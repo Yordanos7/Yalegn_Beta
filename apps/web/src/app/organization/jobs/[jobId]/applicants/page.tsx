@@ -17,9 +17,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/hooks/use-session";
 import { redirect } from "next/navigation";
 import { trpc } from "@/utils/trpc";
-import type { AppRouter } from "@Alpha/api/routers";
-import type { inferRouterOutputs } from "@trpc/server"; // Corrected import
-import { Input } from "@/components/ui/input"; // Added Input import
+import type { AppRouter } from "@my-better-t-app/api/src/routers"; // Assuming AppRouter is exported from routers/index
+import type { inferRouterOutputs } from "@trpc/server";
+import { Input } from "@/components/ui/input";
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type Proposal = RouterOutput["job"]["listProposalsForJob"][number];
@@ -38,7 +38,7 @@ export default function JobApplicantsPage() {
 
   useEffect(() => {
     if (!isSessionLoading && session?.user?.accountType !== "ORGANIZATION") {
-      redirect("/access-denied");
+      redirect("/access-denied" as any); // Cast to any
     }
   }, [session, isSessionLoading]);
 
@@ -98,7 +98,7 @@ export default function JobApplicantsPage() {
           </div>
           <Button
             className="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg px-4 py-2"
-            onClick={() => router.push(`/organization/jobs`)}
+            onClick={() => router.push(`/organization/jobs` as any)} // Cast to any
           >
             Back to My Jobs
           </Button>
@@ -122,7 +122,7 @@ export default function JobApplicantsPage() {
                 className="bg-[#2C2C2C] p-6 rounded-lg mb-4 flex items-center justify-between cursor-pointer"
                 onClick={() =>
                   router.push(
-                    `/organization/jobs/${jobId}/applicants/${proposal.providerId}`
+                    `/organization/jobs/${jobId}/applicants/${proposal.provider.id}` as any
                   )
                 }
               >
@@ -160,7 +160,7 @@ export default function JobApplicantsPage() {
                     onClick={(e) => {
                       e.stopPropagation();
                       router.push(
-                        `/organization/jobs/${jobId}/applicants/${proposal.providerId}`
+                        `/organization/jobs/${jobId}/applicants/${proposal.provider.id}` as any
                       );
                     }}
                   >

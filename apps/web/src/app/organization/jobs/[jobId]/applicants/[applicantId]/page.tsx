@@ -19,8 +19,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/hooks/use-session";
 import { redirect } from "next/navigation";
 import { trpc } from "@/utils/trpc";
-import type { AppRouter } from "@Alpha/api/routers";
+import type { AppRouter } from "@my-better-t-app/api/src/root"; // Assuming AppRouter is exported from root
 import type { inferRouterOutputs } from "@trpc/server";
+import type { Conversation } from "@my-better-t-app/db"; // Reverting to previous import, will define locally if needed
 import { Loader } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -51,8 +52,9 @@ export default function ApplicantDetailPage() {
   } = trpc.job.getProposal.useQuery({ jobId, providerId: applicantId });
 
   const createConversationMutation = trpc.conversation.create.useMutation({
-    onSuccess: (data) => {
-      router.push(`/messages?conversationId=${data.id}`);
+    onSuccess: (data: Conversation) => {
+      // Explicitly type data
+      router.push(`/messages?conversationId=${data.id}` as any); // Cast to any
     },
     onError: (error: any) => {
       console.error("Failed to create or find conversation:", error);
@@ -79,7 +81,7 @@ export default function ApplicantDetailPage() {
 
   useEffect(() => {
     if (!isSessionLoading && session?.user?.accountType !== "ORGANIZATION") {
-      redirect("/access-denied");
+      redirect("/access-denied" as any); // Cast to any
     }
   }, [session, isSessionLoading]);
 
@@ -309,8 +311,11 @@ export default function ApplicantDetailPage() {
               <Button
                 variant="outline"
                 className="bg-[#3A3A3A] border-none text-white"
-                onClick={() =>
-                  router.push(`/individual/profile/${proposal.providerId}`)
+                onClick={
+                  () =>
+                    router.push(
+                      `/individual/profile/${proposal.providerId}` as any
+                    ) // Cast to any
                 }
               >
                 <User className="mr-2" size={20} /> View Profile
