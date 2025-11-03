@@ -1,25 +1,22 @@
 import { redirect } from "next/navigation";
 import Dashboard from "./dashboard";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers"; // Import cookies
+import { auth } from "@my-better-t-app/auth";
 import { authClient } from "@/lib/auth-client";
 
 export default async function DashboardPage() {
-	const session = await authClient.getSession({
-		fetchOptions: {
-			headers: await headers(),
-			throw: true,
-		},
-	});
+  const session = await auth.api.getSession({
+    headers: {
+      cookie: (await cookies()).toString(), // Await cookies() before toString()
+    },
+  });
 
-	if (!session?.user) {
-		redirect("/login");
-	}
+  console.log("Server-side session in DashboardPage:", session); // Log the session
 
-	return (
-		<div>
-			<h1>Dashboard</h1>
-			<p>Welcome {session.user.name}</p>
-			<Dashboard session={session} />
-		</div>
-	);
+  if (!session?.user) {
+    console.log("No user in session, redirecting to login."); // Log redirection reason
+    redirect("/login");
+  }
+
+  return <Dashboard />;
 }
