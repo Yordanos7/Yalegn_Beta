@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@my-better-t-app/auth";
 import { fromNodeHeaders } from "better-auth/node";
 import { PrismaClient, Prisma } from "@prisma/client";
+import crypto from "crypto"; // Import crypto for unique slug generation
 import {
   AccountType,
   CategoryEnum,
@@ -238,15 +239,40 @@ export const userRouter = router({
       try {
         const skillConnects = await Promise.all(
           input.skills.map(async (skillName) => {
-            const skillSlug = skillName.toLowerCase().replace(/\s/g, "-");
-            const skill = await prisma.skill.upsert({
-              where: { slug: skillSlug }, // Use slug for uniqueness check
-              update: { name: skillName }, // Update name if slug exists
-              create: {
-                name: skillName,
-                slug: skillSlug,
-              },
+            const baseSkillSlug = skillName.toLowerCase().replace(/\s/g, "-");
+            let skill = await prisma.skill.findUnique({
+              where: { name: skillName }, // Prioritize finding by name
             });
+
+            if (!skill) {
+              // If not found by name, try to find by the generated base slug
+              skill = await prisma.skill.findUnique({
+                where: { slug: baseSkillSlug },
+              });
+            }
+
+            if (!skill) {
+              // If still not found, create a new skill with a guaranteed unique slug
+              const uniqueSuffix = crypto.randomBytes(4).toString("hex");
+              const uniqueSlug = `${baseSkillSlug}-${uniqueSuffix}`;
+              skill = await prisma.skill.create({
+                data: {
+                  name: skillName,
+                  slug: uniqueSlug,
+                },
+              });
+            } else {
+              // If skill exists, ensure its name is up-to-date
+              if (skill.name !== skillName) {
+                skill = await prisma.skill.update({
+                  where: { id: skill.id },
+                  data: { name: skillName },
+                });
+              }
+              // If the existing skill's slug is different from baseSkillSlug,
+              // it means it was likely created with a unique suffix. We should keep that slug.
+              // No explicit update needed for slug here, as it's unique.
+            }
             return { skillId: skill.id };
           })
         );

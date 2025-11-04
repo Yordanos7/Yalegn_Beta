@@ -25,6 +25,7 @@ import {
 import { trpc } from "@/utils/trpc";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { useCallback, useState } from "react"; // Keep useState and useCallback
 import {
   CategoryEnum,
   ExperienceLevel,
@@ -32,10 +33,9 @@ import {
   DeliveryTime,
   JobType,
 } from "@my-better-t-app/db/prisma/generated/enums"; // Import additional enums
-// import { useCallback, useState } from "react"; // Keep useState and useCallback
-import { useDropzone } from "react-dropzone"; // Use react-dropzone directly
-import Image from "next/image"; // Keep Image component
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Keep Avatar components
+import { useDropzone } from "react-dropzone";
+import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const profileFormSchema = z.object({
   bio: z.string().optional(),
@@ -73,13 +73,13 @@ export function ProfileEditForm({
   const [imageUrl, setImageUrl] = useState<string | null>(
     initialData.image || null
   );
-  const [isUploading, setIsUploading] = useState(false); // Manage uploading state locally
+  const [isUploading, setIsUploading] = useState(false);
 
   const uploadProfileImageMutation = trpc.user.uploadProfileImage.useMutation({
     onSuccess: (data) => {
       const newImageUrl = data?.profileImage || null;
       setImageUrl(newImageUrl);
-      form.setValue("image", newImageUrl); // Update form with new image URL
+      form.setValue("image", newImageUrl);
       toast.success("Image uploaded successfully!");
     },
     onError: (error) => {
@@ -128,14 +128,14 @@ export function ProfileEditForm({
       location: initialData.location || "",
       languages: initialData.languages || "",
       mainCategory: initialData.mainCategory || null,
-      headline: initialData.headline || "", // Set default
-      hourlyRate: initialData.hourlyRate || null, // Set default
-      currency: initialData.currency || null, // Set default
-      rateTypePreference: initialData.rateTypePreference || null, // Set default
-      experienceLevel: initialData.experienceLevel || null, // Set default
-      freelancerLevel: initialData.freelancerLevel || null, // Set default
-      deliveryTime: initialData.deliveryTime || null, // Set default
-      image: initialData.image || null, // Set default for image
+      headline: initialData.headline || "",
+      hourlyRate: initialData.hourlyRate || null,
+      currency: initialData.currency || null,
+      rateTypePreference: initialData.rateTypePreference || null,
+      experienceLevel: initialData.experienceLevel || null,
+      freelancerLevel: initialData.freelancerLevel || null,
+      deliveryTime: initialData.deliveryTime || null,
+      image: initialData.image || null,
     },
   });
 

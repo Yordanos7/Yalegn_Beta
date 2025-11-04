@@ -54,7 +54,7 @@ export const freelancerRouter = router({
       const whereClause: any = {
         role: Role.PROVIDER, // Only fetch users with the PROVIDER role
         accountType: "INDIVIDUAL", // Only show individual freelancers
-        // isOpenToWork: true, // Only show freelancers who are open to work
+        // isOpenToWork: true, // This was causing all freelancers to be blocked if not explicitly set to true from the frontend.
         profile: {
           // isPublicFreelancer: true, // Removed this condition to display all freelancers by default
         },
