@@ -12,7 +12,7 @@ export const messageRouter = router({
       }
 
       // Ensure the user is a participant in the conversation
-      const conversation = await ctx.db.conversation.findUnique({
+      const conversation = await ctx.prisma.conversation.findUnique({
         where: {
           id: input.conversationId,
           participants: {
@@ -27,7 +27,7 @@ export const messageRouter = router({
         throw new Error("Conversation not found or you are not a participant.");
       }
 
-      return ctx.db.message.findMany({
+      return ctx.prisma.message.findMany({
         where: {
           conversationId: input.conversationId,
         },
@@ -68,7 +68,7 @@ export const messageRouter = router({
       }
 
       // Ensure both users are participants in the conversation
-      const conversation = await ctx.db.conversation.findUnique({
+      const conversation = await ctx.prisma.conversation.findUnique({
         where: {
           id: input.conversationId,
           participants: {
@@ -92,7 +92,7 @@ export const messageRouter = router({
       }
 
       console.log("Attempting to create message in database...");
-      const message = await ctx.db.message.create({
+      const message = await ctx.prisma.message.create({
         data: {
           conversationId: input.conversationId,
           fromUserId: fromUserId,
@@ -119,7 +119,7 @@ export const messageRouter = router({
       console.log("Message successfully created in database:", message);
 
       // Update conversation updatedAt to bring it to the top of the list
-      await ctx.db.conversation.update({
+      await ctx.prisma.conversation.update({
         where: { id: input.conversationId },
         data: { updatedAt: new Date() },
       });

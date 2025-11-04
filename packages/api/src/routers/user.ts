@@ -433,7 +433,7 @@ export const userRouter = router({
         id: {
           not: userId,
         },
-        isOpenToWork: true,
+        // Removed isOpenToWork: true to allow all users (except the current one) to be listed as potential conversation partners.
       },
       select: {
         id: true,

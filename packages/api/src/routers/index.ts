@@ -4,12 +4,16 @@ import { listingRouter } from "./listing";
 import { categoryRouter } from "./category";
 import { freelancerRouter } from "./freelancer";
 import { jobRouter } from "./job";
+import { conversationRouter } from "./conversation";
+import { messageRouter } from "./message";
 
 export const appRouter = router({
   user: userRouter,
   listing: listingRouter,
   category: categoryRouter,
-  freelancer: freelancerRouter, // Corrected key to 'freelancer'
+  freelancer: freelancerRouter,
   job: jobRouter,
+  conversation: conversationRouter,
+  message: messageRouter,
 });
 export type AppRouter = typeof appRouter;

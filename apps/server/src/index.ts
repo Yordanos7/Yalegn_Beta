@@ -1,8 +1,8 @@
 // apps/server/src/index.ts
 import "dotenv/config";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { createContext } from "@Alpha/api/context";
-import { appRouter } from "@Alpha/api/routers/index";
+import { createContext } from "@my-better-t-app/api/context";
+import { appRouter } from "@my-better-t-app/api/routers/index";
 import cors from "cors";
 import express from "express";
 import { auth } from "@my-better-t-app/auth";

@@ -5,7 +5,7 @@ import type { Server } from "socket.io";
 import { auth } from "@my-better-t-app/auth";
 import { fromNodeHeaders } from "better-auth/node";
 import prisma from "@my-better-t-app/db";
-import { type User } from "@prisma/client";
+import { type User } from "@my-better-t-app/db/prisma/generated/client";
 
 // Use the generated User type from Prisma, but select only the fields we need.
 type ContextUser = Pick<
@@ -45,9 +45,11 @@ export function createContextInner(opts: CreateContextOptions) {
   };
 }
 
-export async function createContext(
-  opts: CreateExpressContextOptions & { io: Server }
-) {
+export async function createContext(opts: {
+  req: CreateExpressContextOptions["req"];
+  res: CreateExpressContextOptions["res"];
+  io: Server;
+}) {
   let session: Session | null = null;
   let user: ContextUser | null = null;
 
