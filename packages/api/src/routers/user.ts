@@ -91,22 +91,22 @@ export const userRouter = router({
   ),
 
   uploadProfileImage: protectedProcedure
-    .input(z.object({ filePath: z.string() }))
+    .input(z.object({ imageData: z.string() })) // Accept base64 image data
     .mutation(async ({ ctx: { user, prisma, req, res }, input }) => {
       try {
         console.log(
-          "tRPC uploadProfileImage mutation received filePath:",
-          input.filePath
+          "tRPC uploadProfileImage mutation received image data (length):",
+          input.imageData.length
         );
 
         const updatedUser = await prisma.user.update({
           where: { id: user!.id },
-          data: { image: input.filePath },
+          data: { image: input.imageData }, // Store base64 data directly
         });
 
         console.log(
-          "Profile image successfully saved to DB:",
-          updatedUser.image
+          "Profile image successfully saved to DB (first 50 chars):",
+          updatedUser.image?.substring(0, 50)
         );
 
         await auth.api.getSession({
@@ -145,6 +145,7 @@ export const userRouter = router({
         availability: z.string().optional(),
         education: z.any().optional(),
         experience: z.any().optional(),
+        image: z.string().optional().nullable(), // Added image field
       })
     )
     .mutation(async ({ ctx: { user, prisma, req, res }, input }) => {
@@ -154,6 +155,7 @@ export const userRouter = router({
           bio?: string;
           location?: string;
           languages?: string[];
+          image?: string | null; // Added image to userUpdateData
         } = {};
         if (input.name !== undefined) userUpdateData.name = input.name;
         if (input.bio !== undefined) userUpdateData.bio = input.bio;
@@ -161,6 +163,7 @@ export const userRouter = router({
           userUpdateData.location = input.location;
         if (input.languages !== undefined)
           userUpdateData.languages = input.languages;
+        if (input.image !== undefined) userUpdateData.image = input.image; // Handle image update
 
         const updatedUser = await prisma.user.update({
           where: { id: user!.id },
@@ -235,12 +238,13 @@ export const userRouter = router({
       try {
         const skillConnects = await Promise.all(
           input.skills.map(async (skillName) => {
+            const skillSlug = skillName.toLowerCase().replace(/\s/g, "-");
             const skill = await prisma.skill.upsert({
-              where: { name: skillName },
-              update: {},
+              where: { slug: skillSlug }, // Use slug for uniqueness check
+              update: { name: skillName }, // Update name if slug exists
               create: {
                 name: skillName,
-                slug: skillName.toLowerCase().replace(/\s/g, "-"),
+                slug: skillSlug,
               },
             });
             return { skillId: skill.id };

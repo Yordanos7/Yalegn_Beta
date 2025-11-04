@@ -32,12 +32,10 @@ import {
   DeliveryTime,
   JobType,
 } from "@my-better-t-app/db/prisma/generated/enums"; // Import additional enums
-import { useUploadThing } from "@/utils/uploadthing"; // Import useUploadThing
-import { generateClientDropzoneAccept } from "uploadthing/client"; // Import generateClientDropzoneAccept
-import { useCallback, useState } from "react"; // Import useState and useCallback
-import { useDropzone } from "@uploadthing/react/hooks"; // Import useDropzone
-import Image from "next/image"; // Import Image component
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Import Avatar components
+// import { useCallback, useState } from "react"; // Keep useState and useCallback
+import { useDropzone } from "react-dropzone"; // Use react-dropzone directly
+import Image from "next/image"; // Keep Image component
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Keep Avatar components
 
 const profileFormSchema = z.object({
   bio: z.string().optional(),
@@ -75,36 +73,52 @@ export function ProfileEditForm({
   const [imageUrl, setImageUrl] = useState<string | null>(
     initialData.image || null
   );
-  const { startUpload, isUploading } = useUploadThing("imageUploader", {
-    onClientUploadComplete: (res) => {
-      if (res && res.length > 0) {
-        const newImageUrl = res[0].url;
-        setImageUrl(newImageUrl);
-        form.setValue("image", newImageUrl); // Update form with new image URL
-        toast.success("Image uploaded successfully!");
-      }
+  const [isUploading, setIsUploading] = useState(false); // Manage uploading state locally
+
+  const uploadProfileImageMutation = trpc.user.uploadProfileImage.useMutation({
+    onSuccess: (data) => {
+      const newImageUrl = data?.profileImage || null;
+      setImageUrl(newImageUrl);
+      form.setValue("image", newImageUrl); // Update form with new image URL
+      toast.success("Image uploaded successfully!");
     },
-    onUploadError: (error: Error) => {
-      toast.error("Image upload failed: " + error.message);
+    onError: (error) => {
+      toast.error("Failed to upload profile image: " + error.message);
     },
   });
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles.length > 0) {
-        startUpload(acceptedFiles);
+        const file = acceptedFiles[0];
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const base64Image = event.target?.result as string;
+          setIsUploading(true);
+          try {
+            await uploadProfileImageMutation.mutateAsync({
+              imageData: base64Image,
+            });
+          } catch (error: any) {
+            toast.error("Image upload failed: " + error.message);
+          } finally {
+            setIsUploading(false);
+          }
+        };
+        reader.readAsDataURL(file);
       }
     },
-    [startUpload]
+    [uploadProfileImageMutation]
   );
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
-    accept: generateClientDropzoneAccept([
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-    ]),
+    accept: {
+      "image/jpeg": [".jpeg", ".jpg"],
+      "image/png": [".png"],
+      "image/gif": [".gif"],
+    },
+    maxFiles: 1,
   });
 
   const form = useForm<ProfileFormValues>({

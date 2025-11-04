@@ -1,13 +1,11 @@
 "use client";
 
 import { useCallback, useState, useRef } from "react";
-import { useDropzone } from "@uploadthing/react/hooks";
-import { generateClientDropzoneAccept } from "uploadthing/client";
-import { useUploadThing } from "@/utils/uploadthing";
+import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-import { Loader2, UserRound } from "lucide-react"; // Import UserRound icon
+import { Loader2, UserRound } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button"; // Import Button component
+import { Button } from "@/components/ui/button";
 import { trpc } from "@/utils/trpc";
 
 interface ProfileImageUploadProps {
@@ -22,11 +20,12 @@ export function ProfileImageUpload({
   onImageUploadSuccess,
 }: ProfileImageUploadProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(initialImageUrl);
-  const fileInputRef = useRef<HTMLInputElement>(null); // Ref for the hidden file input
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const updateProfileImageMutation = trpc.user.updateProfile.useMutation({
+  const uploadProfileImageMutation = trpc.user.uploadProfileImage.useMutation({
     onSuccess: (data) => {
-      const newImageUrl = data?.user?.image || null; // Access image from data.user
+      const newImageUrl = data?.profileImage || null;
       setImageUrl(newImageUrl);
       toast.success("Profile image updated successfully!");
       if (onImageUploadSuccess && newImageUrl) {
@@ -34,48 +33,47 @@ export function ProfileImageUpload({
       }
     },
     onError: (error) => {
-      toast.error("Failed to update profile image: " + error.message);
-    },
-  });
-
-  const { startUpload, isUploading } = useUploadThing("imageUploader", {
-    onClientUploadComplete: (res) => {
-      if (res && res.length > 0) {
-        const newImageUrl = res[0].url;
-        // Update the user's profile with the new image URL
-        updateProfileImageMutation.mutate({
-          id: userId,
-          image: newImageUrl,
-        });
-      }
-    },
-    onUploadError: (error: Error) => {
-      toast.error("Image upload failed: " + error.message);
+      toast.error("Failed to upload profile image: " + error.message);
     },
   });
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles.length > 0) {
-        startUpload(acceptedFiles);
+        const file = acceptedFiles[0];
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const base64Image = event.target?.result as string;
+          setIsUploading(true);
+          try {
+            await uploadProfileImageMutation.mutateAsync({
+              imageData: base64Image,
+            });
+          } catch (error: any) {
+            toast.error("Image upload failed: " + error.message);
+          } finally {
+            setIsUploading(false);
+          }
+        };
+        reader.readAsDataURL(file);
       }
     },
-    [startUpload]
+    [uploadProfileImageMutation]
   );
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
-    accept: generateClientDropzoneAccept([
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-    ]),
+    accept: {
+      "image/jpeg": [".jpeg", ".jpg"],
+      "image/png": [".png"],
+      "image/gif": [".gif"],
+    },
     maxFiles: 1,
-    noClick: true, // Disable click to open file dialog on the root div
+    noClick: true,
   });
 
   const handleButtonClick = () => {
-    fileInputRef.current?.click(); // Programmatically click the hidden file input
+    fileInputRef.current?.click();
   };
 
   return (
@@ -84,8 +82,8 @@ export function ProfileImageUpload({
         {...getRootProps()}
         className="relative flex items-center justify-center w-32 h-32 rounded-full bg-[#3A3A3A] overflow-hidden"
       >
-        <input {...getInputProps()} ref={fileInputRef} /> {/* Hidden input */}
-        {isUploading || updateProfileImageMutation.status === "pending" ? (
+        <input {...getInputProps()} ref={fileInputRef} />
+        {isUploading || uploadProfileImageMutation.status === "pending" ? (
           <Loader2 className="h-10 w-10 animate-spin text-gray-400" />
         ) : imageUrl ? (
           <Avatar className="h-full w-full">
@@ -99,17 +97,17 @@ export function ProfileImageUpload({
             </AvatarFallback>
           </Avatar>
         ) : (
-          <UserRound className="h-16 w-16 text-gray-400" /> // Face icon
+          <UserRound className="h-16 w-16 text-gray-400" />
         )}
       </div>
       <Button
         onClick={handleButtonClick}
         disabled={
-          isUploading || updateProfileImageMutation.status === "pending"
+          isUploading || uploadProfileImageMutation.status === "pending"
         }
         className="bg-blue-600 hover:bg-blue-700 text-white"
       >
-        {isUploading || updateProfileImageMutation.status === "pending" ? (
+        {isUploading || uploadProfileImageMutation.status === "pending" ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...
           </>
