@@ -1,52 +1,32 @@
-import { publicProcedure, router } from "../index";
+import { createUploadthing, type FileRouter } from "uploadthing/server";
+import { UploadThingError } from "uploadthing/server";
 import { z } from "zod";
-import multer from "multer";
-import { NextApiRequest, NextApiResponse } from "next";
-import path, { dirname } from "path"; // Import path module, and dirname
-import fs from "fs"; // Import fs module to ensure directory exists
-import { fileURLToPath } from "url"; // Import fileURLToPath
-import type { UploadResponse } from "./index"; // Import UploadResponse as a type-only import
 
-// interface UploadResponse { // Moved to index.ts
-//   filePath: string;
-// }
+const f = createUploadthing();
 
-const uploadDir = path.join(process.cwd(), "apps/web/public/uploads");
+// FileRouter for your app, can contain multiple FileRoutes
+export const uploadRouter = {
+  // Define as many FileRoutes as you like, each with a unique routeSlug
+  imageUploader: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })
+    // Set permissions and file types for this FileRoute
+    .input(z.object({ userId: z.string() })) // Add userId to input
+    .middleware(async ({ req, input }) => {
+      // This is where you can check authentication and authorization
+      const userId = input.userId; // Get userId from input
 
-// Ensure the upload directory exists
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-  console.log(`Created upload directory: ${uploadDir}`);
-}
+      if (!userId) throw new UploadThingError("Unauthorized");
 
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      console.log("Multer destination path:", uploadDir); // Log the destination path
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      cb(null, `${Date.now()}-${file.originalname}`);
-    },
-  }),
-});
+      // Whatever is returned here is accessible in onUploadComplete as `metadata`
+      return { userId: userId };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      // This code RUNS ON YOUR SERVER after upload
+      console.log("Upload complete for userId:", metadata.userId);
+      console.log("file url", file.url);
 
-export const uploadRouter = router({
-  upload: publicProcedure
-    .input(z.any())
-    .mutation(async ({ ctx: { req, res } }): Promise<UploadResponse> => {
-      // Add explicit return type
-      await new Promise<void>((resolve, reject) => {
-        upload.single("file")(req as any, res as any, (err) => {
-          if (err) {
-            reject(err);
-          }
-          resolve();
-        });
-      });
-
-      return {
-        filePath: `/uploads/${(req as any).file.filename}`,
-      };
+      // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
+      return { uploadedBy: metadata.userId, fileUrl: file.url };
     }),
-});
+} satisfies FileRouter;
+
+export type OurFileRouter = typeof uploadRouter;

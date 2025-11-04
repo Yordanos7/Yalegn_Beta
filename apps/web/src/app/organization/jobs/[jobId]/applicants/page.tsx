@@ -17,11 +17,11 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/hooks/use-session";
 import { redirect } from "next/navigation";
 import { trpc } from "@/utils/trpc";
-import type { AppRouter } from "@my-better-t-app/api/src/routers"; // Assuming AppRouter is exported from routers/index
+import type { AppRouter } from "@my-better-t-app/api/routers/index"; // Corrected import path
 import type { inferRouterOutputs } from "@trpc/server";
 import { Input } from "@/components/ui/input";
 
-type RouterOutput = inferRouterOutputs<AppRouter>;
+type RouterOutput = inferRouterOutputs<AppRouter>; // Use AppRouter directly
 type Proposal = RouterOutput["job"]["listProposalsForJob"][number];
 
 export default function JobApplicantsPage() {

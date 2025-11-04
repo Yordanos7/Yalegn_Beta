@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog"; // Import DialogTitle
 import { ListingForm } from "@/components/listing-form";
 import { ProfileEditForm } from "@/components/profile-edit-form"; // Import ProfileEditForm
+import { ProfileImageUpload } from "@/components/profile-image-upload"; // Import ProfileImageUpload
 import { Switch } from "@/components/ui/switch"; // Import Switch component
 import {
   Mail,
@@ -39,7 +40,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useSession } from "@/hooks/use-session";
 import { trpc } from "@/utils/trpc";
-import type { AppRouter } from "@my-better-t-app/api/src/routers"; // Corrected import path
+import type { AppRouter } from "@my-better-t-app/api/src/routers/index"; // Corrected import path
 import type { inferRouterOutputs } from "@trpc/server";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -236,15 +237,13 @@ export default function UserProfilePage() {
           <Card className="p-6 bg-card rounded-lg shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center">
-                <Avatar className="h-24 w-24 mr-6">
-                  <AvatarImage
-                    src={userProfile.image || "/placeholder-avatar.jpg"}
-                    alt={userProfile.name}
+                <div className="mr-6">
+                  <ProfileImageUpload
+                    userId={userId!}
+                    initialImageUrl={userProfile.image || null}
+                    onImageUploadSuccess={() => refetchUserProfile()}
                   />
-                  <AvatarFallback className="text-4xl">
-                    {userProfile.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                </div>
                 <div>
                   <h1 className="text-4xl font-bold">{userProfile.name}</h1>
                   <div className="flex items-center text-green-500 text-sm mt-1">
@@ -380,9 +379,10 @@ export default function UserProfilePage() {
                       freelancerLevel:
                         userProfile.profile?.freelancerLevel || null,
                       deliveryTime: userProfile.profile?.deliveryTime || null,
+                      image: userProfile.image || null, // Pass the current image to the form
                     }}
                     onSuccess={() => {
-                      refetchUserProfile();
+                      refetchUserProfile(); // Refetch profile to ensure UI is consistent with new image
                       // Optionally refetch listings if profile changes affect them
                     }}
                     onCancel={() => {}} // Dialog handles closing

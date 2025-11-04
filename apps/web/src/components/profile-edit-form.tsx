@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -31,6 +32,12 @@ import {
   DeliveryTime,
   JobType,
 } from "@my-better-t-app/db/prisma/generated/enums"; // Import additional enums
+import { useUploadThing } from "@/utils/uploadthing"; // Import useUploadThing
+import { generateClientDropzoneAccept } from "uploadthing/client"; // Import generateClientDropzoneAccept
+import { useCallback, useState } from "react"; // Import useState and useCallback
+import { useDropzone } from "@uploadthing/react/hooks"; // Import useDropzone
+import Image from "next/image"; // Import Image component
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Import Avatar components
 
 const profileFormSchema = z.object({
   bio: z.string().optional(),
@@ -47,6 +54,7 @@ const profileFormSchema = z.object({
   experienceLevel: z.nativeEnum(ExperienceLevel).optional().nullable(), // Added experienceLevel
   freelancerLevel: z.nativeEnum(FreelancerLevel).optional().nullable(), // Added freelancerLevel
   deliveryTime: z.nativeEnum(DeliveryTime).optional().nullable(), // Added deliveryTime
+  image: z.string().optional().nullable(), // Added image field
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -64,6 +72,41 @@ export function ProfileEditForm({
   onSuccess,
   onCancel,
 }: ProfileEditFormProps) {
+  const [imageUrl, setImageUrl] = useState<string | null>(
+    initialData.image || null
+  );
+  const { startUpload, isUploading } = useUploadThing("imageUploader", {
+    onClientUploadComplete: (res) => {
+      if (res && res.length > 0) {
+        const newImageUrl = res[0].url;
+        setImageUrl(newImageUrl);
+        form.setValue("image", newImageUrl); // Update form with new image URL
+        toast.success("Image uploaded successfully!");
+      }
+    },
+    onUploadError: (error: Error) => {
+      toast.error("Image upload failed: " + error.message);
+    },
+  });
+
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      if (acceptedFiles.length > 0) {
+        startUpload(acceptedFiles);
+      }
+    },
+    [startUpload]
+  );
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    accept: generateClientDropzoneAccept([
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+    ]),
+  });
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -78,6 +121,7 @@ export function ProfileEditForm({
       experienceLevel: initialData.experienceLevel || null, // Set default
       freelancerLevel: initialData.freelancerLevel || null, // Set default
       deliveryTime: initialData.deliveryTime || null, // Set default
+      image: initialData.image || null, // Set default for image
     },
   });
 
@@ -108,12 +152,49 @@ export function ProfileEditForm({
       experienceLevel: values.experienceLevel ?? undefined, // Convert null to undefined
       freelancerLevel: values.freelancerLevel ?? undefined, // Convert null to undefined
       deliveryTime: values.deliveryTime ?? undefined, // Convert null to undefined
+      image: imageUrl ?? undefined, // Pass the uploaded image URL
     });
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="image"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Profile Image</FormLabel>
+              <FormControl>
+                <div
+                  {...getRootProps()}
+                  className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg cursor-pointer bg-[#3A3A3A] hover:bg-[#4A4A4A] transition-colors"
+                >
+                  <input {...getInputProps()} />
+                  {isUploading ? (
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                  ) : imageUrl ? (
+                    <Avatar className="h-24 w-24">
+                      <AvatarImage src={imageUrl} alt="Profile Image" />
+                      <AvatarFallback>
+                        {initialData.bio?.charAt(0).toUpperCase() || "P"}
+                      </AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <div className="text-gray-400 text-center">
+                      <p>
+                        Drag 'n' drop an image here, or click to select files
+                      </p>
+                      <p className="text-sm mt-1">(Max 4MB, JPG, PNG, GIF)</p>
+                    </div>
+                  )}
+                </div>
+              </FormControl>
+              <FormDescription>Upload a profile picture.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="bio"
@@ -415,11 +496,12 @@ export function ProfileEditForm({
           </Button>
           <Button
             type="submit"
-            disabled={updateProfileMutation.status === "pending"}
+            disabled={updateProfileMutation.status === "pending" || isUploading}
           >
-            {updateProfileMutation.status === "pending" && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {updateProfileMutation.status === "pending" ||
+              (isUploading && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ))}
             Save Changes
           </Button>
         </div>
