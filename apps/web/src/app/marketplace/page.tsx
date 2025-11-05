@@ -33,6 +33,19 @@ const ListingCard = ({ listing }: { listing: Listing }) => {
     return videoExtensions.some((ext) => url.toLowerCase().endsWith(ext));
   };
 
+  const isImage = (url: string) => {
+    const imageExtensions = [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".gif",
+      ".bmp",
+      ".webp",
+      ".svg",
+    ];
+    return imageExtensions.some((ext) => url.toLowerCase().endsWith(ext));
+  };
+
   console.log("ListingCard - Listing Data:", listing);
 
   const mediaUrl = listing.videos?.[0] || listing.images?.[0];
@@ -41,11 +54,18 @@ const ListingCard = ({ listing }: { listing: Listing }) => {
   console.log("ListingCard - Listing Images:", listing.images);
   console.log("ListingCard - Listing Videos:", listing.videos);
 
+  console.log("this is media url mediaUrl:", mediaUrl);
+
   return (
     <Link href={`/marketplace/${listing.id}`} passHref legacyBehavior>
       <Card className="relative group w-full h-80 bg-cover bg-center rounded-lg overflow-hidden cursor-pointer transition-transform duration-300 ease-in-out transform hover:scale-105">
         {mediaUrl ? (
-          isVideo(mediaUrl) ? (
+          isImage(mediaUrl) ? (
+            <div
+              className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
+              style={{ backgroundImage: `url(${mediaUrl})` }}
+            />
+          ) : isVideo(mediaUrl) ? (
             <video
               src={mediaUrl}
               className="absolute inset-0 w-full h-full object-cover z-0"
@@ -55,9 +75,10 @@ const ListingCard = ({ listing }: { listing: Listing }) => {
               playsInline
             />
           ) : (
+            // Fallback for unknown media types, or if mediaUrl is not an image or video
             <div
               className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
-              style={{ backgroundImage: `url(${mediaUrl})` }}
+              style={{ backgroundImage: `url(${placeholderUrl})` }}
             />
           )
         ) : (
@@ -104,7 +125,7 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     if (listingsData?.listings) {
-      setFilteredListings(listingsData.listings);
+      setFilteredListings(listingsData.listings as Listing[]);
     }
   }, [listingsData]);
 
