@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   Home,
   MessageSquare,
@@ -28,6 +29,7 @@ import {
   FileText,
   X,
   Clock,
+  Menu, // Added Menu icon for sidebar toggle
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -35,9 +37,15 @@ import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
   currentPage: string;
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
 }
 
-export default function Sidebar({ currentPage }: SidebarProps) {
+export default function Sidebar({
+  currentPage,
+  isSidebarOpen,
+  toggleSidebar,
+}: SidebarProps) {
   const pathname = usePathname();
 
   const navItems = [
@@ -54,17 +62,28 @@ export default function Sidebar({ currentPage }: SidebarProps) {
   ];
 
   return (
-    <aside className="w-64 bg-[#2C2C2C] p-6 flex flex-col">
-      <div className="flex items-center mb-8">
-        <img src="/assets/logo.png" alt="Logo" className="h-8 mr-2" />
-        <span className="text-xl font-bold">
-          {currentPage === "dashboard" && "Dashboard"}
-          {currentPage === "messages" && "Messages"}
-          {currentPage === "applications" && "Applications"}
-        </span>
+    <aside
+      className={`bg-[#2C2C2C] p-6 flex flex-col transition-all duration-300 ease-in-out ${
+        isSidebarOpen ? "w-64" : "w-20"
+      }`}
+    >
+      <div className="flex items-center justify-between mb-8">
+        {isSidebarOpen && (
+          <div className="flex items-center">
+            <img src="/assets/logo.png" alt="Logo" className="h-8 mr-2" />
+            <span className="text-xl font-bold">
+              {currentPage === "dashboard" && "Dashboard"}
+              {currentPage === "messages" && "Messages"}
+              {currentPage === "applications" && "Applications"}
+            </span>
+          </div>
+        )}
+        <Button variant="ghost" onClick={toggleSidebar} className="p-2">
+          <Menu size={24} />
+        </Button>
       </div>
 
-      {currentPage === "messages" && (
+      {isSidebarOpen && currentPage === "messages" && (
         <>
           <div className="relative mb-6">
             <Search
@@ -174,7 +193,7 @@ export default function Sidebar({ currentPage }: SidebarProps) {
         </>
       )}
 
-      {currentPage !== "messages" && (
+      {isSidebarOpen && currentPage !== "messages" && (
         <nav className="flex-1">
           <ul>
             {navItems.map((item) => {
@@ -197,6 +216,36 @@ export default function Sidebar({ currentPage }: SidebarProps) {
                   >
                     <Icon className="mr-3" size={20} />
                     {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
+
+      {!isSidebarOpen && (
+        <nav className="flex-1">
+          <ul>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <li
+                  key={item.href}
+                  className={`mb-4 flex justify-center ${
+                    isActive ? "border-l-4 border-yellow-500" : ""
+                  }`}
+                >
+                  <Link
+                    href={item.href}
+                    className={`flex items-center ${
+                      isActive
+                        ? "text-white font-semibold"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    <Icon size={20} />
                   </Link>
                 </li>
               );

@@ -3,6 +3,7 @@
 import Sidebar from "@/components/sidebar";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useSidebar } from "@/hooks/use-sidebar"; // Assuming a custom hook for sidebar state
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,9 +20,16 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/hooks/use-session";
 import { redirect } from "next/navigation";
 import { trpc } from "@/utils/trpc";
-import type { AppRouter } from "@my-better-t-app/api/src/root"; // Assuming AppRouter is exported from root
 import type { inferRouterOutputs } from "@trpc/server";
-import type { Conversation } from "@my-better-t-app/db"; // Reverting to previous import, will define locally if needed
+
+// Define a local interface for Conversation based on Prisma schema
+interface Conversation {
+  id: string;
+  title: string | null;
+  projectId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 import { Loader } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -33,7 +41,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-type RouterOutput = inferRouterOutputs<AppRouter>;
+type RouterOutput = inferRouterOutputs<typeof trpc.router>; // Infer AppRouter from trpc.router
 type Proposal = RouterOutput["job"]["getProposal"];
 
 export default function ApplicantDetailPage() {
@@ -42,6 +50,7 @@ export default function ApplicantDetailPage() {
   const applicantId = params.applicantId as string;
   const router = useRouter();
   const { session, isLoading: isSessionLoading } = useSession();
+  const { isSidebarOpen, toggleSidebar } = useSidebar(); // Use the custom hook
 
   const utils = trpc.useUtils();
 
@@ -88,7 +97,11 @@ export default function ApplicantDetailPage() {
   if (isSessionLoading || isProposalLoading) {
     return (
       <div className="flex min-h-screen bg-[#202020] text-white">
-        <Sidebar currentPage="applicant-detail" />
+        <Sidebar
+          currentPage="applicant-detail"
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
+        />
         <main className="flex-1 p-8 flex flex-col items-center justify-center">
           <p className="text-gray-400">Loading applicant details...</p>
         </main>
@@ -99,7 +112,11 @@ export default function ApplicantDetailPage() {
   if (session?.user?.accountType !== "ORGANIZATION") {
     return (
       <div className="flex min-h-screen bg-[#202020] text-white">
-        <Sidebar currentPage="applicant-detail" />
+        <Sidebar
+          currentPage="applicant-detail"
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
+        />
         <main className="flex-1 p-8 flex flex-col items-center justify-center">
           <h1 className="text-2xl font-bold text-red-500">Access Denied</h1>
           <p className="text-gray-400">
@@ -113,7 +130,11 @@ export default function ApplicantDetailPage() {
   if (proposalError) {
     return (
       <div className="flex min-h-screen bg-[#202020] text-white">
-        <Sidebar currentPage="applicant-detail" />
+        <Sidebar
+          currentPage="applicant-detail"
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
+        />
         <main className="flex-1 p-8 flex flex-col items-center justify-center">
           <h1 className="text-2xl font-bold text-red-500">Error</h1>
           <p className="text-gray-400">
@@ -127,7 +148,11 @@ export default function ApplicantDetailPage() {
   if (!proposal) {
     return (
       <div className="flex min-h-screen bg-[#202020] text-white">
-        <Sidebar currentPage="applicant-detail" />
+        <Sidebar
+          currentPage="applicant-detail"
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
+        />
         <main className="flex-1 p-8 flex flex-col items-center justify-center">
           <h1 className="text-2xl font-bold text-red-500">
             Applicant Not Found
@@ -209,8 +234,16 @@ export default function ApplicantDetailPage() {
 
   return (
     <div className="flex min-h-screen bg-[#202020] text-white">
-      <Sidebar currentPage="applicant-detail" />
-      <main className="flex-1 p-8 flex flex-col">
+      <Sidebar
+        currentPage="applicant-detail"
+        isSidebarOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+      />
+      <main
+        className={`flex-1 p-8 flex flex-col transition-all duration-300 ease-in-out ${
+          isSidebarOpen ? "ml-0" : "ml-0"
+        }`}
+      >
         <ScrollArea className="flex-1 h-full pr-4">
           <Card className="bg-[#2C2C2C] p-8 rounded-lg mb-8">
             <div className="flex items-center mb-6">

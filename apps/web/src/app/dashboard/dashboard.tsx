@@ -25,26 +25,23 @@ import {
   Star,
 } from "lucide-react"; // Assuming lucide-react is installed
 import Sidebar from "@/components/sidebar";
+import { useSidebar } from "@/hooks/use-sidebar"; // Import the custom hook
 import { useState } from "react";
 
 export default function Dashboard() {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
+  const { isSidebarOpen, toggleSidebar } = useSidebar(); // Use the custom hook
 
   return (
     <div className="flex min-h-screen bg-[#202020] text-white">
       <Sidebar
         currentPage="dashboard"
-        isCollapsed={isSidebarCollapsed}
+        isSidebarOpen={isSidebarOpen}
         toggleSidebar={toggleSidebar}
       />
       {/* Main Content */}
       <main
         className={`flex-1 p-4 md:p-8 bg-[#202020] flex flex-col lg:flex-row transition-all duration-300 ${
-          isSidebarCollapsed ? "ml-20" : "ml-64"
+          isSidebarOpen ? "ml-0" : "ml-0"
         }`}
       >
         <div className="flex-1">

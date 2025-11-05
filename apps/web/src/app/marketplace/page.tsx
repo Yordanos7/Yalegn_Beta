@@ -22,7 +22,8 @@ import {
 import { trpc } from "@/utils/trpc"; // Import trpc
 import React, { useEffect, useState } from "react";
 import { MarketPlaceFilters } from "@/components/MarketPlaceFilters";
-import { RouterOutputs } from "@my-better-t-app/api/routers/types";
+import type { RouterOutputs } from "@my-better-t-app/api/routers/types"; // Use type-only import
+import { useSidebar } from "@/hooks/use-sidebar"; // Import the custom hook
 
 type Listing = RouterOutputs["listing"]["getAll"]["listings"][number];
 
@@ -98,7 +99,7 @@ export default function MarketplacePage() {
     isPending,
     error,
   } = trpc.listing.getAll.useQuery();
-
+  const { isSidebarOpen, toggleSidebar } = useSidebar();
   const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
 
   useEffect(() => {
@@ -110,7 +111,11 @@ export default function MarketplacePage() {
   if (isPending) {
     return (
       <div className="flex min-h-screen bg-[#202020] text-white">
-        <Sidebar currentPage="marketplace" />
+        <Sidebar
+          currentPage="marketplace"
+          isSidebarOpen={true} // Default to open during loading
+          toggleSidebar={() => {}} // No-op during loading
+        />
         <main className="flex-1 p-8 bg-[#202020] flex flex-col items-center justify-center">
           <p className="text-gray-400">Loading listings...</p>
         </main>
@@ -121,7 +126,11 @@ export default function MarketplacePage() {
   if (error) {
     return (
       <div className="flex min-h-screen bg-[#202020] text-white">
-        <Sidebar currentPage="marketplace" />
+        <Sidebar
+          currentPage="marketplace"
+          isSidebarOpen={true} // Default to open during error
+          toggleSidebar={() => {}} // No-op during error
+        />
         <main className="flex-1 p-8 bg-[#411a1a] flex flex-col items-center justify-center">
           <h1 className="text-2xl font-bold text-red-500">Error</h1>
           <p className="text-gray-400">
@@ -133,14 +142,24 @@ export default function MarketplacePage() {
   }
 
   const listings = listingsData?.listings || [];
+  // Use the custom hook
+
   console.log("Marketplace Listings:", listings); // Log the listings to the console
 
   return (
     <div className="flex min-h-screen bg-[#202020] text-white">
-      <Sidebar currentPage="marketplace" />
+      <Sidebar
+        currentPage="marketplace"
+        isSidebarOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+      />
 
       {/* Main Content */}
-      <main className="flex-1 p-8 bg-[#202020] flex flex-col">
+      <main
+        className={`flex-1 p-8 bg-[#202020] flex flex-col transition-all duration-300 ease-in-out ${
+          isSidebarOpen ? "ml-0" : "ml-0"
+        }`}
+      >
         {/* Top Header */}
         <header className="flex items-center justify-between mb-6">
           <div className="flex items-center">
