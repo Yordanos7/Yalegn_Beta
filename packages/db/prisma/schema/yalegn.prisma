@@ -1,4 +1,4 @@
- enum Role {
+enum Role {
   PROVIDER
   SEEKER
   ADMIN

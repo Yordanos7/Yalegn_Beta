@@ -18,8 +18,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import type { AppRouter } from "@Alpha/api/routers";
-import { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "@my-better-t-app/api/routers/index";
+import { type inferRouterOutputs } from "@trpc/server";
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type Conversation = RouterOutput["conversation"]["list"][number];
@@ -144,11 +144,13 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)]">
-      {" "}
-      {/* Adjust height as needed */}
+    <div className="flex h-[calc(100vh-64px)] flex-col md:flex-row">
       {/* Conversation List */}
-      <div className="w-1/4 border-r">
+      <div
+        className={`w-full md:w-1/4 border-r ${
+          selectedConversationId ? "hidden md:flex flex-col" : "flex flex-col"
+        }`}
+      >
         <div className="flex items-center justify-between p-4">
           <h2 className="text-lg font-semibold">Conversations</h2>
           <Dialog
@@ -231,10 +233,36 @@ export default function MessagesPage() {
         </ScrollArea>
       </div>
       {/* Message Area */}
-      <div className="flex-1 flex flex-col">
+      <div
+        className={`flex-1 flex flex-col ${
+          selectedConversationId ? "flex" : "hidden md:flex"
+        }`}
+      >
         {selectedConversationId ? (
           <>
             <div className="flex items-center gap-3 p-4 border-b">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setSelectedConversationId(null)}
+              >
+                {/* You'll need an icon here, e.g., an arrow-left icon */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-6 h-6"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
+                  />
+                </svg>
+              </Button>
               <Avatar>
                 <AvatarImage
                   src={
