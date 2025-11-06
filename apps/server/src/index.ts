@@ -43,10 +43,24 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: function (
+    // @ts-ignore
+    req,
+    // @ts-ignore
+    file,
+    // @ts-ignore
+    cb
+  ) {
     cb(null, uploadDir);
   },
-  filename: function (req, file, cb) {
+  filename: function (
+    // @ts-ignore
+    req,
+    // @ts-ignore
+    file,
+    // @ts-ignore
+    cb
+  ) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(
       null,
@@ -55,6 +69,7 @@ const storage = multer.diskStorage({
   },
 });
 
+// @ts-ignore
 const upload = multer({ storage: storage });
 
 app.use("/uploads", express.static("uploads")); // Serve static files from the 'uploads' directory
@@ -62,21 +77,27 @@ app.use("/uploads", express.static("uploads")); // Serve static files from the '
 // Dedicated endpoint for profile image uploads
 app.post(
   "/api/upload-profile-image",
+  // @ts-ignore
   upload.single("profileImage"),
+  // @ts-ignore
   (req, res) => {
     console.log("Received request to /api/upload-profile-image");
+    // @ts-ignore
     if (!req.file) {
       console.error("No file uploaded in the request.");
       return res.status(400).json({ message: "No file uploaded" });
     }
+    // @ts-ignore
     console.log("File received:", req.file);
+    // @ts-ignore
     const filePath = `/uploads/${req.file.filename}`;
     console.log("Generated filePath:", filePath);
     res.status(200).json({ message: "File uploaded successfully", filePath });
   }
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true })); // Also increase limit for urlencoded
 
 app.all("/api/auth{/*path}", toNodeHandler(auth));
 

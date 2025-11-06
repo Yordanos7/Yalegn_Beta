@@ -46,10 +46,17 @@ import { toast } from "sonner";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { VerificationStatus } from "@my-better-t-app/db/prisma/generated/enums"; // Import VerificationStatus
 // Removed: import type { Session } from "better-auth"; // No longer needed directly
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
-type UserProfile = RouterOutput["user"]["getPublicUserProfile"];
+type UserProfile = RouterOutput["user"]["getPublicUserProfile"] & {
+  verification?: {
+    status: VerificationStatus;
+    idFrontImage?: string | null;
+    idBackImage?: string | null;
+  } | null;
+};
 
 // Define a custom session type that matches what useSession returns
 interface CustomSessionWithUser {
@@ -197,7 +204,7 @@ export default function UserProfilePage() {
 
   const calculateProfileCompletion = () => {
     let completedFields = 0;
-    let totalFields = 7; // Name, Email, Bio, Headline, Skills, Portfolio, Location
+    let totalFields = 8; // Name, Email, Bio, Headline, Skills, Portfolio, Location, Verification
 
     if (userProfile.name) completedFields++;
     if (userProfile.email) completedFields++;
@@ -213,6 +220,8 @@ export default function UserProfilePage() {
     )
       completedFields++;
     if (userProfile.location) completedFields++;
+    if (userProfile.verification?.status === VerificationStatus.APPROVED)
+      completedFields++;
 
     return Math.round((completedFields / totalFields) * 100);
   };
@@ -227,6 +236,11 @@ export default function UserProfilePage() {
       })
     : "N/A";
   const lastActive = "98%, 3hrs ago"; // Placeholder for now
+
+  console.log(
+    "this is verification that come from backend",
+    userProfile.verification
+  );
 
   return (
     <main className="container mx-auto px-4 py-8 md:py-12 bg-background text-foreground">
@@ -246,9 +260,28 @@ export default function UserProfilePage() {
                 </div>
                 <div>
                   <h1 className="text-4xl font-bold">{userProfile.name}</h1>
-                  <div className="flex items-center text-green-500 text-sm mt-1">
-                    <BadgeCheck className="mr-1 h-4 w-4" /> Faida ID Verified
-                  </div>
+                  {userProfile.verification?.status ===
+                    VerificationStatus.APPROVED && (
+                    <div className="flex items-center text-green-500 text-sm mt-1">
+                      <BadgeCheck className="mr-1 h-4 w-4" /> Faida ID Verified
+                    </div>
+                  )}
+                  {userProfile.verification?.status ===
+                    VerificationStatus.PENDING && (
+                    <div className="flex items-center text-blue-500 text-sm mt-1">
+                      <Loader className="mr-1 h-4 w-4 animate-spin" /> Faida ID
+                      Verification Pending
+                    </div>
+                  )}
+                  {(!userProfile.verification?.status ||
+                    userProfile.verification?.status ===
+                      VerificationStatus.NONE ||
+                    userProfile.verification?.status ===
+                      VerificationStatus.REJECTED) && (
+                    <div className="flex items-center text-red-500 text-sm mt-1">
+                      <XCircle className="mr-1 h-4 w-4" /> Faida ID Not Verified
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center space-x-4">
@@ -380,6 +413,9 @@ export default function UserProfilePage() {
                         userProfile.profile?.freelancerLevel || null,
                       deliveryTime: userProfile.profile?.deliveryTime || null,
                       image: userProfile.image || null, // Pass the current image to the form
+                      verificationStatus: userProfile.verification?.status, // Pass verification status
+                      idFrontImage: userProfile.verification?.idFrontImage, // Pass ID front image
+                      idBackImage: userProfile.verification?.idBackImage, // Pass ID back image
                     }}
                     onSuccess={() => {
                       refetchUserProfile(); // Refetch profile to ensure UI is consistent with new image

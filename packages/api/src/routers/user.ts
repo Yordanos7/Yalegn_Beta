@@ -13,6 +13,7 @@ import {
   DeliveryTime,
   JobType,
   Role, // Added Role for whereClause
+  VerificationStatus, // Added VerificationStatus
 } from "@my-better-t-app/db/prisma/generated/enums"; // Corrected import path for enums
 
 export const userRouter = router({
@@ -75,6 +76,8 @@ export const userRouter = router({
           verification: {
             select: {
               status: true,
+              idFrontImage: true, // Added
+              idBackImage: true, // Added
             },
           },
         },
@@ -402,6 +405,8 @@ export const userRouter = router({
           verification: {
             select: {
               status: true,
+              idFrontImage: true, // Added
+              idBackImage: true, // Added
             },
           },
           updatedAt: true,
@@ -476,6 +481,8 @@ export const userRouter = router({
         verification: {
           select: {
             status: true,
+            idFrontImage: true, // Added
+            idBackImage: true, // Added
           },
         },
       },
@@ -647,6 +654,81 @@ export const userRouter = router({
       }
     }),
 
+  updateIdVerification: protectedProcedure
+    .input(
+      z.object({
+        idFrontImage: z.string().url().optional(),
+        idBackImage: z.string().url().optional(),
+      })
+    )
+    .mutation(async ({ ctx: { user, prisma, req, res }, input }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      try {
+        console.log("updateIdVerification mutation received input:", input);
+
+        const verificationData: {
+          idFrontImage?: string;
+          idBackImage?: string;
+          status: VerificationStatus;
+        } = {
+          status: VerificationStatus.PENDING, // Set status to PENDING upon submission
+        };
+
+        if (input.idFrontImage) {
+          verificationData.idFrontImage = input.idFrontImage;
+        }
+        if (input.idBackImage) {
+          verificationData.idBackImage = input.idBackImage;
+        }
+
+        console.log("Verification data to upsert:", verificationData);
+
+        const updatedVerification = await prisma.verification.upsert({
+          where: { userId: user.id },
+          update: verificationData,
+          create: {
+            userId: user.id,
+            ...verificationData,
+          },
+        });
+        console.log("Upserted verification record:", updatedVerification);
+
+        // Update user's isVerified status if verification is approved
+        if (updatedVerification.status === VerificationStatus.APPROVED) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { isVerified: true },
+          });
+        } else {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { isVerified: false },
+          });
+        }
+
+        await auth.api.getSession({
+          headers: fromNodeHeaders(req.headers),
+        });
+
+        return {
+          message: "ID verification images submitted successfully",
+          verificationStatus: updatedVerification.status,
+        };
+      } catch (error) {
+        console.error("Error updating ID verification:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update ID verification",
+        });
+      }
+    }),
+
   updateIsOpenToWork: protectedProcedure
     .input(z.object({ isOpenToWork: z.boolean() }))
     .mutation(async ({ ctx: { user, prisma, req, res }, input }) => {
@@ -676,6 +758,93 @@ export const userRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to update isOpenToWork status",
+        });
+      }
+    }),
+
+  getPendingVerifications: protectedProcedure.query(
+    async ({ ctx: { user, prisma } }) => {
+      // TODO: Add admin role check here
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      const pendingVerifications = await prisma.verification.findMany({
+        where: {
+          status: VerificationStatus.PENDING,
+        },
+        select: {
+          id: true,
+          status: true,
+          idFrontImage: true,
+          idBackImage: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              accountType: true,
+            },
+          },
+          createdAt: true,
+        },
+      });
+
+      return pendingVerifications;
+    }
+  ),
+
+  updateUserVerificationStatus: protectedProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        status: z.nativeEnum(VerificationStatus),
+        // Removed reason from input schema as it's not in the Prisma model yet
+      })
+    )
+    .mutation(async ({ ctx: { user, prisma, req, res }, input }) => {
+      // TODO: Add admin role check here
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      const { userId, status } = input; // Removed reason from destructuring
+
+      try {
+        const updatedVerification = await prisma.verification.update({
+          where: { userId: userId },
+          data: {
+            status: status,
+            // Removed reason from update data as it's not in the Prisma model yet
+          },
+        });
+
+        // Update user's isVerified status based on verification status
+        await prisma.user.update({
+          where: { id: userId },
+          data: { isVerified: status === VerificationStatus.APPROVED },
+        });
+
+        await auth.api.getSession({
+          headers: fromNodeHeaders(req.headers),
+        });
+
+        return {
+          message: `User verification status updated to ${status}`,
+          verification: updatedVerification,
+        };
+      } catch (error) {
+        console.error("Error updating user verification status:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update user verification status",
         });
       }
     }),

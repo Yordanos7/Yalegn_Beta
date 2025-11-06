@@ -1,4 +1,4 @@
-enum Role {
+ enum Role {
   PROVIDER
   SEEKER
   ADMIN
@@ -491,6 +491,8 @@ model Verification {
   userId        String?            @unique
   faidaIdNumber String?
   documents     String[]           @default([])
+  idFrontImage  String?
+  idBackImage   String?
   status        VerificationStatus @default(NONE)
   reviewedBy    String?
   reviewedAt    DateTime?

@@ -25,14 +25,15 @@ import {
 import { trpc } from "@/utils/trpc";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { useCallback, useState } from "react"; // Keep useState and useCallback
+import { useCallback, useState } from "react";
 import {
   CategoryEnum,
   ExperienceLevel,
   FreelancerLevel,
   DeliveryTime,
   JobType,
-} from "@my-better-t-app/db/prisma/generated/enums"; // Import additional enums
+  VerificationStatus,
+} from "@my-better-t-app/db/prisma/generated/enums";
 import { useDropzone } from "react-dropzone";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,26 +41,32 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const profileFormSchema = z.object({
   bio: z.string().optional(),
   location: z.string().optional(),
-  languages: z.string().optional(), // Simplified for now, could be string[]
+  languages: z.string().optional(),
   mainCategory: z.nativeEnum(CategoryEnum).optional().nullable(),
-  headline: z.string().optional(), // Added headline
+  headline: z.string().optional(),
   hourlyRate: z
     .union([z.number().min(0), z.literal(null)])
     .optional()
-    .nullable(), // Added hourlyRate, explicitly allowing null
-  currency: z.enum(["ETB", "USD"]).optional().nullable(), // Added currency
-  rateTypePreference: z.nativeEnum(JobType).optional().nullable(), // Added rateTypePreference
-  experienceLevel: z.nativeEnum(ExperienceLevel).optional().nullable(), // Added experienceLevel
-  freelancerLevel: z.nativeEnum(FreelancerLevel).optional().nullable(), // Added freelancerLevel
-  deliveryTime: z.nativeEnum(DeliveryTime).optional().nullable(), // Added deliveryTime
-  image: z.string().optional().nullable(), // Added image field
+    .nullable(),
+  currency: z.enum(["ETB", "USD"]).optional().nullable(),
+  rateTypePreference: z.nativeEnum(JobType).optional().nullable(),
+  experienceLevel: z.nativeEnum(ExperienceLevel).optional().nullable(),
+  freelancerLevel: z.nativeEnum(FreelancerLevel).optional().nullable(),
+  deliveryTime: z.nativeEnum(DeliveryTime).optional().nullable(),
+  image: z.string().optional().nullable(),
+  idFrontImage: z.string().optional().nullable(),
+  idBackImage: z.string().optional().nullable(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 interface ProfileEditFormProps {
   userId: string;
-  initialData: ProfileFormValues;
+  initialData: ProfileFormValues & {
+    verificationStatus?: VerificationStatus | null; // Allow null for verificationStatus
+    idFrontImage?: string | null;
+    idBackImage?: string | null;
+  };
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -70,57 +77,6 @@ export function ProfileEditForm({
   onSuccess,
   onCancel,
 }: ProfileEditFormProps) {
-  const [imageUrl, setImageUrl] = useState<string | null>(
-    initialData.image || null
-  );
-  const [isUploading, setIsUploading] = useState(false);
-
-  const uploadProfileImageMutation = trpc.user.uploadProfileImage.useMutation({
-    onSuccess: (data) => {
-      const newImageUrl = data?.profileImage || null;
-      setImageUrl(newImageUrl);
-      form.setValue("image", newImageUrl);
-      toast.success("Image uploaded successfully!");
-    },
-    onError: (error) => {
-      toast.error("Failed to upload profile image: " + error.message);
-    },
-  });
-
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      if (acceptedFiles.length > 0) {
-        const file = acceptedFiles[0];
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          const base64Image = event.target?.result as string;
-          setIsUploading(true);
-          try {
-            await uploadProfileImageMutation.mutateAsync({
-              imageData: base64Image,
-            });
-          } catch (error: any) {
-            toast.error("Image upload failed: " + error.message);
-          } finally {
-            setIsUploading(false);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    },
-    [uploadProfileImageMutation]
-  );
-
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop,
-    accept: {
-      "image/jpeg": [".jpeg", ".jpg"],
-      "image/png": [".png"],
-      "image/gif": [".gif"],
-    },
-    maxFiles: 1,
-  });
-
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -136,7 +92,176 @@ export function ProfileEditForm({
       freelancerLevel: initialData.freelancerLevel || null,
       deliveryTime: initialData.deliveryTime || null,
       image: initialData.image || null,
+      idFrontImage: initialData.idFrontImage || null,
+      idBackImage: initialData.idBackImage || null,
     },
+  });
+
+  const [imageUrl, setImageUrl] = useState<string | null>(
+    initialData.image || null
+  );
+  const [idFrontImageUrl, setIdFrontImageUrl] = useState<string | null>(
+    initialData.idFrontImage || null
+  );
+  const [idBackImageUrl, setIdBackImageUrl] = useState<string | null>(
+    initialData.idBackImage || null
+  );
+  const [isUploadingProfileImage, setIsUploadingProfileImage] = useState(false);
+  const [isUploadingIdFront, setIsUploadingIdFront] = useState(false);
+  const [isUploadingIdBack, setIsUploadingIdBack] = useState(false);
+
+  const uploadProfileImageMutation = trpc.user.uploadProfileImage.useMutation({
+    onSuccess: (data) => {
+      const newImageUrl = data?.profileImage || null;
+      setImageUrl(newImageUrl);
+      form.setValue("image", newImageUrl);
+      toast.success("Profile image uploaded successfully!");
+    },
+    onError: (error: any) => {
+      toast.error("Failed to upload profile image: " + error.message);
+    },
+  });
+
+  const uploadIdVerificationMutation =
+    trpc.user.updateIdVerification.useMutation({
+      onSuccess: () => {
+        toast.success("ID verification images submitted successfully!");
+        onSuccess();
+      },
+      onError: (error: any) => {
+        toast.error(
+          "Failed to submit ID verification images: " + error.message
+        );
+      },
+    });
+
+  const uploadFile = async (
+    file: File,
+    type: "profile" | "idFront" | "idBack"
+  ) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "File upload failed");
+      }
+
+      const data = await response.json();
+      return data.path;
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      throw new Error("Failed to upload file: " + error.message);
+    }
+  };
+
+  const onDropProfileImage = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (acceptedFiles.length > 0) {
+        const file = acceptedFiles[0];
+        setIsUploadingProfileImage(true);
+        try {
+          const reader = new FileReader();
+          reader.onload = async (event) => {
+            const base64Image = event.target?.result as string;
+            await uploadProfileImageMutation.mutateAsync({
+              imageData: base64Image,
+            });
+          };
+          reader.readAsDataURL(file);
+        } catch (error: any) {
+          toast.error("Profile image upload failed: " + error.message);
+        } finally {
+          setIsUploadingProfileImage(false);
+        }
+      }
+    },
+    [uploadProfileImageMutation]
+  );
+
+  const onDropIdFront = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (acceptedFiles.length > 0) {
+        const file = acceptedFiles[0];
+        setIsUploadingIdFront(true);
+        try {
+          const path = await uploadFile(file, "idFront");
+          const fullUrl = `${window.location.origin}${path}`; // Construct full URL
+          setIdFrontImageUrl(fullUrl);
+          form.setValue("idFrontImage", fullUrl);
+          toast.success("ID Front image uploaded successfully!");
+        } catch (error: any) {
+          toast.error("ID Front image upload failed: " + error.message);
+        } finally {
+          setIsUploadingIdFront(false);
+        }
+      }
+    },
+    [form]
+  );
+
+  const onDropIdBack = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (acceptedFiles.length > 0) {
+        const file = acceptedFiles[0];
+        setIsUploadingIdBack(true);
+        try {
+          const path = await uploadFile(file, "idBack");
+          const fullUrl = `${window.location.origin}${path}`; // Construct full URL
+          setIdBackImageUrl(fullUrl);
+          form.setValue("idBackImage", fullUrl);
+          toast.success("ID Back image uploaded successfully!");
+        } catch (error: any) {
+          toast.error("ID Back image upload failed: " + error.message);
+        } finally {
+          setIsUploadingIdBack(false);
+        }
+      }
+    },
+    [form]
+  );
+
+  const {
+    getRootProps: getProfileImageRootProps,
+    getInputProps: getProfileImageInputProps,
+  } = useDropzone({
+    onDrop: onDropProfileImage,
+    accept: {
+      "image/jpeg": [".jpeg", ".jpg"],
+      "image/png": [".png"],
+      "image/gif": [".gif"],
+    },
+    maxFiles: 1,
+  });
+
+  const {
+    getRootProps: getIdFrontRootProps,
+    getInputProps: getIdFrontInputProps,
+  } = useDropzone({
+    onDrop: onDropIdFront,
+    accept: {
+      "image/jpeg": [".jpeg", ".jpg"],
+      "image/png": [".png"],
+    },
+    maxFiles: 1,
+  });
+
+  const {
+    getRootProps: getIdBackRootProps,
+    getInputProps: getIdBackInputProps,
+  } = useDropzone({
+    onDrop: onDropIdBack,
+    accept: {
+      "image/jpeg": [".jpeg", ".jpg"],
+      "image/png": [".png"],
+    },
+    maxFiles: 1,
   });
 
   const { data: categoryData, isLoading: isLoadingCategories } =
@@ -147,28 +272,37 @@ export function ProfileEditForm({
       toast.success("Profile updated successfully!");
       onSuccess();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error("Failed to update profile: " + error.message);
     },
   });
 
   async function onSubmit(values: ProfileFormValues) {
     updateProfileMutation.mutate({
-      id: userId, // Assuming the backend mutation expects 'id' for the user to update
+      id: userId,
       bio: values.bio,
       location: values.location,
-      languages: values.languages ? [values.languages] : [], // Convert string to array
+      languages: values.languages ? [values.languages] : [],
       mainCategory: values.mainCategory,
       headline: values.headline,
-      hourlyRate: values.hourlyRate ?? undefined, // Convert null to undefined
-      currency: values.currency ?? undefined, // Convert null to undefined
-      rateTypePreference: values.rateTypePreference ?? undefined, // Convert null to undefined
-      experienceLevel: values.experienceLevel ?? undefined, // Convert null to undefined
-      freelancerLevel: values.freelancerLevel ?? undefined, // Convert null to undefined
-      deliveryTime: values.deliveryTime ?? undefined, // Convert null to undefined
-      image: imageUrl ?? undefined, // Pass the uploaded image URL
+      hourlyRate: values.hourlyRate ?? undefined,
+      currency: values.currency ?? undefined,
+      rateTypePreference: values.rateTypePreference ?? undefined,
+      experienceLevel: values.experienceLevel ?? undefined,
+      freelancerLevel: values.freelancerLevel ?? undefined,
+      deliveryTime: values.deliveryTime ?? undefined,
     });
+
+    if (idFrontImageUrl || idBackImageUrl) {
+      uploadIdVerificationMutation.mutate({
+        idFrontImage: idFrontImageUrl ?? undefined,
+        idBackImage: idBackImageUrl ?? undefined,
+      });
+    }
   }
+
+  const isAnyUploading =
+    isUploadingProfileImage || isUploadingIdFront || isUploadingIdBack;
 
   return (
     <Form {...form}>
@@ -181,11 +315,11 @@ export function ProfileEditForm({
               <FormLabel>Profile Image</FormLabel>
               <FormControl>
                 <div
-                  {...getRootProps()}
+                  {...getProfileImageRootProps()}
                   className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg cursor-pointer bg-[#3A3A3A] hover:bg-[#4A4A4A] transition-colors"
                 >
-                  <input {...getInputProps()} />
-                  {isUploading ? (
+                  <input {...getProfileImageInputProps()} />
+                  {isUploadingProfileImage ? (
                     <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                   ) : imageUrl ? (
                     <Avatar className="h-24 w-24">
@@ -209,6 +343,122 @@ export function ProfileEditForm({
             </FormItem>
           )}
         />
+        {/* ID Verification Section */}
+        <div className="space-y-4 border p-4 rounded-lg bg-[#3A3A3A]">
+          <h3 className="text-lg font-semibold text-white">ID Verification</h3>
+          <p className="text-sm text-gray-400">
+            Upload images of your ID (front and back) for verification. Your
+            profile completion will increase to 100% upon approval.
+          </p>
+
+          <div className="flex items-center space-x-2 text-white">
+            <span className="font-medium">Status:</span>
+            {initialData.verificationStatus === VerificationStatus.APPROVED && (
+              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-500 text-white">
+                Verified
+              </span>
+            )}
+            {initialData.verificationStatus === VerificationStatus.PENDING && (
+              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-500 text-white">
+                Verification Pending
+              </span>
+            )}
+            {initialData.verificationStatus === VerificationStatus.REJECTED && (
+              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-500 text-white">
+                Verification Rejected
+              </span>
+            )}
+            {(!initialData.verificationStatus ||
+              initialData.verificationStatus === VerificationStatus.NONE) && (
+              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-500 text-white">
+                Verify Your ID
+              </span>
+            )}
+          </div>
+
+          <FormField
+            control={form.control}
+            name="idFrontImage"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>ID Front Image</FormLabel>
+                <FormControl>
+                  <div
+                    {...getIdFrontRootProps()}
+                    className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg cursor-pointer bg-[#2A2A2A] hover:bg-[#3A3A3A] transition-colors"
+                  >
+                    <input {...getIdFrontInputProps()} capture="user" />
+                    {isUploadingIdFront ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                    ) : idFrontImageUrl ? (
+                      <div className="relative w-32 h-20">
+                        <Image
+                          src={idFrontImageUrl}
+                          alt="ID Front"
+                          layout="fill"
+                          objectFit="contain"
+                          className="rounded-md"
+                        />
+                      </div>
+                    ) : (
+                      <div className="text-gray-400 text-center text-sm">
+                        <p>Drag 'n' drop ID front here, or click to select</p>
+                        <p className="mt-1">(JPG, PNG)</p>
+                      </div>
+                    )}
+                  </div>
+                </FormControl>
+                <FormDescription>
+                  Ensure the image is clear, well-lit, and all details are
+                  visible. You can use your camera to take a photo directly.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="idBackImage"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>ID Back Image</FormLabel>
+                <FormControl>
+                  <div
+                    {...getIdBackRootProps()}
+                    className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg cursor-pointer bg-[#2A2A2A] hover:bg-[#3A3A3A] transition-colors"
+                  >
+                    <input {...getIdBackInputProps()} capture="user" />
+                    {isUploadingIdBack ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                    ) : idBackImageUrl ? (
+                      <div className="relative w-32 h-20">
+                        <Image
+                          src={idBackImageUrl}
+                          alt="ID Back"
+                          layout="fill"
+                          objectFit="contain"
+                          className="rounded-md"
+                        />
+                      </div>
+                    ) : (
+                      <div className="text-gray-400 text-center text-sm">
+                        <p>Drag 'n' drop ID back here, or click to select</p>
+                        <p className="mt-1">(JPG, PNG)</p>
+                      </div>
+                    )}
+                  </div>
+                </FormControl>
+                <FormDescription>
+                  Ensure the image is clear, well-lit, and all details are
+                  visible. You can use your camera to take a photo directly.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        {/* End ID Verification Section */}
         <FormField
           control={form.control}
           name="bio"
@@ -292,7 +542,7 @@ export function ProfileEditForm({
                   placeholder="e.g., 25"
                   className="bg-[#3A3A3A] border-none text-white"
                   {...field}
-                  value={field.value === null ? "" : field.value} // Handle null for input
+                  value={field.value === null ? "" : field.value}
                   onChange={(e) =>
                     field.onChange(
                       e.target.value === "" ? null : Number(e.target.value)
@@ -323,8 +573,7 @@ export function ProfileEditForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent className="bg-[#3A3A3A] text-white">
-                  <SelectItem value="null">None</SelectItem>{" "}
-                  {/* Changed value to "null" string */}
+                  <SelectItem value="null">None</SelectItem>
                   <SelectItem value="ETB">ETB</SelectItem>
                   <SelectItem value="USD">USD</SelectItem>
                 </SelectContent>
@@ -352,8 +601,7 @@ export function ProfileEditForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent className="bg-[#3A3A3A] text-white">
-                  <SelectItem value="null">None</SelectItem>{" "}
-                  {/* Changed value to "null" string */}
+                  <SelectItem value="null">None</SelectItem>
                   <SelectItem value="HOURLY">Hourly</SelectItem>
                   <SelectItem value="FIXED">Fixed Price</SelectItem>
                 </SelectContent>
@@ -381,8 +629,7 @@ export function ProfileEditForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent className="bg-[#3A3A3A] text-white">
-                  <SelectItem value="null">None</SelectItem>{" "}
-                  {/* Changed value to "null" string */}
+                  <SelectItem value="null">None</SelectItem>
                   {trpc.category.getExperienceLevels
                     .useQuery()
                     .data?.experienceLevels.map((exp) => (
@@ -415,8 +662,7 @@ export function ProfileEditForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent className="bg-[#3A3A3A] text-white">
-                  <SelectItem value="null">None</SelectItem>{" "}
-                  {/* Changed value to "null" string */}
+                  <SelectItem value="null">None</SelectItem>
                   {trpc.category.getFreelancerLevels
                     .useQuery()
                     .data?.freelancerLevels.map((lvl) => (
@@ -449,8 +695,7 @@ export function ProfileEditForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent className="bg-[#3A3A3A] text-white">
-                  <SelectItem value="null">None</SelectItem>{" "}
-                  {/* Changed value to "null" string */}
+                  <SelectItem value="null">None</SelectItem>
                   {trpc.category.getDeliveryTimes
                     .useQuery()
                     .data?.deliveryTimes.map((time) => (
@@ -489,8 +734,7 @@ export function ProfileEditForm({
                     </SelectItem>
                   ) : (
                     <>
-                      <SelectItem value="null">None</SelectItem>{" "}
-                      {/* Option to clear category, changed value to "null" string */}
+                      <SelectItem value="null">None</SelectItem>
                       {categoryData?.categories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.name}>
                           {cat.label}
@@ -510,10 +754,12 @@ export function ProfileEditForm({
           </Button>
           <Button
             type="submit"
-            disabled={updateProfileMutation.status === "pending" || isUploading}
+            disabled={
+              updateProfileMutation.status === "pending" || isAnyUploading
+            }
           >
             {updateProfileMutation.status === "pending" ||
-              (isUploading && (
+              (isAnyUploading && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ))}
             Save Changes
