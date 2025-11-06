@@ -33,10 +33,15 @@ export default function AdminVerificationPage() {
   const handleReject = async (userId: string) => {
     try {
       // In a real application, you might want to prompt for a reason for rejection
+      const reason = prompt("Please provide a reason for rejection:");
+      if (!reason) {
+        toast.info("Rejection cancelled.");
+        return;
+      }
       await updateUserVerificationStatus({
         userId,
         status: VerificationStatus.REJECTED,
-        reason: "Admin rejected verification", // Placeholder reason
+        reason: reason,
       });
       toast.success("User verification rejected!");
       refetch();

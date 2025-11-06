@@ -657,8 +657,8 @@ export const userRouter = router({
   updateIdVerification: protectedProcedure
     .input(
       z.object({
-        idFrontImage: z.string().url().optional(),
-        idBackImage: z.string().url().optional(),
+        idFrontImage: z.string().url().optional().nullable(),
+        idBackImage: z.string().url().optional().nullable(),
       })
     )
     .mutation(async ({ ctx: { user, prisma, req, res }, input }) => {
@@ -673,17 +673,19 @@ export const userRouter = router({
         console.log("updateIdVerification mutation received input:", input);
 
         const verificationData: {
-          idFrontImage?: string;
-          idBackImage?: string;
+          idFrontImage?: string | null;
+          idBackImage?: string | null;
           status: VerificationStatus;
+          userId: string;
         } = {
+          userId: user.id,
           status: VerificationStatus.PENDING, // Set status to PENDING upon submission
         };
 
-        if (input.idFrontImage) {
+        if (input.idFrontImage !== undefined) {
           verificationData.idFrontImage = input.idFrontImage;
         }
-        if (input.idBackImage) {
+        if (input.idBackImage !== undefined) {
           verificationData.idBackImage = input.idBackImage;
         }
 
@@ -692,12 +694,15 @@ export const userRouter = router({
         const updatedVerification = await prisma.verification.upsert({
           where: { userId: user.id },
           update: verificationData,
-          create: {
-            userId: user.id,
-            ...verificationData,
-          },
+          create: verificationData,
         });
         console.log("Upserted verification record:", updatedVerification);
+
+        // Link relation by setting User's verificationId
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { verificationId: updatedVerification.id },
+        });
 
         // Update user's isVerified status if verification is approved
         if (updatedVerification.status === VerificationStatus.APPROVED) {
@@ -772,6 +777,19 @@ export const userRouter = router({
         });
       }
 
+      // Ensure the user has an ADMIN role
+      // const requestingUser = await prisma.user.findUnique({
+      //   where: { id: user.id },
+      //   select: { role: true },
+      // });
+
+      // if (requestingUser?.role !== Role.ADMIN) {
+      //   throw new TRPCError({
+      //     code: "FORBIDDEN",
+      //     message: "Only administrators can view pending verifications.",
+      //   });
+      // }
+
       const pendingVerifications = await prisma.verification.findMany({
         where: {
           status: VerificationStatus.PENDING,
@@ -803,7 +821,7 @@ export const userRouter = router({
       z.object({
         userId: z.string(),
         status: z.nativeEnum(VerificationStatus),
-        // Removed reason from input schema as it's not in the Prisma model yet
+        reason: z.string().optional(), // Added reason to input schema
       })
     )
     .mutation(async ({ ctx: { user, prisma, req, res }, input }) => {
@@ -815,14 +833,14 @@ export const userRouter = router({
         });
       }
 
-      const { userId, status } = input; // Removed reason from destructuring
+      const { userId, status, reason } = input; // Destructure reason
 
       try {
         const updatedVerification = await prisma.verification.update({
           where: { userId: userId },
           data: {
             status: status,
-            // Removed reason from update data as it's not in the Prisma model yet
+            notes: reason, // Store reason in notes field
           },
         });
 
