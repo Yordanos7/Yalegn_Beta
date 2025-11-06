@@ -762,8 +762,6 @@ export const userRouter = router({
       }
     }),
 
-  // this is admin route to get pending verifications
-
   getPendingVerifications: protectedProcedure.query(
     async ({ ctx: { user, prisma } }) => {
       // TODO: Add admin role check here
@@ -809,7 +807,6 @@ export const userRouter = router({
       })
     )
     .mutation(async ({ ctx: { user, prisma, req, res }, input }) => {
-      // the inout is come from admin  as input of user id and status approved or rejected
       // TODO: Add admin role check here
       if (!user?.id) {
         throw new TRPCError({

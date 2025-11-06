@@ -7,9 +7,6 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { VerificationStatus } from "@my-better-t-app/db/prisma/generated/enums"; // Corrected import path for VerificationStatus
 
-const NEXT_PUBLIC_SERVER_URL =
-  process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001";
-
 export default function AdminVerificationPage() {
   const {
     data: pendingVerifications,
@@ -63,22 +60,17 @@ export default function AdminVerificationPage() {
       </div>
     );
   }
-
+  console.log("this is images", pendingVerifications);
+  console.log("this is front image", pendingVerifications[0].idFrontImage);
+  console.log("this is back image", pendingVerifications[0].idBackImage);
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-2xl font-bold mb-6">Admin Verification</h1>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {pendingVerifications.map(
           (verification: (typeof pendingVerifications)[0]) => {
-            const idFrontImageSrc = verification.idFrontImage
-              ? verification.idFrontImage
-              : null;
-            const idBackImageSrc = verification.idBackImage
-              ? verification.idBackImage
-              : null;
-
-            console.log("ID Front Image src:", idFrontImageSrc);
-            console.log("ID Back Image src:", idBackImageSrc);
+            const idFrontImageSrc = verification.idFrontImage;
+            const idBackImageSrc = verification.idBackImage;
 
             return (
               <Card key={verification.id}>
@@ -92,11 +84,26 @@ export default function AdminVerificationPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    <p>
+                      <strong>Verification ID:</strong> {verification.id}
+                    </p>
+                    <p>
+                      <strong>Status:</strong> {verification.status}
+                    </p>
+                    <p>
+                      <strong>Requested On:</strong>{" "}
+                      {new Date(verification.createdAt).toLocaleDateString()}
+                    </p>
+                    {verification.user?.id && (
+                      <p>
+                        <strong>User ID:</strong> {verification.user.id}
+                      </p>
+                    )}
                     <div>
                       <h3 className="font-semibold mb-2">ID Front Image:</h3>
-                      {idFrontImageSrc ? (
+                      {verification.idFrontImage ? (
                         <Image
-                          src={idFrontImageSrc}
+                          src={verification.idFrontImage}
                           alt="ID Front"
                           width={300}
                           height={200}
@@ -108,9 +115,9 @@ export default function AdminVerificationPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold mb-2">ID Back Image:</h3>
-                      {idBackImageSrc ? (
+                      {verification.idBackImage ? (
                         <Image
-                          src={idBackImageSrc}
+                          src={verification.idBackImage}
                           alt="ID Back"
                           width={300}
                           height={200}

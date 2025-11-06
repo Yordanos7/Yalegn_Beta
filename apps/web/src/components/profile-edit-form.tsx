@@ -129,8 +129,10 @@ export function ProfileEditForm({
         onSuccess();
       },
       onError: (error: any) => {
+        console.error("ID verification mutation error:", error);
         toast.error(
-          "Failed to submit ID verification images: " + error.message
+          "Failed to submit ID verification images: " +
+            (error.message || "Unknown error")
         );
       },
     });
@@ -191,10 +193,10 @@ export function ProfileEditForm({
         const file = acceptedFiles[0];
         setIsUploadingIdFront(true);
         try {
-          const path = await uploadFile(file, "idFront");
-          const fullUrl = `${window.location.origin}${path}`; // Construct full URL
-          setIdFrontImageUrl(fullUrl);
-          form.setValue("idFrontImage", fullUrl);
+          const relativePath = await uploadFile(file, "idFront");
+          const fullImageUrl = `${window.location.origin}${relativePath}`;
+          setIdFrontImageUrl(fullImageUrl);
+          form.setValue("idFrontImage", fullImageUrl);
           toast.success("ID Front image uploaded successfully!");
         } catch (error: any) {
           toast.error("ID Front image upload failed: " + error.message);
@@ -212,10 +214,10 @@ export function ProfileEditForm({
         const file = acceptedFiles[0];
         setIsUploadingIdBack(true);
         try {
-          const path = await uploadFile(file, "idBack");
-          const fullUrl = `${window.location.origin}${path}`; // Construct full URL
-          setIdBackImageUrl(fullUrl);
-          form.setValue("idBackImage", fullUrl);
+          const relativePath = await uploadFile(file, "idBack");
+          const fullImageUrl = `${window.location.origin}${relativePath}`;
+          setIdBackImageUrl(fullImageUrl);
+          form.setValue("idBackImage", fullImageUrl);
           toast.success("ID Back image uploaded successfully!");
         } catch (error: any) {
           toast.error("ID Back image upload failed: " + error.message);

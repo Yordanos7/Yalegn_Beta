@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     "@my-better-t-app/auth",
   ],
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "http",

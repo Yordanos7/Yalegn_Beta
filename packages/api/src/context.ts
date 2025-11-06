@@ -54,13 +54,15 @@ export async function createContext(opts: {
   let user: ContextUser | null = null;
 
   try {
+    console.log("Attempting to get session from headers...");
     const authResult = await auth.api.getSession({
       headers: fromNodeHeaders(opts.req.headers),
     });
-    // The session object from better-auth is nested inside the result
     session = authResult?.session ?? null;
+    console.log("Session result:", session ? "Found" : "Not found");
 
     if (session?.userId) {
+      console.log("Session userId found:", session.userId);
       const foundUser = await prisma.user.findUnique({
         where: { id: session.userId },
         select: {
@@ -82,6 +84,9 @@ export async function createContext(opts: {
       });
       if (foundUser) {
         user = foundUser;
+        console.log("User found in context:", user.id);
+      } else {
+        console.log("User not found in DB for session userId:", session.userId);
       }
     }
   } catch (error) {

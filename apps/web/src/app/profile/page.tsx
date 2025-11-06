@@ -56,6 +56,7 @@ type UserProfile = RouterOutput["user"]["getPublicUserProfile"] & {
     idFrontImage?: string | null;
     idBackImage?: string | null;
   } | null;
+  emailVerified: boolean; // Added emailVerified
 };
 
 // Define a custom session type that matches what useSession returns
@@ -69,7 +70,7 @@ interface CustomSessionWithUser {
     token: string;
     ipAddress?: string | null;
     userAgent?: string | null;
-    expires: string; // Moved expires here
+    expires: string;
   };
   user?: {
     id: string;
@@ -77,9 +78,7 @@ interface CustomSessionWithUser {
     email?: string | null;
     image?: string | null;
     accountType?: "INDIVIDUAL" | "ORGANIZATION" | null;
-    // Add other user properties if they exist in the session object
   };
-  // Removed top-level expires
 }
 
 type ProfileWithSkillsAndPortfolio = NonNullable<UserProfile["profile"]> & {
@@ -107,6 +106,17 @@ export default function UserProfilePage() {
   const userId = session?.user?.id;
 
   const createListingMutation = trpc.listing.create.useMutation(); // Initialize mutation
+  const sendVerificationEmailMutation =
+    trpc.user.sendVerificationEmail.useMutation({
+      onSuccess: () => {
+        toast.success("Verification email sent! Please check your inbox.");
+      },
+      onError: (error: { message: string }) => {
+        toast.error("Failed to send verification email.", {
+          description: error.message,
+        });
+      },
+    });
 
   const {
     data: userProfile,
@@ -204,10 +214,11 @@ export default function UserProfilePage() {
 
   const calculateProfileCompletion = () => {
     let completedFields = 0;
-    let totalFields = 8; // Name, Email, Bio, Headline, Skills, Portfolio, Location, Verification
+    let totalFields = 9; // Name, Email, Bio, Headline, Skills, Portfolio, Location, Verification, Email Verified
 
     if (userProfile.name) completedFields++;
     if (userProfile.email) completedFields++;
+    if (userProfile.emailVerified) completedFields++; // New field for email verification
     if (userProfile.bio) completedFields++;
     if (userProfile.profile?.headline) completedFields++;
     if (
@@ -494,8 +505,12 @@ export default function UserProfilePage() {
                   Verified
                 </div>
                 <div className="flex items-center">
-                  <CheckCircle className="h-5 w-5 mr-2 text-green-500" /> Email
-                  Verified
+                  {userProfile.emailVerified ? (
+                    <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+                  ) : (
+                    <XCircle className="h-5 w-5 mr-2 text-red-500" />
+                  )}{" "}
+                  Email Verified
                 </div>
                 <div className="flex items-center">
                   <CheckCircle className="h-5 w-5 mr-2 text-green-500" />{" "}
@@ -505,6 +520,17 @@ export default function UserProfilePage() {
               <Button variant="outline" className="mt-4 font-semibold">
                 Unlock all badges to build client trust
               </Button>
+              {!userProfile.emailVerified && (
+                <Button
+                  className="mt-4 font-semibold w-full"
+                  onClick={() => sendVerificationEmailMutation.mutate()}
+                  disabled={sendVerificationEmailMutation.isPending}
+                >
+                  {sendVerificationEmailMutation.isPending
+                    ? "Sending..."
+                    : "Verify Email"}
+                </Button>
+              )}
             </CardContent>
           </Card>
 
