@@ -27,6 +27,7 @@ export const trpcClient = trpc.createClient({
     httpBatchLink({
       url: `${process.env.NEXT_PUBLIC_SERVER_URL}/trpc`,
       fetch(url, options) {
+        // the url and options are come from trpc for fetching data from the server
         return fetch(url, {
           ...options,
           credentials: "include",
@@ -35,3 +36,6 @@ export const trpcClient = trpc.createClient({
     }),
   ],
 });
+
+// this is trpc.ts file is main job is to setup the trpc client for the web app to interact with the trpc server
+// the main part where the frontend and backend communicate  so trpc.ts is  the main bridge between frontend and backend

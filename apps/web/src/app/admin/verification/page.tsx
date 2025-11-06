@@ -1,11 +1,14 @@
 "use client";
 
-import { trpc } from "@/utils/trpc"; // Corrected import from api to trpc
+import { trpc } from "@/utils/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { toast } from "sonner";
 import { VerificationStatus } from "@my-better-t-app/db/prisma/generated/enums"; // Corrected import path for VerificationStatus
+
+const NEXT_PUBLIC_SERVER_URL =
+  process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001";
 
 export default function AdminVerificationPage() {
   const {
@@ -65,77 +68,85 @@ export default function AdminVerificationPage() {
     <div className="container mx-auto py-8">
       <h1 className="text-2xl font-bold mb-6">Admin Verification</h1>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {pendingVerifications.map((verification) => (
-          <Card key={verification.id}>
-            <CardHeader>
-              <CardTitle>{verification.user?.name || "Unknown User"}</CardTitle>
-              <p className="text-sm text-gray-500">
-                {verification.user?.email || "No email available"}
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold mb-2">ID Front Image:</h3>
-                  {verification.idFrontImage ? (
-                    <Image
-                      src={
-                        verification.idFrontImage.startsWith("http")
-                          ? verification.idFrontImage
-                          : `${process.env.NEXT_PUBLIC_SERVER_URL}${verification.idFrontImage}`
-                      }
-                      alt="ID Front"
-                      width={300}
-                      height={200}
-                      className="rounded-md object-cover"
-                    />
-                  ) : (
-                    <p>No front image uploaded.</p>
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-2">ID Back Image:</h3>
-                  {verification.idBackImage ? (
-                    <Image
-                      src={
-                        verification.idBackImage.startsWith("http")
-                          ? verification.idBackImage
-                          : `${process.env.NEXT_PUBLIC_SERVER_URL}${verification.idBackImage}`
-                      }
-                      alt="ID Back"
-                      width={300}
-                      height={200}
-                      className="rounded-md object-cover"
-                    />
-                  ) : (
-                    <p>No back image uploaded.</p>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  {verification.user?.id ? (
-                    <>
-                      <Button
-                        onClick={() => handleApprove(verification.user.id)}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleReject(verification.user.id)}
-                      >
-                        Reject
-                      </Button>
-                    </>
-                  ) : (
-                    <p className="text-red-500">
-                      User data missing for verification.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {pendingVerifications.map(
+          (verification: (typeof pendingVerifications)[0]) => {
+            const idFrontImageSrc = verification.idFrontImage
+              ? verification.idFrontImage
+              : null;
+            const idBackImageSrc = verification.idBackImage
+              ? verification.idBackImage
+              : null;
+
+            console.log("ID Front Image src:", idFrontImageSrc);
+            console.log("ID Back Image src:", idBackImageSrc);
+
+            return (
+              <Card key={verification.id}>
+                <CardHeader>
+                  <CardTitle>
+                    {verification.user?.name || "Unknown User"}
+                  </CardTitle>
+                  <p className="text-sm text-gray-500">
+                    {verification.user?.email || "No email available"}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-semibold mb-2">ID Front Image:</h3>
+                      {idFrontImageSrc ? (
+                        <Image
+                          src={idFrontImageSrc}
+                          alt="ID Front"
+                          width={300}
+                          height={200}
+                          className="rounded-md object-cover"
+                        />
+                      ) : (
+                        <p>No front image uploaded.</p>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-2">ID Back Image:</h3>
+                      {idBackImageSrc ? (
+                        <Image
+                          src={idBackImageSrc}
+                          alt="ID Back"
+                          width={300}
+                          height={200}
+                          className="rounded-md object-cover"
+                        />
+                      ) : (
+                        <p>No back image uploaded.</p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      {verification.user?.id ? (
+                        <>
+                          <Button
+                            onClick={() => handleApprove(verification.user.id)}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => handleReject(verification.user.id)}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      ) : (
+                        <p className="text-red-500">
+                          User data missing for verification.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          }
+        )}
       </div>
     </div>
   );
