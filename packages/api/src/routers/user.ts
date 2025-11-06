@@ -1,4 +1,4 @@
-import { protectedProcedure, router } from "../trpc";
+import { protectedProcedure, publicProcedure, router } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { auth } from "@my-better-t-app/auth";
@@ -375,11 +375,11 @@ export const userRouter = router({
               education: true,
               averageRating: true,
               mainCategory: true,
-              rateTypePreference: true, // Added
-              experienceLevel: true, // Added
-              freelancerLevel: true, // Added
-              deliveryTime: true, // Added
-              goals: true, // Added
+              rateTypePreference: true,
+              experienceLevel: true,
+              freelancerLevel: true,
+              deliveryTime: true,
+              goals: true,
               isPublicFreelancer: true,
               skills: {
                 select: {
@@ -405,8 +405,85 @@ export const userRouter = router({
           verification: {
             select: {
               status: true,
-              idFrontImage: true, // Added
-              idBackImage: true, // Added
+              idFrontImage: true,
+              idBackImage: true,
+            },
+          },
+          updatedAt: true,
+          coins: true,
+        },
+      });
+
+      if (!userProfile) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User profile not found.",
+        });
+      }
+
+      return userProfile;
+    }),
+
+  getShowPublicProfile: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ ctx: { prisma }, input }) => {
+      const { userId } = input;
+      const userProfile = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          bio: true,
+          location: true,
+          accountType: true,
+          createdAt: true,
+          languages: true,
+          profile: {
+            select: {
+              headline: true,
+              hourlyRate: true,
+              currency: true,
+              availability: true,
+              completedJobs: true,
+              successRate: true,
+              experience: true,
+              education: true,
+              averageRating: true,
+              mainCategory: true,
+              rateTypePreference: true,
+              experienceLevel: true,
+              freelancerLevel: true,
+              deliveryTime: true,
+              goals: true,
+              isPublicFreelancer: true,
+              skills: {
+                select: {
+                  level: true,
+                  skill: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+              portfolio: {
+                select: {
+                  id: true,
+                  title: true,
+                  description: true,
+                  media: true,
+                  link: true,
+                },
+              },
+            },
+          },
+          verification: {
+            select: {
+              status: true,
+              idFrontImage: true,
+              idBackImage: true,
             },
           },
           updatedAt: true,

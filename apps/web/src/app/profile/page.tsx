@@ -15,6 +15,7 @@ import {
 import { ListingForm } from "@/components/listing-form";
 import { ProfileEditForm } from "@/components/profile-edit-form"; // Import ProfileEditForm
 import { ProfileImageUpload } from "@/components/profile-image-upload"; // Import ProfileImageUpload
+import { PortfolioForm } from "@/components/portfolio-form"; // Import PortfolioForm
 import { Switch } from "@/components/ui/switch"; // Import Switch component
 import {
   Mail,
@@ -436,12 +437,14 @@ export default function UserProfilePage() {
                   />
                 </DialogContent>
               </Dialog>
-              <Button
-                variant="outline"
-                className="font-semibold rounded-md px-6 py-2 flex items-center"
-              >
-                <Share2 className="mr-2 h-4 w-4" /> Share Profile Link
-              </Button>
+              <Link href={`/profile/${userId}`}>
+                <Button
+                  variant="outline"
+                  className="font-semibold rounded-md px-6 py-2 flex items-center"
+                >
+                  <Share2 className="mr-2 h-4 w-4" /> Share Profile Link
+                </Button>
+              </Link>
               <Button
                 variant="outline"
                 className="font-semibold rounded-md px-6 py-2 flex items-center"
@@ -667,9 +670,31 @@ export default function UserProfilePage() {
                     )
                   )}
               </div>
-              <Button variant="outline" className="mt-4 w-full font-semibold">
-                <Plus className="mr-2 h-4 w-4" /> Add to Portfolio
-              </Button>
+              {isOwnProfile && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="mt-4 w-full font-semibold"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Add to Portfolio
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-card text-foreground p-6 rounded-lg max-w-3xl overflow-y-auto max-h-[90vh]">
+                    <DialogTitle className="text-2xl font-bold mb-4">
+                      Add Portfolio Item
+                    </DialogTitle>
+                    <PortfolioForm
+                      userId={userId!}
+                      onSuccess={() => {
+                        refetchUserProfile();
+                        toast.success("Portfolio item added successfully!");
+                      }}
+                      onCancel={() => {}}
+                    />
+                  </DialogContent>
+                </Dialog>
+              )}
             </CardContent>
           </Card>
 

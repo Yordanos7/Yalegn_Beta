@@ -348,10 +348,17 @@ export function ProfileEditForm({
         {/* ID Verification Section */}
         <div className="space-y-4 border p-4 rounded-lg bg-[#3A3A3A]">
           <h3 className="text-lg font-semibold text-white">ID Verification</h3>
-          <p className="text-sm text-gray-400">
-            Upload images of your ID (front and back) for verification. Your
-            profile completion will increase to 100% upon approval.
-          </p>
+          {initialData.verificationStatus === VerificationStatus.APPROVED ? (
+            <p className="text-sm text-gray-400">
+              Thanks for verifying your identity. Your account is now verified
+              By Yalegn Team
+            </p>
+          ) : (
+            <p className="text-sm text-gray-400">
+              Upload images of your ID (front and back) for verification. Your
+              profile completion will increase to 100% upon approval.
+            </p>
+          )}
 
           <div className="flex items-center space-x-2 text-white">
             <span className="font-medium">Status:</span>
@@ -378,87 +385,95 @@ export function ProfileEditForm({
             )}
           </div>
 
-          <FormField
-            control={form.control}
-            name="idFrontImage"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>ID Front Image</FormLabel>
-                <FormControl>
-                  <div
-                    {...getIdFrontRootProps()}
-                    className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg cursor-pointer bg-[#2A2A2A] hover:bg-[#3A3A3A] transition-colors"
-                  >
-                    <input {...getIdFrontInputProps()} capture="user" />
-                    {isUploadingIdFront ? (
-                      <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                    ) : idFrontImageUrl ? (
-                      <div className="relative w-32 h-20">
-                        <Image
-                          src={idFrontImageUrl}
-                          alt="ID Front"
-                          layout="fill"
-                          objectFit="contain"
-                          className="rounded-md"
-                        />
+          {initialData.verificationStatus !== VerificationStatus.APPROVED && (
+            <>
+              <FormField
+                control={form.control}
+                name="idFrontImage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ID Front Image</FormLabel>
+                    <FormControl>
+                      <div
+                        {...getIdFrontRootProps()}
+                        className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg cursor-pointer bg-[#2A2A2A] hover:bg-[#3A3A3A] transition-colors"
+                      >
+                        <input {...getIdFrontInputProps()} capture="user" />
+                        {isUploadingIdFront ? (
+                          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                        ) : idFrontImageUrl ? (
+                          <div className="relative w-32 h-20">
+                            <Image
+                              src={idFrontImageUrl}
+                              alt="ID Front"
+                              layout="fill"
+                              objectFit="contain"
+                              className="rounded-md"
+                            />
+                          </div>
+                        ) : (
+                          <div className="text-gray-400 text-center text-sm">
+                            <p>
+                              Drag 'n' drop ID front here, or click to select
+                            </p>
+                            <p className="mt-1">(JPG, PNG)</p>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="text-gray-400 text-center text-sm">
-                        <p>Drag 'n' drop ID front here, or click to select</p>
-                        <p className="mt-1">(JPG, PNG)</p>
-                      </div>
-                    )}
-                  </div>
-                </FormControl>
-                <FormDescription>
-                  Ensure the image is clear, well-lit, and all details are
-                  visible. You can use your camera to take a photo directly.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                    </FormControl>
+                    <FormDescription>
+                      Ensure the image is clear, well-lit, and all details are
+                      visible. You can use your camera to take a photo directly.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="idBackImage"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>ID Back Image</FormLabel>
-                <FormControl>
-                  <div
-                    {...getIdBackRootProps()}
-                    className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg cursor-pointer bg-[#2A2A2A] hover:bg-[#3A3A3A] transition-colors"
-                  >
-                    <input {...getIdBackInputProps()} capture="user" />
-                    {isUploadingIdBack ? (
-                      <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                    ) : idBackImageUrl ? (
-                      <div className="relative w-32 h-20">
-                        <Image
-                          src={idBackImageUrl}
-                          alt="ID Back"
-                          layout="fill"
-                          objectFit="contain"
-                          className="rounded-md"
-                        />
+              <FormField
+                control={form.control}
+                name="idBackImage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ID Back Image</FormLabel>
+                    <FormControl>
+                      <div
+                        {...getIdBackRootProps()}
+                        className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg cursor-pointer bg-[#2A2A2A] hover:bg-[#3A3A3A] transition-colors"
+                      >
+                        <input {...getIdBackInputProps()} capture="user" />
+                        {isUploadingIdBack ? (
+                          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                        ) : idBackImageUrl ? (
+                          <div className="relative w-32 h-20">
+                            <Image
+                              src={idBackImageUrl}
+                              alt="ID Back"
+                              layout="fill"
+                              objectFit="contain"
+                              className="rounded-md"
+                            />
+                          </div>
+                        ) : (
+                          <div className="text-gray-400 text-center text-sm">
+                            <p>
+                              Drag 'n' drop ID back here, or click to select
+                            </p>
+                            <p className="mt-1">(JPG, PNG)</p>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="text-gray-400 text-center text-sm">
-                        <p>Drag 'n' drop ID back here, or click to select</p>
-                        <p className="mt-1">(JPG, PNG)</p>
-                      </div>
-                    )}
-                  </div>
-                </FormControl>
-                <FormDescription>
-                  Ensure the image is clear, well-lit, and all details are
-                  visible. You can use your camera to take a photo directly.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                    </FormControl>
+                    <FormDescription>
+                      Ensure the image is clear, well-lit, and all details are
+                      visible. You can use your camera to take a photo directly.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
         </div>
         {/* End ID Verification Section */}
         <FormField
