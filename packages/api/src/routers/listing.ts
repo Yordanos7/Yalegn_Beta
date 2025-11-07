@@ -38,10 +38,10 @@ export const listingRouter = router({
           videos,
           ...(categoryId && { category: categoryId as CategoryEnum }), // Connect category by its enum value
           providerId: userId,
-          slug: input.title
+          slug: `${input.title
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-*|-*$/g, ""), // Basic slug generation
+            .replace(/^-*|-*$/g, "")}-${Date.now()}`, // Ensure unique slug
         },
       });
       return listing;

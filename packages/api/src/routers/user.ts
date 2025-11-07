@@ -308,6 +308,142 @@ export const userRouter = router({
       }
     }),
 
+  addPortfolioItem: protectedProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        title: z.string().min(1),
+        description: z.string().optional(), // Added description
+        link: z.string().url().min(1),
+      })
+    )
+    .mutation(async ({ ctx: { prisma, user }, input }) => {
+      if (!user?.id || user.id !== input.userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authorized to add portfolio item.",
+        });
+      }
+
+      try {
+        const profile = await prisma.profile.findUnique({
+          where: { userId: input.userId },
+          select: { id: true },
+        });
+
+        if (!profile) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User profile not found.",
+          });
+        }
+
+        await prisma.portfolio.create({
+          data: {
+            profileId: profile.id,
+            title: input.title,
+            description: input.description, // Added description
+            link: input.link,
+          },
+        });
+
+        return { message: "Portfolio item added successfully!" };
+      } catch (error) {
+        console.error("Error adding portfolio item:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to add portfolio item.",
+        });
+      }
+    }),
+
+  editPortfolioItem: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        userId: z.string(),
+        title: z.string().min(1).optional(),
+        description: z.string().optional(),
+        link: z.string().url().min(1).optional(),
+      })
+    )
+    .mutation(async ({ ctx: { prisma, user }, input }) => {
+      if (!user?.id || user.id !== input.userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authorized to edit portfolio item.",
+        });
+      }
+
+      try {
+        const portfolioItem = await prisma.portfolio.findUnique({
+          where: { id: input.id },
+          select: { profile: { select: { userId: true } } },
+        });
+
+        if (!portfolioItem || portfolioItem.profile.userId !== input.userId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Not authorized to edit this portfolio item.",
+          });
+        }
+
+        await prisma.portfolio.update({
+          where: { id: input.id },
+          data: {
+            title: input.title,
+            description: input.description,
+            link: input.link,
+          },
+        });
+
+        return { message: "Portfolio item updated successfully!" };
+      } catch (error) {
+        console.error("Error editing portfolio item:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to edit portfolio item.",
+        });
+      }
+    }),
+
+  deletePortfolioItem: protectedProcedure
+    .input(z.object({ id: z.string(), userId: z.string() }))
+    .mutation(async ({ ctx: { prisma, user }, input }) => {
+      if (!user?.id || user.id !== input.userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authorized to delete portfolio item.",
+        });
+      }
+
+      try {
+        const portfolioItem = await prisma.portfolio.findUnique({
+          where: { id: input.id },
+          select: { profile: { select: { userId: true } } },
+        });
+
+        if (!portfolioItem || portfolioItem.profile.userId !== input.userId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Not authorized to delete this portfolio item.",
+          });
+        }
+
+        await prisma.portfolio.delete({
+          where: { id: input.id },
+        });
+
+        return { message: "Portfolio item deleted successfully!" };
+      } catch (error) {
+        console.error("Error deleting portfolio item:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete portfolio item.",
+        });
+      }
+    }),
+
   getSession: protectedProcedure.query(
     async ({ ctx: { user, prisma, session } }) => {
       if (!user?.id) {
@@ -395,7 +531,6 @@ export const userRouter = router({
                 select: {
                   id: true,
                   title: true,
-                  description: true,
                   media: true,
                   link: true,
                 },

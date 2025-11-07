@@ -17,13 +17,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/utils/trpc";
 import { toast } from "sonner";
-import { Loader2, XCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import Image from "next/image";
+import { XCircle } from "lucide-react"; // Import XCircle
 
 const portfolioFormSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }),
+  description: z.string().optional(), // Added description
   link: z
     .string()
     .url({ message: "Must be a valid URL." })
@@ -36,19 +38,28 @@ interface PortfolioFormProps {
   userId: string;
   onSuccess: () => void;
   onCancel: () => void;
+  initialData?: PortfolioFormValues & { id: string }; // Added for editing
 }
 
 export function PortfolioForm({
   userId,
   onSuccess,
   onCancel,
+  initialData,
 }: PortfolioFormProps) {
   const form = useForm<PortfolioFormValues>({
     resolver: zodResolver(portfolioFormSchema),
-    defaultValues: {
-      title: "",
-      link: "",
-    },
+    defaultValues: initialData
+      ? {
+          title: initialData.title,
+          description: initialData.description,
+          link: initialData.link,
+        }
+      : {
+          title: "",
+          description: "",
+          link: "",
+        },
   });
 
   const createPortfolioMutation = trpc.user.addPortfolioItem.useMutation({
@@ -61,12 +72,29 @@ export function PortfolioForm({
     },
   });
 
+  const editPortfolioMutation = trpc.user.editPortfolioItem.useMutation({
+    onSuccess: () => {
+      onSuccess();
+      form.reset();
+    },
+    onError: (error: any) => {
+      toast.error("Failed to edit portfolio item: " + error.message);
+    },
+  });
+
   async function onSubmit(values: PortfolioFormValues) {
-    createPortfolioMutation.mutate({
-      userId,
-      title: values.title,
-      link: values.link,
-    });
+    if (initialData) {
+      editPortfolioMutation.mutate({
+        id: initialData.id,
+        userId,
+        ...values,
+      });
+    } else {
+      createPortfolioMutation.mutate({
+        userId,
+        ...values,
+      });
+    }
   }
 
   return (
@@ -85,6 +113,27 @@ export function PortfolioForm({
                   {...field}
                 />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Describe your project..."
+                  className="bg-[#3A3A3A] border-none text-white"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                A brief description of your portfolio item.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -116,11 +165,18 @@ export function PortfolioForm({
           <Button variant="ghost" onClick={onCancel} type="button">
             Cancel
           </Button>
-          <Button type="submit" disabled={createPortfolioMutation.isPending}>
-            {createPortfolioMutation.isPending && (
+          <Button
+            type="submit"
+            disabled={
+              createPortfolioMutation.isPending ||
+              editPortfolioMutation.isPending
+            }
+          >
+            {(createPortfolioMutation.isPending ||
+              editPortfolioMutation.isPending) && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Add Portfolio Item
+            {initialData ? "Save Changes" : "Add Portfolio Item"}
           </Button>
         </div>
       </form>

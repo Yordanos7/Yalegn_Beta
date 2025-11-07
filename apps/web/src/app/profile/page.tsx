@@ -57,7 +57,7 @@ type UserProfile = RouterOutput["user"]["getPublicUserProfile"] & {
     idFrontImage?: string | null;
     idBackImage?: string | null;
   } | null;
-  emailVerified: boolean; // Added emailVerified
+  emailVerified?: boolean; // Made optional
 };
 
 // Define a custom session type that matches what useSession returns
@@ -86,10 +86,9 @@ type ProfileWithSkillsAndPortfolio = NonNullable<UserProfile["profile"]> & {
   skills: { skill: { name: string } }[];
   portfolio: {
     id: string;
-    media: string[];
     title: string;
     description: string;
-    link?: string;
+    link: string; // Made link non-optional as per schema
   }[];
   isPublicFreelancer: boolean;
   averageRating?: number | null; // Added
@@ -107,6 +106,15 @@ export default function UserProfilePage() {
   const userId = session?.user?.id;
 
   const createListingMutation = trpc.listing.create.useMutation(); // Initialize mutation
+  const deletePortfolioMutation = trpc.user.deletePortfolioItem.useMutation({
+    onSuccess: () => {
+      refetchUserProfile();
+      toast.success("Portfolio item deleted successfully!");
+    },
+    onError: (error: any) => {
+      toast.error("Failed to delete portfolio item: " + error.message);
+    },
+  });
   const sendVerificationEmailMutation =
     trpc.user.sendVerificationEmail.useMutation({
       onSuccess: () => {
@@ -254,6 +262,7 @@ export default function UserProfilePage() {
     userProfile.verification
   );
 
+  console.log("this is log for user link", userProfile.profile?.portfolio);
   return (
     <main className="container mx-auto px-4 py-8 md:py-12 bg-background text-foreground">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -627,49 +636,84 @@ export default function UserProfilePage() {
                 </Button>
               </div>
             </CardHeader>
+
             <CardContent className="p-0 text-muted-foreground">
               <div className="grid grid-cols-1 gap-4">
-                {(userProfile.profile as ProfileWithSkillsAndPortfolio)
-                  ?.portfolio &&
-                  (
-                    userProfile.profile as ProfileWithSkillsAndPortfolio
-                  ).portfolio.map(
-                    (item: {
-                      id: string;
-                      media: string[];
-                      title: string;
-                      description: string;
-                      link?: string;
-                    }) => (
-                      <Card key={item.id} className="bg-muted p-3 rounded-lg">
-                        <div className="relative w-full h-32 mb-2 rounded-md overflow-hidden">
-                          <Image
-                            src={item.media[0] || "/placeholder-image.jpg"}
-                            alt={item.title}
-                            layout="fill"
-                            objectFit="cover"
-                          />
-                        </div>
-                        <h3 className="font-semibold text-foreground mb-1">
-                          {item.title}
-                        </h3>
-                        <p className="text-xs line-clamp-2 mb-2">
-                          {item.description}
-                        </p>
-                        {item.link && (
-                          <a
-                            href={item.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline text-sm flex items-center"
+                {(
+                  userProfile.profile as ProfileWithSkillsAndPortfolio
+                )?.portfolio?.map(
+                  (item: {
+                    id: string;
+                    title: string;
+                    description: string; // Added description
+                    link?: string;
+                  }) => (
+                    <Card key={item.id} className="bg-muted p-3 rounded-lg">
+                      {/* Title */}
+                      <h3 className="font-semibold text-foreground mb-1">
+                        {item.title}
+                      </h3>
+                      {/* Description */}
+                      <p className="text-xs line-clamp-2 mb-2">
+                        {item.description}
+                      </p>
+                      {/* Link */}
+                      {item.link && (
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline text-sm flex items-center"
+                        >
+                          <LinkIcon className="mr-1 h-4 w-4" /> View Project
+                        </a>
+                      )}
+                      {isOwnProfile && (
+                        <div className="flex space-x-2 mt-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Edit className="h-4 w-4 mr-1" /> Edit
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="bg-card text-foreground p-6 rounded-lg max-w-3xl overflow-y-auto max-h-[90vh]">
+                              <DialogTitle className="text-2xl font-bold mb-4">
+                                Edit Portfolio Item
+                              </DialogTitle>
+                              <PortfolioForm
+                                userId={userId!}
+                                initialData={item}
+                                onSuccess={() => {
+                                  refetchUserProfile();
+                                  toast.success(
+                                    "Portfolio item updated successfully!"
+                                  );
+                                }}
+                                onCancel={() => {}}
+                              />
+                            </DialogContent>
+                          </Dialog>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() =>
+                              deletePortfolioMutation.mutate({
+                                id: item.id,
+                                userId: userId!,
+                              })
+                            }
+                            disabled={deletePortfolioMutation.isPending}
                           >
-                            <LinkIcon className="mr-1 h-4 w-4" /> View Project
-                          </a>
-                        )}
-                      </Card>
-                    )
-                  )}
+                            <XCircle className="h-4 w-4 mr-1" /> Delete
+                          </Button>
+                        </div>
+                      )}
+                    </Card>
+                  )
+                )}
               </div>
+
+              {/* Add Portfolio Button */}
               {isOwnProfile && (
                 <Dialog>
                   <DialogTrigger asChild>
@@ -684,6 +728,7 @@ export default function UserProfilePage() {
                     <DialogTitle className="text-2xl font-bold mb-4">
                       Add Portfolio Item
                     </DialogTitle>
+
                     <PortfolioForm
                       userId={userId!}
                       onSuccess={() => {
@@ -729,6 +774,54 @@ export default function UserProfilePage() {
                           {listing.currency} {listing.price.toFixed(2)}
                         </p>
                       </div>
+                      {isOwnProfile && (
+                        <div className="flex space-x-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Edit className="h-4 w-4 mr-1" /> Edit
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="bg-card text-foreground p-6 rounded-lg max-w-3xl overflow-y-auto max-h-[90vh]">
+                              <DialogTitle className="text-2xl font-bold mb-4">
+                                Edit Listing
+                              </DialogTitle>
+                              <ListingForm
+                                initialData={listing}
+                                onSubmit={async (data) => {
+                                  await trpc.listing.update.mutateAsync({
+                                    id: listing.id,
+                                    ...data,
+                                  });
+                                  refetchListings();
+                                  toast.success(
+                                    "Listing updated successfully!"
+                                  );
+                                }}
+                                onCancel={() => {}}
+                                isSubmitting={false}
+                                // Add a key to force re-render when initialData changes
+                                key={listing.id}
+                              />
+                            </DialogContent>
+                          </Dialog>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={async () => {
+                              await trpc.listing.delete.mutateAsync({
+                                id: listing.id,
+                              });
+                              refetchListings();
+                              toast.success("Listing deleted successfully!");
+                            }}
+                            // Add a key to force re-render when initialData changes
+                            key={`delete-${listing.id}`}
+                          >
+                            <XCircle className="h-4 w-4 mr-1" /> Delete
+                          </Button>
+                        </div>
+                      )}
                       <Link href={`/marketplace/${listing.id}`}>
                         <Button variant="outline" size="sm">
                           View
@@ -751,6 +844,7 @@ export default function UserProfilePage() {
                     onSubmit={handleCreateListing}
                     onCancel={() => setIsFormOpen(false)}
                     isSubmitting={createListingMutation.isPending} // Pass isSubmitting prop
+                    key="create-listing-form" // Add a key to the create form
                   />
                 </DialogContent>
               </Dialog>

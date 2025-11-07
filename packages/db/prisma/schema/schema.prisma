@@ -93,9 +93,11 @@ enum DeliveryTime {
 model User {
   id              String            @id @default(cuid()) @map("_id")
   email           String?           @unique
-  emailVerified   Boolean           @default(false)  
+  emailVerified   Boolean?          @default(false) // Changed to Boolean? to match better-auth
   phone           String?           @unique
   passwordHash    String?           // null if OAuth-only
+  emailVerificationToken String? @unique
+  emailVerificationExpires DateTime?
   role            Role              @default(PROVIDER)
   accountType     AccountType?      // Added for onboarding
   onboarded       Boolean           @default(false) // Added for onboarding
@@ -463,6 +465,8 @@ model Portfolio {
   id          String   @id @default(cuid()) @map("_id")
   profileId   String
   title       String
+  description String? // Added description field
+  media       String[] @default([]) // Added for media uploads
   link        String
   createdAt   DateTime @default(now())
   profile     Profile  @relation(fields: [profileId], references: [id])

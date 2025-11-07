@@ -20,13 +20,13 @@ import { trpc } from "@/utils/trpc";
 
 interface ListingFormProps {
   initialData?: {
-    id?: string;
+    id: string;
     title: string;
     description: string;
     price: number;
     currency: "ETB" | "USD";
     deliveryDays?: number;
-    categoryId?: string;
+    category?: string;
     images: string[];
     videos?: string[];
     tags: string[];
@@ -54,7 +54,7 @@ export function ListingForm({
   const [deliveryDays, setDeliveryDays] = useState(
     initialData?.deliveryDays?.toString() || ""
   );
-  const [categoryId, setCategoryId] = useState(initialData?.categoryId || "");
+  const [categoryId, setCategoryId] = useState(initialData?.category || ""); // Changed to category
   const [images, setImages] = useState<string[]>(initialData?.images || []);
   const [videos, setVideos] = useState<string[]>(initialData?.videos || []);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
