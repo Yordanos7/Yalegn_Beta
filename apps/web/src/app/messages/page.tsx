@@ -5,8 +5,6 @@ import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/utils/trpc";
 import { getSocket } from "@/utils/socket";
 import { useSessionContext } from "@/components/providers"; // Use the new useSessionContext hook
-import Sidebar from "@/components/sidebar"; // Import Sidebar
-import { useSidebar } from "@/hooks/use-sidebar"; // Import the custom hook
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,13 +24,13 @@ import { type inferRouterOutputs } from "@trpc/server";
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type Conversation = RouterOutput["conversation"]["list"][number];
 type Message = RouterOutput["message"]["list"][number];
+type Participant = { id: string; name: string; image: string | null };
 type User = RouterOutput["user"]["list"][number];
 
 export default function MessagesPage() {
   const { session } = useSessionContext();
   const utils = trpc.useUtils(); // Use trpc.useUtils() for invalidation
   const userId = session?.user?.id; // Correctly access userId from the nested user object
-  const { isSidebarOpen, toggleSidebar } = useSidebar(); // Use the custom hook
 
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
@@ -129,7 +127,7 @@ export default function MessagesPage() {
 
     const participant = conversations
       ?.find((c: Conversation) => c.id === selectedConversationId)
-      ?.participants.find((p: User) => p.id !== userId);
+      ?.participants.find((p: Participant) => p.id !== userId);
 
     if (!participant) {
       console.error("Participant not found for selected conversation.");
@@ -151,16 +149,7 @@ export default function MessagesPage() {
 
   return (
     <div className="flex min-h-screen bg-[#202020] text-white">
-      <Sidebar
-        currentPage="messages"
-        isSidebarOpen={isSidebarOpen}
-        toggleSidebar={toggleSidebar}
-      />
-      <div
-        className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
-          isSidebarOpen ? "ml-0" : "ml-0"
-        }`}
-      >
+      <div className="flex-1 flex flex-col transition-all duration-300 ease-in-out">
         <div className="flex h-[calc(100vh-64px)] flex-col md:flex-row">
           {/* Conversation List */}
           <div
@@ -205,7 +194,7 @@ export default function MessagesPage() {
               ) : (
                 conversations?.map((conversation: Conversation) => {
                   const otherParticipant = conversation.participants.find(
-                    (p: User) => p.id !== userId
+                    (p: Participant) => p.id !== userId
                   );
                   const lastMessage = conversation.messages[0];
                   return (
@@ -294,8 +283,9 @@ export default function MessagesPage() {
                           ?.find(
                             (c: Conversation) => c.id === selectedConversationId
                           )
-                          ?.participants.find((p: User) => p.id !== userId)
-                          ?.image || "/placeholder-avatar.jpg"
+                          ?.participants.find(
+                            (p: Participant) => p.id !== userId
+                          )?.image || "/placeholder-avatar.jpg"
                       }
                     />
                     <AvatarFallback>
@@ -314,8 +304,8 @@ export default function MessagesPage() {
                       ?.find(
                         (c: Conversation) => c.id === selectedConversationId
                       )
-                      ?.participants.find((p: User) => p.id !== userId)?.name ||
-                      "Unknown User"}
+                      ?.participants.find((p: Participant) => p.id !== userId)
+                      ?.name || "Unknown User"}
                   </h2>
                 </div>
                 <ScrollArea className="flex-1 p-4">

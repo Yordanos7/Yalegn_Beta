@@ -29,7 +29,6 @@ import {
   FileText,
   X,
   Clock,
-  Menu, // Added Menu icon for sidebar toggle
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -48,22 +47,11 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
 
-  const navItems = [
-    { href: "/dashboard", icon: Home, label: "Dashboard (Home)" },
-    { href: "/marketplace", icon: Briefcase, label: "Marketplace" },
-    { href: "/messages", icon: MessageSquare, label: "Messages" },
-    { href: "/wallet", icon: Wallet, label: "Wallet" },
-    { href: "/my-listings", icon: List, label: "My Listings" },
-    { href: "/applications", icon: Briefcase, label: "Applications / Jobs" },
-    { href: "/analytics", icon: BarChart, label: "Analytics" },
-    { href: "/settings", icon: Settings, label: "Settings" },
-    { href: "/support", icon: HelpCircle, label: "Help / Support" },
-    { href: "/logout", icon: LogOut, label: "Logout" },
-  ];
+  // navItems are now in the Header component
 
   return (
     <aside
-      className={`bg-[#2C2C2C] p-6 flex flex-col transition-all duration-300 ease-in-out ${
+      className={`bg-[#2C2C2C] p-6 flex-col transition-all duration-300 ease-in-out hidden md:flex ${
         isSidebarOpen ? "w-64" : "w-20"
       }`}
     >
@@ -78,9 +66,7 @@ export default function Sidebar({
             </span>
           </div>
         )}
-        <Button variant="ghost" onClick={toggleSidebar} className="p-2">
-          <Menu size={24} />
-        </Button>
+        {/* Removed Menu button from sidebar */}
       </div>
 
       {isSidebarOpen && currentPage === "messages" && (
@@ -195,62 +181,13 @@ export default function Sidebar({
 
       {isSidebarOpen && currentPage !== "messages" && (
         <nav className="flex-1">
-          <ul>
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <li
-                  key={item.href}
-                  className={`mb-4 ${
-                    isActive ? "border-l-4 border-yellow-500 pl-2" : ""
-                  }`}
-                >
-                  <Link
-                    href={item.href as any}
-                    className={`flex items-center ${
-                      isActive
-                        ? "text-white font-semibold"
-                        : "text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    <Icon className="mr-3" size={20} />
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          <ul>{/* Nav items are now in header */}</ul>
         </nav>
       )}
 
       {!isSidebarOpen && (
         <nav className="flex-1">
-          <ul>
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <li
-                  key={item.href}
-                  className={`mb-4 flex justify-center ${
-                    isActive ? "border-l-4 border-yellow-500" : ""
-                  }`}
-                >
-                  <Link
-                    href={item.href as any}
-                    className={`flex items-center ${
-                      isActive
-                        ? "text-white font-semibold"
-                        : "text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    <Icon size={20} />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          <ul>{/* Nav items are now in header */}</ul>
         </nav>
       )}
     </aside>

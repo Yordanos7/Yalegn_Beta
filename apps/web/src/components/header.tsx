@@ -1,11 +1,42 @@
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Menu, ShoppingCart } from "lucide-react"; // Added ShoppingCart icon
+import {
+  Menu,
+  ShoppingCart,
+  Home,
+  MessageSquare,
+  Wallet,
+  List,
+  Briefcase,
+  BarChart,
+  Settings,
+  HelpCircle,
+  LogOut,
+} from "lucide-react"; // Added ShoppingCart icon and sidebar icons
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import UserMenu from "./user-menu";
 import logo from "@/../assets/logo.png";
+
+const desktopNavItems = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/about", label: "How It Works" },
+  { href: "/marketplace", label: "Marketplace" },
+];
+
+const mobileNavItems = [
+  { href: "/dashboard", icon: Home, label: "Dashboard" },
+  { href: "/marketplace", icon: Briefcase, label: "Marketplace" },
+  { href: "/messages", icon: MessageSquare, label: "Messages" },
+  { href: "/wallet", icon: Wallet, label: "Wallet" },
+  { href: "/my-listings", icon: List, label: "My Listings" },
+  { href: "/applications", icon: Briefcase, label: "Applications / Jobs" },
+  { href: "/analytics", icon: BarChart, label: "Analytics" },
+  { href: "/settings", icon: Settings, label: "Settings" },
+  { href: "/support", icon: HelpCircle, label: "Help / Support" },
+  { href: "/logout", icon: LogOut, label: "Logout" },
+];
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -22,29 +53,20 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            <Link
-              href="/dashboard"
-              className="text-foreground hover:text-primary transition-colors font-medium"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/about"
-              className="text-foreground hover:text-primary transition-colors font-medium"
-            >
-              How It Works
-            </Link>
-            <Link
-              href="/marketplace"
-              className="text-foreground hover:text-primary transition-colors font-medium"
-            >
-              Marketplace
-            </Link>
+            {desktopNavItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href as any}
+                className="text-foreground hover:text-primary transition-colors font-medium"
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
 
           {/* User Menu, Cart, or CTA Buttons */}
           <div className="hidden md:flex items-center gap-4">
-            <Link href="/cart">
+            <Link href="/cart" as="/cart">
               <Button variant="ghost" size="icon">
                 <ShoppingCart className="h-5 w-5" />
               </Button>
@@ -53,10 +75,10 @@ const Header = () => {
               <UserMenu />
             ) : (
               <>
-                <Link href="/login">
+                <Link href="/login" as="/login">
                   <Button variant="ghost">Login</Button>
                 </Link>
-                <Link href="/signup">
+                <Link href="/signup" as="/signup">
                   <Button variant="default" size="lg">
                     Sign Up
                   </Button>
@@ -77,35 +99,30 @@ const Header = () => {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden mt-4 pb-4 flex flex-col gap-4 animate-fade-in">
-            <Link
-              href="/"
-              className="text-foreground hover:text-primary transition-colors font-medium py-2"
-            >
-              Home
-            </Link>
-            <Link
-              href="/about"
-              className="text-foreground hover:text-primary transition-colors font-medium py-2"
-            >
-              How It Works
-            </Link>
-            <Link
-              href="/marketplace"
-              className="text-foreground hover:text-primary transition-colors font-medium py-2"
-            >
-              Marketplace
-            </Link>
+            {mobileNavItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href as any}
+                  className="flex items-center text-foreground hover:text-primary transition-colors font-medium py-2"
+                >
+                  <Icon className="mr-3" size={20} />
+                  {item.label}
+                </Link>
+              );
+            })}
             <div className="flex flex-col gap-3 pt-4 border-t">
               {session?.user ? (
                 <UserMenu />
               ) : (
                 <>
-                  <Link href="/login">
+                  <Link href="/login" as="/login">
                     <Button variant="ghost" className="w-full">
                       Login
                     </Button>
                   </Link>
-                  <Link href="/signup">
+                  <Link href="/signup" as="/signup">
                     <Button variant="default" className="w-full">
                       Sign Up
                     </Button>
