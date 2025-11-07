@@ -19,7 +19,7 @@ import {
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import { useSession } from "@/hooks/use-session"; // Import useSession
-import { ReviewForm } from "@/components/review-form"; // Import ReviewForm
+// ReviewForm will be moved to cart page
 import { formatDistanceToNow } from "date-fns"; // For date formatting
 import { useCart } from "@/context/CartContext"; // Import useCart
 import { toast } from "sonner"; // Import toast for notifications
@@ -157,9 +157,26 @@ export default function ListingDetailPage() {
 
   const uploadDeliveryProofMutation =
     trpc.order.uploadDeliveryProof.useMutation();
+  const sellerConfirmProductSentMutation =
+    trpc.order.sellerConfirmProductSent.useMutation(); // New mutation
 
   const [deliveryProofUrlInput, setDeliveryProofUrlInput] =
     useState<string>("");
+
+  const handleConfirmProductSent = async (orderId: string) => {
+    try {
+      await sellerConfirmProductSentMutation.mutateAsync({ orderId });
+      toast.success(
+        "Product marked as sent! Buyer and admin have been notified."
+      );
+      refetchOrders(); // Refetch orders to update status
+    } catch (err: any) {
+      console.error("Error confirming product sent:", err);
+      toast.error(
+        `Failed to mark product as sent: ${err.message || "Unknown error"}`
+      );
+    }
+  };
 
   const handleDeliveryProofUpload = async (orderId: string) => {
     if (!deliveryProofUrlInput) {
@@ -204,7 +221,6 @@ export default function ListingDetailPage() {
     data: reviewsData,
     isPending: isReviewsPending,
     error: reviewsError,
-    refetch: refetchReviews, // Add refetch for reviews
   } = trpc.review.getReviewsForListing.useQuery(
     { listingId: listingId },
     {
@@ -282,7 +298,8 @@ export default function ListingDetailPage() {
   };
 
   const isProvider = currentUserId === listing.provider.id;
-  const hasReviewed = reviews.some((review) => review.by.id === currentUserId);
+  // hasReviewed will be handled on the cart page
+  // const hasReviewed = reviews.some((review) => review.by.id === currentUserId);
 
   console.log("Rendering listing:", listing);
   console.log("Listing images array:", listing.images);
@@ -297,157 +314,223 @@ export default function ListingDetailPage() {
   console.log("  isProvider:", isProvider);
   console.log("  ordersForListing:", ordersForListing);
   console.log("  sellerOrders.length:", sellerOrders.length);
+  console.log("  currentUserId:", currentUserId);
+  console.log("  listing.provider.id:", listing.provider.id);
+
   return (
     <main className=" mx-auto px-4 py-8 md:py-12 bg-background text-foreground">
       <Button variant="outline" onClick={() => router.back()} className="mb-6">
         &larr; Back to Marketplace
       </Button>
 
-      {isProvider && ( // Temporarily remove sellerOrders.length > 0 for debugging
+      {isProvider && (
         <Card className="p-6 bg-card rounded-lg shadow-sm mb-8">
           <CardTitle className="text-xl font-semibold mb-4 flex items-center">
             <CheckCircle className="h-5 w-5 text-green-500 mr-2" /> Orders for
             Your Listing
           </CardTitle>
           <CardContent className="p-0 space-y-6">
-            {sellerOrders.length > 0 ? ( // Add a check here to display orders if available
-              sellerOrders.map((order: OrderWithDetails) => (
-                <React.Fragment key={order.id}>
-                  <div className="border-b pb-4 last:border-b-0 last:pb-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage
-                            src={order.buyer.image || "/placeholder-avatar.jpg"}
-                            alt={order.buyer.name}
-                          />
-                          <AvatarFallback>{order.buyer.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-semibold text-foreground">
-                            {order.buyer.name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Ordered {order.quantity} item(s)
-                          </p>
+            {sellerOrders.length > 0 ? (
+              sellerOrders.map((order: OrderWithDetails) => {
+                console.log(`Order ${order.id} status:`, order.orderStatus);
+                return (
+                  <React.Fragment key={order.id}>
+                    <div className="border-b pb-4 last:border-b-0 last:pb-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage
+                              src={
+                                order.buyer.image || "/placeholder-avatar.jpg"
+                              }
+                              alt={order.buyer.name}
+                            />
+                            <AvatarFallback>
+                              {order.buyer.name[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-semibold text-foreground">
+                              {order.buyer.name}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Ordered {order.quantity} item(s)
+                            </p>
+                          </div>
                         </div>
+                        <Badge
+                          className={`
+                            ${
+                              order.orderStatus === OrderStatus.COMPLETED &&
+                              "bg-green-500"
+                            }
+                            ${
+                              order.orderStatus === OrderStatus.DELIVERED &&
+                              "bg-blue-500"
+                            }
+                            ${
+                              order.orderStatus ===
+                                OrderStatus.PAYMENT_RECEIVED && "bg-yellow-500"
+                            }
+                            ${
+                              order.orderStatus ===
+                                OrderStatus.PENDING_PAYMENT && "bg-orange-500"
+                            }
+                            ${
+                              order.orderStatus === OrderStatus.CANCELLED &&
+                              "bg-red-500"
+                            }
+                          `}
+                        >
+                          {order.orderStatus.replace(/_/g, " ")}
+                        </Badge>
                       </div>
-                      <Badge
-                        className={`
-                          ${
-                            order.orderStatus === OrderStatus.COMPLETED &&
-                            "bg-green-500"
-                          }
-                          ${
-                            order.orderStatus === OrderStatus.DELIVERED &&
-                            "bg-blue-500"
-                          }
-                          ${
-                            order.orderStatus ===
-                              OrderStatus.PAYMENT_RECEIVED && "bg-yellow-500"
-                          }
-                          ${
-                            order.orderStatus === OrderStatus.PENDING_PAYMENT &&
-                            "bg-orange-500"
-                          }
-                          ${
-                            order.orderStatus === OrderStatus.CANCELLED &&
-                            "bg-red-500"
-                          }
-                        `}
-                      >
-                        {order.orderStatus.replace(/_/g, " ")}
-                      </Badge>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground mt-4">
-                      <div>
-                        <p>
-                          <span className="font-semibold text-foreground">
-                            Total Price:
-                          </span>{" "}
-                          {order.currency} {order.totalPrice.toFixed(2)}
-                        </p>
-                        <p>
-                          <span className="font-semibold text-foreground">
-                            Payment Account:
-                          </span>{" "}
-                          {order.paymentDetails.accountNumber}
-                        </p>
-                        <p>
-                          <span className="font-semibold text-foreground">
-                            Account Owner:
-                          </span>{" "}
-                          {order.paymentDetails.accountOwner}
-                        </p>
-                        <p>
-                          <span className="font-semibold text-foreground">
-                            Selected Bank:
-                          </span>{" "}
-                          {order.paymentDetails.selectedBank}
-                        </p>
-                        <p>
-                          <span className="font-semibold text-foreground">
-                            Payment Link:
-                          </span>{" "}
-                          <a
-                            href={order.paymentDetails.paymentSenderLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            {order.paymentDetails.paymentSenderLink}
-                          </a>
-                        </p>
-                      </div>
-                      {(order.orderStatus === OrderStatus.PAYMENT_RECEIVED ||
-                        order.orderStatus === OrderStatus.DELIVERY_PENDING) && (
-                        <div className="space-y-2">
-                          <Label htmlFor={`delivery-proof-${order.id}`}>
-                            Delivery Proof (e.g., Post Office Receipt Image URL)
-                          </Label>
-                          <Input
-                            id={`delivery-proof-${order.id}`}
-                            type="url"
-                            placeholder="Enter URL for delivery proof"
-                            value={deliveryProofUrlInput}
-                            onChange={(e) =>
-                              setDeliveryProofUrlInput(e.target.value)
-                            }
-                            className="mb-2"
-                          />
-                          <Button
-                            onClick={() => handleDeliveryProofUpload(order.id)}
-                            disabled={
-                              !deliveryProofUrlInput ||
-                              uploadDeliveryProofMutation.isPending
-                            }
-                            className="w-full bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            {uploadDeliveryProofMutation.isPending
-                              ? "Uploading..."
-                              : "Confirm Delivery"}
-                          </Button>
-                        </div>
-                      )}
-                      {order.orderStatus === OrderStatus.DELIVERED &&
-                        order.deliveryProofUrl && (
-                          <div className="text-sm text-green-600">
-                            <p className="font-semibold">Delivery Confirmed</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground mt-4">
+                        <div>
+                          <p>
+                            <span className="font-semibold text-foreground">
+                              Total Price:
+                            </span>{" "}
+                            {order.currency} {order.totalPrice.toFixed(2)}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-foreground">
+                              Payment Account:
+                            </span>{" "}
+                            {order.paymentDetails.accountNumber}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-foreground">
+                              Account Owner:
+                            </span>{" "}
+                            {order.paymentDetails.accountOwner}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-foreground">
+                              Selected Bank:
+                            </span>{" "}
+                            {order.paymentDetails.selectedBank}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-foreground">
+                              Payment Link:
+                            </span>{" "}
                             <a
-                              href={order.deliveryProofUrl}
+                              href={order.paymentDetails.paymentSenderLink}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:underline"
                             >
-                              View Delivery Proof
+                              {order.paymentDetails.paymentSenderLink}
                             </a>
+                          </p>
+                        </div>
+                        {order.orderStatus === OrderStatus.PENDING_PAYMENT && (
+                          <div className="space-y-2">
+                            <p className="text-orange-600 font-semibold">
+                              Action Required: Confirm Product Sent
+                            </p>
+                            <Button
+                              onClick={() => handleConfirmProductSent(order.id)}
+                              disabled={
+                                sellerConfirmProductSentMutation.isPending
+                              }
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              {sellerConfirmProductSentMutation.isPending
+                                ? "Sending..."
+                                : "Send Product"}
+                            </Button>
+                            <p className="text-xs text-red-500 mt-2">
+                              <span className="font-bold">
+                                Important Warning:
+                              </span>{" "}
+                              If you confirm selling and do not send the
+                              product, your account will be banned by the Yalegn
+                              Team and you may face legal action. The money is
+                              held by the Yalegn Team until the buyer confirms
+                              delivery.
+                            </p>
                           </div>
                         )}
+                        {order.orderStatus === OrderStatus.DELIVERY_PENDING && (
+                          <div className="space-y-2">
+                            <Label htmlFor={`delivery-proof-${order.id}`}>
+                              Delivery Proof (e.g., Post Office Receipt Image
+                              URL)
+                            </Label>
+                            <Input
+                              id={`delivery-proof-${order.id}`}
+                              type="url"
+                              placeholder="Enter URL for delivery proof"
+                              value={deliveryProofUrlInput}
+                              onChange={(e) =>
+                                setDeliveryProofUrlInput(e.target.value)
+                              }
+                              className="mb-2"
+                            />
+                            <Button
+                              onClick={() =>
+                                handleDeliveryProofUpload(order.id)
+                              }
+                              disabled={
+                                !deliveryProofUrlInput ||
+                                uploadDeliveryProofMutation.isPending
+                              }
+                              className="w-full bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              {uploadDeliveryProofMutation.isPending
+                                ? "Uploading..."
+                                : "Upload Delivery Proof"}
+                            </Button>
+                          </div>
+                        )}
+                        {order.orderStatus === OrderStatus.DELIVERED &&
+                          order.deliveryProofUrl && (
+                            <div className="text-sm text-green-600">
+                              <p className="font-semibold">
+                                Delivery Confirmed by Seller
+                              </p>
+                              <a
+                                href={order.deliveryProofUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline"
+                              >
+                                View Delivery Proof
+                              </a>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Waiting for buyer to confirm delivery.
+                              </p>
+                            </div>
+                          )}
+                        {order.orderStatus === OrderStatus.COMPLETED && (
+                          <div className="text-sm text-green-600">
+                            <p className="font-semibold flex items-center">
+                              <CheckCircle className="h-4 w-4 mr-1" /> Order
+                              Completed
+                            </p>
+                            {order.deliveryProofUrl && (
+                              <a
+                                href={order.deliveryProofUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline"
+                              >
+                                View Delivery Proof
+                              </a>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Payment released to your account.
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </React.Fragment>
-              ))
+                  </React.Fragment>
+                );
+              })
             ) : (
               <p className="text-muted-foreground">
                 No orders for this listing yet.
@@ -678,9 +761,7 @@ export default function ListingDetailPage() {
 
             <Button
               className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold rounded-md px-6 py-2 flex items-center mb-2"
-              onClick={() =>
-                router.push(`/marketplace/${listingId}?review=true`)
-              } // Navigate to review prompt
+              // Removed direct navigation to review prompt from here
             >
               Buy Now
             </Button>
@@ -777,18 +858,6 @@ export default function ListingDetailPage() {
               <p className="text-muted-foreground">
                 No reviews yet. Be the first to review!
               </p>
-            )}
-
-            {currentUserId && !isProvider && !hasReviewed && (
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-3">Leave a Review</h3>
-                <ReviewForm
-                  aboutId={listing.provider.id}
-                  listingId={listing.id}
-                  onReviewSubmitted={refetchReviews}
-                  onCancel={() => {}} // Add onCancel prop
-                />
-              </div>
             )}
           </Card>
 

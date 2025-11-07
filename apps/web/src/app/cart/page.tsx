@@ -33,6 +33,12 @@ import { trpc } from "@/utils/trpc"; // Import trpc
 import { useRouter } from "next/navigation"; // Import useRouter
 import { useSession } from "@/hooks/use-session"; // Import useSession
 import { toast } from "sonner"; // Import toast
+import {
+  OrderStatus,
+  Currency,
+} from "@my-better-t-app/db/prisma/generated/enums"; // Import OrderStatus and Currency enum
+import { CheckCircle } from "lucide-react"; // Import CheckCircle icon
+import { ReviewForm } from "@/components/review-form"; // Import ReviewForm
 
 export default function CartPage() {
   const { cartItems, updateQuantity, removeItem, clearCart } = useCart(); // Use cart context
@@ -44,8 +50,30 @@ export default function CartPage() {
   const [paymentSenderLink, setPaymentSenderLink] = useState(""); // New state for payment sender link
   const [timeLeft, setTimeLeft] = useState(3 * 24 * 60 * 60); // 3 days in seconds
   const createOrderMutation = trpc.order.createOrder.useMutation();
+  const confirmDeliveryMutation =
+    trpc.order.confirmDeliveryByBuyer.useMutation(); // New mutation
   const router = useRouter();
   const { session } = useSession();
+
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewOrderDetails, setReviewOrderDetails] = useState<{
+    orderId: string;
+    listingId: string;
+    sellerId: string;
+  } | null>(null);
+
+  // Fetch orders for the current buyer
+  const {
+    data: buyerOrders,
+    isPending: isBuyerOrdersPending,
+    error: buyerOrdersError,
+    refetch: refetchBuyerOrders,
+  } = trpc.order.getOrdersForBuyer.useQuery(
+    undefined, // No input needed for getOrdersForBuyer
+    {
+      enabled: !!session?.user?.id, // Only run query if user is logged in
+    }
+  );
 
   // Countdown effect
   useEffect(() => {
@@ -54,6 +82,13 @@ export default function CartPage() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Refetch buyer orders when the component mounts or session changes
+  useEffect(() => {
+    if (session?.user?.id) {
+      refetchBuyerOrders();
+    }
+  }, [session?.user?.id, refetchBuyerOrders]);
 
   const formatTime = (seconds: number) => {
     if (seconds <= 0) return "Contact support";
@@ -113,6 +148,36 @@ export default function CartPage() {
     }
   };
 
+  const handleConfirmDelivery = async (
+    orderId: string,
+    listingId: string,
+    sellerId: string
+  ) => {
+    try {
+      await confirmDeliveryMutation.mutateAsync({ orderId });
+      toast.success("Delivery confirmed successfully!");
+      refetchBuyerOrders(); // Refetch orders to update status
+      setReviewOrderDetails({ orderId, listingId, sellerId });
+      setShowReviewForm(true);
+    } catch (err: any) {
+      console.error("Error confirming delivery:", err);
+      toast.error(
+        `Failed to confirm delivery: ${err.message || "Unknown error"}`
+      );
+    }
+  };
+
+  const handleReviewSubmitted = () => {
+    setShowReviewForm(false);
+    setReviewOrderDetails(null);
+    refetchBuyerOrders(); // Refresh orders to show review status
+  };
+
+  const handleCancelReview = () => {
+    setShowReviewForm(false);
+    setReviewOrderDetails(null);
+  };
+
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -128,112 +193,233 @@ export default function CartPage() {
       <main className="container mx-auto p-8 grid grid-cols-3 gap-8">
         {/* Left Column: Cart Items */}
         <div className="col-span-2">
-          <h1 className="text-3xl font-bold mb-6">Cart</h1>
+          <h1 className="text-3xl font-bold mb-6">Your Cart & Orders</h1>
 
-          <div className="space-y-4">
-            {cartItems.length === 0 ? (
-              <p className="text-gray-600">Your cart is empty.</p>
-            ) : (
-              cartItems.map((item) => (
-                <Card key={item.id} className="flex items-center p-4 shadow-sm">
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    className="w-20 h-20 object-cover rounded-md mr-4"
-                  />
-                  <div className="flex-1">
-                    <h2 className="text-lg font-semibold">{item.name}</h2>
-                    <div className="flex items-center text-sm text-gray-600 mb-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={
-                            i < Math.floor(item.rating)
-                              ? "text-yellow-500"
-                              : "text-gray-300"
-                          }
-                          size={16}
-                          fill={
-                            i < Math.floor(item.rating)
-                              ? "currentColor"
-                              : "none"
-                          }
-                        />
-                      ))}
-                      <span className="ml-2">{item.provider}</span>
-                    </div>
-                    {item.type === "service" && item.isInstant && (
-                      <div className="flex items-center text-xs text-gray-500">
-                        <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
-                        Instant
+          {/* Cart Items Section */}
+          <section className="mb-8">
+            <h2 className="text-2xl font-bold mb-4">Cart Items</h2>
+            <div className="space-y-4">
+              {cartItems.length === 0 ? (
+                <p className="text-gray-600">Your cart is empty.</p>
+              ) : (
+                cartItems.map((item) => (
+                  <Card
+                    key={item.id}
+                    className="flex items-center p-4 shadow-sm"
+                  >
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-20 h-20 object-cover rounded-md mr-4"
+                    />
+                    <div className="flex-1">
+                      <h2 className="text-lg font-semibold">{item.name}</h2>
+                      <div className="flex items-center text-sm text-gray-600 mb-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={
+                              i < Math.floor(item.rating)
+                                ? "text-yellow-500"
+                                : "text-gray-300"
+                            }
+                            size={16}
+                            fill={
+                              i < Math.floor(item.rating)
+                                ? "currentColor"
+                                : "none"
+                            }
+                          />
+                        ))}
+                        <span className="ml-2">{item.provider}</span>
                       </div>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2 mr-4">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => updateQuantity(item.id, -1)}
-                      disabled={item.quantity <= 1}
-                    >
-                      <Minus size={16} />
-                    </Button>
-                    <span>{item.quantity}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => updateQuantity(item.id, 1)}
-                    >
-                      <Plus size={16} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeItem(item.id)}
-                    >
-                      <Trash2 size={16} />
-                    </Button>
-                  </div>
-                  <p className="text-lg font-semibold">
-                    ETB {(item.price * item.quantity).toFixed(2)}
-                  </p>
-                </Card>
-              ))
-            )}
-          </div>
-
-          {/* Discount Code */}
-          <div className="flex items-center mt-6 space-x-2">
-            <Input
-              type="text"
-              placeholder="Enter discount code"
-              className="flex-1 border-gray-300 rounded-md p-2"
-              value={discountCode}
-              onChange={(e) => setDiscountCode(e.target.value)}
-            />
-            <Button className="bg-[#E0B44B] hover:bg-[#D0A43B] text-white font-semibold rounded-md px-6 py-2">
-              Apply
-            </Button>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-between mt-6">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="save-for-later"
-                checked={saveForLater}
-                onCheckedChange={setSaveForLater}
-              />
-              <Label htmlFor="save-for-later">Save for later</Label>
+                      {item.type === "service" && item.isInstant && (
+                        <div className="flex items-center text-xs text-gray-500">
+                          <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                          Instant
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2 mr-4">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, -1)}
+                        disabled={item.quantity <= 1}
+                      >
+                        <Minus size={16} />
+                      </Button>
+                      <span>{item.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, 1)}
+                      >
+                        <Plus size={16} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
+                    <p className="text-lg font-semibold">
+                      ETB {(item.price * item.quantity).toFixed(2)}
+                    </p>
+                  </Card>
+                ))
+              )}
             </div>
-            <Button
-              variant="ghost"
-              className="text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft size={16} className="mr-2" />
-              Continue shopping
-            </Button>
-          </div>
+
+            {/* Discount Code */}
+            <div className="flex items-center mt-6 space-x-2">
+              <Input
+                type="text"
+                placeholder="Enter discount code"
+                className="flex-1 border-gray-300 rounded-md p-2"
+                value={discountCode}
+                onChange={(e) => setDiscountCode(e.target.value)}
+              />
+              <Button className="bg-[#E0B44B] hover:bg-[#D0A43B] text-white font-semibold rounded-md px-6 py-2">
+                Apply
+              </Button>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-between mt-6">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="save-for-later"
+                  checked={saveForLater}
+                  onCheckedChange={setSaveForLater}
+                />
+                <Label htmlFor="save-for-later">Save for later</Label>
+              </div>
+              <Button
+                variant="ghost"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <ArrowLeft size={16} className="mr-2" />
+                Continue shopping
+              </Button>
+            </div>
+          </section>
+
+          {/* Buyer Orders Section */}
+          <section className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Your Orders</h2>
+            {isBuyerOrdersPending ? (
+              <p className="text-gray-600">Loading your orders...</p>
+            ) : buyerOrdersError ? (
+              <p className="text-red-500">
+                Error loading orders: {buyerOrdersError.message}
+              </p>
+            ) : buyerOrders && buyerOrders.length > 0 ? (
+              <div className="space-y-4">
+                {buyerOrders.map((order) => (
+                  <Card key={order.id} className="p-4 shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={
+                            order.listing.images[0] || "/placeholder-image.jpg"
+                          }
+                          alt={order.listing.title}
+                          className="w-16 h-16 object-cover rounded-md"
+                        />
+                        <div>
+                          <p className="font-semibold text-lg">
+                            {order.listing.title}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Quantity: {order.quantity} | Total: {order.currency}{" "}
+                            {order.totalPrice.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold
+                            ${
+                              order.orderStatus === OrderStatus.COMPLETED &&
+                              "bg-green-100 text-green-800"
+                            }
+                            ${
+                              order.orderStatus === OrderStatus.DELIVERED &&
+                              "bg-blue-100 text-blue-800"
+                            }
+                            ${
+                              order.orderStatus ===
+                                OrderStatus.PAYMENT_RECEIVED &&
+                              "bg-yellow-100 text-yellow-800"
+                            }
+                            ${
+                              order.orderStatus ===
+                                OrderStatus.PENDING_PAYMENT &&
+                              "bg-orange-100 text-orange-800"
+                            }
+                            ${
+                              order.orderStatus === OrderStatus.CANCELLED &&
+                              "bg-red-100 text-red-800"
+                            }
+                          `}
+                        >
+                          {order.orderStatus.replace(/_/g, " ")}
+                        </span>
+                        {order.orderStatus === OrderStatus.DELIVERED && (
+                          <Button
+                            className="mt-2 bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() =>
+                              handleConfirmDelivery(
+                                order.id,
+                                order.listing.id,
+                                order.seller.id
+                              )
+                            }
+                            disabled={confirmDeliveryMutation.isPending}
+                          >
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            {confirmDeliveryMutation.isPending
+                              ? "Confirming..."
+                              : "Confirm Delivery"}
+                          </Button>
+                        )}
+                        {order.orderStatus === OrderStatus.COMPLETED &&
+                          reviewOrderDetails?.orderId === order.id &&
+                          showReviewForm && (
+                            <div className="mt-4 p-4 border rounded-md bg-gray-50">
+                              <h3 className="text-lg font-semibold mb-2">
+                                Rate Your Experience
+                              </h3>
+                              <ReviewForm
+                                aboutId={reviewOrderDetails.sellerId}
+                                listingId={reviewOrderDetails.listingId}
+                                onReviewSubmitted={handleReviewSubmitted}
+                                onCancel={handleCancelReview}
+                              />
+                            </div>
+                          )}
+                        {order.deliveryProofUrl && (
+                          <a
+                            href={order.deliveryProofUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm mt-1"
+                          >
+                            View Delivery Proof
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-600">You have no past orders.</p>
+            )}
+          </section>
         </div>
 
         {/* Right Column: Order Summary */}
