@@ -26,10 +26,74 @@ import {
 } from "lucide-react"; // Assuming lucide-react is installed
 import Sidebar from "@/components/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar"; // Import the custom hook
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+} from "recharts";
+import { trpc } from "@/utils/trpc"; // Import trpc
 
 export default function Dashboard() {
   const { isSidebarOpen, toggleSidebar } = useSidebar(); // Use the custom hook
+  const [timeRange, setTimeRange] = useState("Year"); // State for time range
+  const [earningsData, setEarningsData] = useState<
+    { name: string; earnings: number }[]
+  >([]);
+
+  const { data: orders, isLoading } = trpc.order.getOrdersForSeller.useQuery(
+    {}
+  );
+
+  useEffect(() => {
+    if (orders) {
+      const monthlyEarnings: { [key: string]: number } = {};
+      orders.forEach((order) => {
+        const date = new Date(order.createdAt);
+        const month = date.toLocaleString("default", { month: "short" });
+        const year = date.getFullYear();
+        const key = `${month} ${year}`;
+        monthlyEarnings[key] = (monthlyEarnings[key] || 0) + order.totalPrice;
+      });
+
+      const formattedData = Object.keys(monthlyEarnings).map((key) => ({
+        name: key,
+        earnings: monthlyEarnings[key],
+      }));
+
+      setEarningsData(formattedData);
+    }
+  }, [orders]);
+
+  const data = useMemo(() => {
+    // For now, we'll just use the fetched monthly data for all views.
+    // In a real application, you would process the `orders` data to generate
+    // weekly, monthly, and yearly aggregates based on the `timeRange`.
+    switch (timeRange) {
+      case "Week":
+        // Placeholder for weekly data processing
+        return earningsData.slice(0, 7); // Example: last 7 entries
+      case "Month":
+        // Placeholder for monthly data processing
+        return earningsData.slice(0, 6); // Example: last 6 months
+      case "Year":
+      default:
+        return earningsData;
+    }
+  }, [timeRange, earningsData]);
+
+  const formatYAxis = (tickItem: number) => {
+    if (tickItem >= 1000) {
+      return `${tickItem / 1000}K`;
+    }
+    return String(tickItem); // Ensure the return type is always a string
+  };
 
   return (
     <div className="flex min-h-screen bg-[#202020] text-white">
@@ -113,24 +177,76 @@ export default function Dashboard() {
             </h3>
             <div className="flex justify-end space-x-2 mb-4">
               <Button
-                variant="ghost"
-                className="text-gray-400 hover:text-white"
+                variant={timeRange === "Week" ? "default" : "ghost"}
+                className={
+                  timeRange === "Week"
+                    ? "bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg px-4 py-2"
+                    : "text-gray-400 hover:text-white"
+                }
+                onClick={() => setTimeRange("Week")}
               >
                 Week
               </Button>
               <Button
-                variant="ghost"
-                className="text-gray-400 hover:text-white"
+                variant={timeRange === "Month" ? "default" : "ghost"}
+                className={
+                  timeRange === "Month"
+                    ? "bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg px-4 py-2"
+                    : "text-gray-400 hover:text-white"
+                }
+                onClick={() => setTimeRange("Month")}
               >
                 Month
               </Button>
-              <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg px-4 py-2">
+              <Button
+                variant={timeRange === "Year" ? "default" : "ghost"}
+                className={
+                  timeRange === "Year"
+                    ? "bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg px-4 py-2"
+                    : "text-gray-400 hover:text-white"
+                }
+                onClick={() => setTimeRange("Year")}
+              >
                 Year
               </Button>
             </div>
             {/* Placeholder for the graph */}
-            <div className="h-64 bg-[#3A3A3A] rounded-lg flex items-center justify-center text-gray-400">
-              [Graph Placeholder]
+            <div className="h-64 bg-[#3A3A3A] rounded-lg p-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={data}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="name" stroke="#888888" />
+                  <YAxis stroke="#888888" tickFormatter={formatYAxis} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#444444" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#2C2C2C",
+                      borderColor: "#444444",
+                      color: "#FFFFFF",
+                    }}
+                    itemStyle={{ color: "#FFFFFF" }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="earnings"
+                    stroke="#82ca9d"
+                    fillOpacity={1}
+                    fill="url(#colorPv)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </Card>
 
