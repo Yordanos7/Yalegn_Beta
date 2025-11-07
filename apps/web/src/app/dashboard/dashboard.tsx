@@ -24,6 +24,8 @@ import {
   TrendingUp,
   Star,
 } from "lucide-react"; // Assuming lucide-react is installed
+import Sidebar from "@/components/sidebar";
+import { useSidebar } from "@/hooks/use-sidebar"; // Import the custom hook
 import { useState, useMemo, useEffect } from "react";
 import {
   LineChart,
@@ -41,6 +43,7 @@ import { useSession } from "@/hooks/use-session"; // Import useSession
 import { skipToken } from "@tanstack/react-query"; // Import skipToken
 
 export default function Dashboard() {
+  const { isSidebarOpen, toggleSidebar } = useSidebar(); // Use the custom hook
   const [timeRange, setTimeRange] = useState("Year"); // State for time range
   const [earningsData, setEarningsData] = useState<
     { name: string; earnings: number }[]
@@ -261,8 +264,17 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
+      <Sidebar
+        currentPage="dashboard"
+        isSidebarOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+      />
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 bg-background flex flex-col lg:flex-row transition-all duration-300">
+      <main
+        className={`flex-1 p-4 md:p-8 bg-background flex flex-col lg:flex-row transition-all duration-300 ${
+          isSidebarOpen ? "md:ml-[200px]" : "md:ml-[60px]"
+        }`}
+      >
         <div className="flex-1">
           {/* Header */}
           <header className="flex flex-col sm:flex-row items-center justify-between mb-4 md:mb-8 bg-card p-4 rounded-lg">
