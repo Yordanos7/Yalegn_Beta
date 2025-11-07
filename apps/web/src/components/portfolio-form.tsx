@@ -29,7 +29,8 @@ const portfolioFormSchema = z.object({
   link: z
     .string()
     .url({ message: "Must be a valid URL." })
-    .min(1, { message: "Link is required." }),
+    .optional()
+    .or(z.literal("")), // Allow empty string for optional link
 });
 
 type PortfolioFormValues = z.infer<typeof portfolioFormSchema>;
@@ -58,7 +59,7 @@ export function PortfolioForm({
       : {
           title: "",
           description: "",
-          link: "",
+          link: undefined, // Set to undefined for optional field
         },
   });
 

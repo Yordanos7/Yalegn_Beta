@@ -12,7 +12,7 @@ const updateListingSchema = z.object({
   price: z.number().positive("Price must be a positive number").optional(),
   currency: z.enum(["ETB", "USD"]).optional(),
   deliveryDays: z.number().int().positive().optional(),
-  categoryId: z.string().optional(),
+  category: z.nativeEnum(CategoryEnum).optional().nullable(), // Changed from categoryId to category
   images: z.array(z.string()).optional(),
   videos: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
@@ -74,6 +74,7 @@ export const listingRouter = router({
               name: true,
               image: true,
               accountType: true,
+              location: true, // Include location
             },
           },
         },
@@ -100,6 +101,7 @@ export const listingRouter = router({
               name: true,
               image: true,
               accountType: true,
+              location: true, // Include location in getAll query
             },
           },
         },
@@ -172,6 +174,7 @@ export const listingRouter = router({
               name: true,
               image: true,
               accountType: true,
+              location: true, // Include location in getAll query
             },
           },
         },
@@ -218,7 +221,7 @@ export const listingRouter = router({
   update: protectedProcedure
     .input(updateListingSchema)
     .mutation(async ({ ctx: { prisma, user }, input }) => {
-      const { id, ...data } = input;
+      const { id, category, ...data } = input; // Extract category
       const userId = user!.id;
 
       const existingListing = await prisma.listing.findUnique({
@@ -236,6 +239,7 @@ export const listingRouter = router({
         where: { id },
         data: {
           ...data,
+          ...(category && { category: category }), // Update category
           ...(data.title && {
             slug: data.title
               .toLowerCase()

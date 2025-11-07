@@ -14,11 +14,13 @@ import {
 import { Search, ChevronDown, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { trpc } from "@/utils/trpc";
+import { CategoryEnum } from "@my-better-t-app/db/prisma/generated/enums"; // Import CategoryEnum
 
 interface Category {
   id: string;
   name: string;
   slug: string;
+  label: string; // Added label property
 }
 
 interface CategoriesResponse {
@@ -31,23 +33,23 @@ interface Listing {
   description: string;
   price: number;
   currency: "ETB" | "USD";
-  deliveryDays?: number;
-  category?: string; // Changed to string as CategoryEnum might not be available
+  deliveryDays: number | null; // Changed to number | null
+  category: CategoryEnum | null; // Changed to CategoryEnum | null
   images: string[];
-  videos?: string[];
+  videos: string[]; // Changed to string[]
   tags: string[];
   isPublished: boolean;
-  rating?: number;
-  reviewCount?: number;
+  rating: number | null; // Changed to number | null
+  reviewCount: number; // Changed to number
   provider: {
     id: string;
     name: string;
-    image?: string;
-    accountType: "INDIVIDUAL" | "ORGANIZATION";
-    location?: string;
+    image: string | null; // Changed to string | null
+    accountType: "INDIVIDUAL" | "ORGANIZATION" | null; // Changed to include null
+    location: string | null; // Changed to string | null
   };
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string; // Changed to string
+  updatedAt: string; // Changed to string
 }
 
 interface FilterProps {
@@ -94,7 +96,8 @@ export const MarketPlaceFilters: React.FC<FilterProps> = ({
   const dynamicDeliveryOptions = useMemo(() => {
     const uniqueDeliveryDays = new Set<number>();
     listings.forEach((listing) => {
-      if (listing.deliveryDays !== undefined) {
+      if (listing.deliveryDays !== null && listing.deliveryDays !== undefined) {
+        // Handle null
         uniqueDeliveryDays.add(listing.deliveryDays);
       }
     });
@@ -149,6 +152,7 @@ export const MarketPlaceFilters: React.FC<FilterProps> = ({
     if (estimatedDelivery !== null) {
       currentListings = currentListings.filter(
         (listing) =>
+          listing.deliveryDays !== null && // Handle null
           listing.deliveryDays !== undefined &&
           listing.deliveryDays <= estimatedDelivery
       );

@@ -10,11 +10,20 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireVerification: true, // Enable email verification
+    sendVerificationEmail: true, // Explicitly enable here as well
     onSignUp: async (user: { email: any; password: any; name: any }) => {
       console.log("onSignUp callback triggered:", user);
       // This is where you can add custom logic before the user is created
       // For now, we'll just log and return the user object
       return user;
+    },
+  },
+  email: {
+    sendVerificationEmail: true, // Enable email verification directly at the email level
+    provider: {
+      type: "mailersend", // Using MailerSend
+      apiKey: process.env.MAILERSEND_API_KEY!, // Ensure this env var is set
+      fromEmail: process.env.MAILERSEND_FROM_EMAIL!, // Ensure this env var is set
     },
   },
   session: {

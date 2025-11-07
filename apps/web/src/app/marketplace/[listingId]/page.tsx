@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { useSession } from "@/hooks/use-session"; // Import useSession
+import { ReviewForm } from "@/components/review-form"; // Import ReviewForm
+import { formatDistanceToNow } from "date-fns"; // For date formatting
 
 interface ListingDetailPageProps {
   params: {
@@ -60,11 +63,27 @@ interface RelatedListing {
   reviewCount: number; // Changed from number? to number
 }
 
+interface Review {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  by: {
+    id: string;
+    name: string;
+    image: string | null;
+  };
+  contractId: string | null;
+  listingId: string | null;
+  aboutId: string;
+}
+
 export default function ListingDetailPage() {
-  // Removed params from props
   const router = useRouter();
-  const params = useParams(); // Use useParams hook
-  const listingId = params.listingId as string; // Cast to string as useParams returns string | string[]
+  const params = useParams();
+  const listingId = params.listingId as string;
+  const { session } = useSession(); // Get session for authenticated user
+  const currentUserId = session?.user?.id;
 
   const {
     data: listingData,
@@ -92,6 +111,20 @@ export default function ListingDetailPage() {
       enabled: !!listingData && !!listingData.category, // Only fetch if listingData and category are available
     }
   );
+
+  const {
+    data: reviewsData,
+    isPending: isReviewsPending,
+    error: reviewsError,
+    refetch: refetchReviews, // Add refetch for reviews
+  } = trpc.review.getReviewsForListing.useQuery(
+    { listingId: listingId },
+    {
+      enabled: !!listingId,
+    }
+  );
+
+  const reviews = (reviewsData || []) as Review[];
 
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0); // this is for image/video carousel
   const [quantity, setQuantity] = useState(1); // Quantity state for purchase
@@ -141,6 +174,9 @@ export default function ListingDetailPage() {
     const videoExtensions = [".mp4", ".webm", ".ogg"];
     return videoExtensions.some((ext) => url.toLowerCase().endsWith(ext));
   };
+
+  const isProvider = currentUserId === listing.provider.id;
+  const hasReviewed = reviews.some((review) => review.by.id === currentUserId);
 
   console.log("Rendering listing:", listing);
   console.log("Listing images array:", listing.images);
@@ -310,7 +346,8 @@ export default function ListingDetailPage() {
                 />
               ))}
               <span className="text-sm text-muted-foreground ml-2">
-                ({listing.rating?.toFixed(1) || "N/A"})
+                ({listing.rating?.toFixed(1) || "N/A"}) (
+                {listing.reviewCount || 0} reviews)
               </span>
             </div>
 
@@ -369,7 +406,12 @@ export default function ListingDetailPage() {
               </Button>
             </div>
 
-            <Button className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold rounded-md px-6 py-2 flex items-center mb-2">
+            <Button
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold rounded-md px-6 py-2 flex items-center mb-2"
+              onClick={() =>
+                router.push(`/marketplace/${listingId}?review=true`)
+              } // Navigate to review prompt
+            >
               Buy Now
             </Button>
             <Button variant="outline" className="w-full flex items-center">
@@ -378,34 +420,103 @@ export default function ListingDetailPage() {
           </Card>
 
           {/* Customer Reviews Summary */}
-          {listing.reviewCount !== undefined && listing.reviewCount > 0 && (
-            <Card className="p-6 bg-card rounded-lg shadow-sm">
-              <CardTitle className="text-xl font-semibold mb-4">
-                Customer Reviews
-              </CardTitle>
-              <div className="flex items-center mb-2">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-5 w-5 ${
-                      i < Math.floor(listing.rating || 0)
-                        ? "text-yellow-500 fill-yellow-500"
-                        : "text-muted-foreground"
-                    }`}
-                  />
-                ))}
-                <span className="text-lg font-bold ml-2">
-                  {listing.rating?.toFixed(1) || "N/A"}
-                </span>
-                <span className="text-sm text-muted-foreground ml-2">
-                  ({listing.reviewCount} reviews)
-                </span>
+          <Card className="p-6 bg-card rounded-lg shadow-sm">
+            <CardTitle className="text-xl font-semibold mb-4">
+              Customer Reviews
+            </CardTitle>
+            {isReviewsPending ? (
+              <p className="text-muted-foreground">Loading reviews...</p>
+            ) : reviewsError ? (
+              <p className="text-red-500">
+                Error loading reviews: {reviewsError.message}
+              </p>
+            ) : reviews.length > 0 ? (
+              <>
+                <div className="flex items-center mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-5 w-5 ${
+                        i < Math.floor(listing.rating || 0)
+                          ? "text-yellow-500 fill-yellow-500"
+                          : "text-muted-foreground"
+                      }`}
+                    />
+                  ))}
+                  <span className="text-lg font-bold ml-2">
+                    {listing.rating?.toFixed(1) || "N/A"}
+                  </span>
+                  <span className="text-sm text-muted-foreground ml-2">
+                    ({listing.reviewCount || 0} reviews)
+                  </span>
+                </div>
+                <div className="space-y-4 mt-4">
+                  {reviews.map((review) => (
+                    <div
+                      key={review.id}
+                      className="border-t border-border pt-4"
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage
+                            src={review.by.image || "/placeholder-avatar.jpg"}
+                            alt={review.by.name}
+                          />
+                          <AvatarFallback>{review.by.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold text-foreground">
+                            {review.by.name}
+                          </p>
+                          <div className="flex items-center text-xs text-muted-foreground">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-3 w-3 ${
+                                  i < review.rating
+                                    ? "text-yellow-500 fill-yellow-500"
+                                    : "text-muted-foreground"
+                                }`}
+                              />
+                            ))}
+                            <span className="ml-1">
+                              {review.rating.toFixed(1)}
+                            </span>
+                            <span className="ml-2">
+                              {formatDistanceToNow(new Date(review.createdAt), {
+                                addSuffix: true,
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {review.comment && (
+                        <p className="text-sm text-muted-foreground">
+                          {review.comment}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-muted-foreground">
+                No reviews yet. Be the first to review!
+              </p>
+            )}
+
+            {currentUserId && !isProvider && !hasReviewed && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-3">Leave a Review</h3>
+                <ReviewForm
+                  aboutId={listing.provider.id}
+                  listingId={listing.id}
+                  onReviewSubmitted={refetchReviews}
+                  onCancel={() => {}} // Add onCancel prop
+                />
               </div>
-              <Button variant="link" className="p-0 h-auto text-sm">
-                View All Reviews
-              </Button>
-            </Card>
-          )}
+            )}
+          </Card>
 
           {/* Seller Information */}
           <Card className="p-6 bg-card rounded-lg shadow-sm">

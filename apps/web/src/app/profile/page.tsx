@@ -48,17 +48,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { VerificationStatus } from "@my-better-t-app/db/prisma/generated/enums"; // Import VerificationStatus
+import { formatDistanceToNow } from "date-fns"; // Import date-fns for time formatting
+import { ReviewForm } from "@/components/review-form"; // Import ReviewForm
 // Removed: import type { Session } from "better-auth"; // No longer needed directly
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
-type UserProfile = RouterOutput["user"]["getPublicUserProfile"] & {
+type UserProfile = RouterOutput["user"]["getUserProfile"] & {
   verification?: {
     status: VerificationStatus;
     idFrontImage?: string | null;
     idBackImage?: string | null;
   } | null;
-  emailVerified?: boolean; // Made optional
+  emailVerified?: boolean | null; // Changed to boolean | null to match schema
 };
+
+type Review = RouterOutput["review"]["getReviewsAboutUser"][number]; // Define Review type
 
 // Define a custom session type that matches what useSession returns
 interface CustomSessionWithUser {
@@ -100,12 +104,16 @@ type Listing = RouterOutput["listing"]["getByUserId"][number]; // Use inferred t
 export default function UserProfilePage() {
   const router = useRouter();
   const { session, isLoading: isSessionLoading } = useSession() as any; // Temporarily use 'any' to unblock
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isListingFormOpen, setIsListingFormOpen] = useState(false); // Renamed to avoid conflict
+  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false); // State for review form dialog
   const [isFreelancerPublic, setIsFreelancerPublic] = useState(false); // State for freelancer public status
 
   const userId = session?.user?.id;
 
   const createListingMutation = trpc.listing.create.useMutation(); // Initialize mutation
+  const updateListingMutation = trpc.listing.update.useMutation(); // Initialize update mutation
+  const deleteListingMutation = trpc.listing.delete.useMutation(); // Initialize delete mutation
+
   const deletePortfolioMutation = trpc.user.deletePortfolioItem.useMutation({
     onSuccess: () => {
       refetchUserProfile();
@@ -119,6 +127,7 @@ export default function UserProfilePage() {
     trpc.user.sendVerificationEmail.useMutation({
       onSuccess: () => {
         toast.success("Verification email sent! Please check your inbox.");
+        refetchUserProfile(); // Refetch user profile to update emailVerified status
       },
       onError: (error: { message: string }) => {
         toast.error("Failed to send verification email.", {
@@ -132,7 +141,7 @@ export default function UserProfilePage() {
     isLoading: isProfileLoading,
     error: profileError,
     refetch: refetchUserProfile, // Add refetch to update profile data
-  } = trpc.user.getPublicUserProfile.useQuery(
+  } = trpc.user.getUserProfile.useQuery(
     { userId: userId! },
     {
       enabled: !!userId,
@@ -146,6 +155,18 @@ export default function UserProfilePage() {
     refetch: refetchListings,
   } = trpc.listing.getByUserId.useQuery(
     { userId: userId || "" },
+    {
+      enabled: !!userId,
+    }
+  );
+
+  const {
+    data: reviewsData,
+    isLoading: isReviewsLoading,
+    error: reviewsError,
+    refetch: refetchReviews,
+  } = trpc.review.getReviewsAboutUser.useQuery(
+    { userId: userId! },
     {
       enabled: !!userId,
     }
@@ -171,7 +192,12 @@ export default function UserProfilePage() {
       },
     });
 
-  if (isSessionLoading || isProfileLoading || isListingsLoading) {
+  if (
+    isSessionLoading ||
+    isProfileLoading ||
+    isListingsLoading ||
+    isReviewsLoading
+  ) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center py-12 bg-background text-foreground">
         <Loader className="animate-spin" size={48} />
@@ -192,26 +218,40 @@ export default function UserProfilePage() {
     );
   }
 
-  if (!session?.user || !userProfile) {
+  if (profileError || listingsError || reviewsError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center py-12 bg-background text-destructive">
+        <h1 className="text-2xl font-bold">Error</h1>
+        <p className="mt-4">
+          Failed to load profile:{" "}
+          {(profileError as any)?.message ||
+            (listingsError as any)?.message ||
+            (reviewsError as any)?.message ||
+            "An unknown error occurred."}
+        </p>
+      </div>
+    );
+  }
+
+  // Ensure userProfile is defined before proceeding
+  if (!userProfile) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center py-12 bg-background text-destructive">
         <h1 className="text-2xl font-bold">Profile Not Found</h1>
-        <p className="mt-4">
-          The user profile you are looking for does not exist or you are not
-          logged in.
-        </p>
+        <p className="mt-4">The user profile could not be loaded.</p>
       </div>
     );
   }
 
   const isOwnProfile = session?.user?.id === userId;
   const listings = listingsData as Listing[];
+  const reviews = reviewsData as Review[];
 
   const handleCreateListing = async (data: any) => {
     try {
       await createListingMutation.mutateAsync(data);
       toast.success("Listing created successfully!");
-      setIsFormOpen(false); // Close the form
+      setIsListingFormOpen(false); // Close the form
       refetchListings(); // Refetch listings to show the new one
     } catch (err: any) {
       toast.error("Failed to create listing.", {
@@ -219,6 +259,12 @@ export default function UserProfilePage() {
       });
       console.error("Error creating listing:", err);
     }
+  };
+
+  const handleReviewSuccess = () => {
+    setIsReviewFormOpen(false);
+    refetchReviews(); // Refetch reviews to show the new one
+    refetchUserProfile(); // Refetch user profile to update average rating
   };
 
   const calculateProfileCompletion = () => {
@@ -446,7 +492,7 @@ export default function UserProfilePage() {
                   />
                 </DialogContent>
               </Dialog>
-              <Link href={`/profile/${userId}`}>
+              <Link href={`/profile/${userId!}`} passHref>
                 <Button
                   variant="outline"
                   className="font-semibold rounded-md px-6 py-2 flex items-center"
@@ -573,13 +619,89 @@ export default function UserProfilePage() {
                     }`}
                   />
                 ))}
+                <span className="ml-2 text-lg font-bold text-foreground">
+                  {userProfile.profile?.averageRating?.toFixed(1) || "0.0"}
+                </span>
+                <span className="ml-1 text-sm">
+                  ({reviews.length}{" "}
+                  {reviews.length === 1 ? "review" : "reviews"})
+                </span>
               </div>
-              <p className="mb-4">
-                Deliver your first project to collect reviews
-              </p>
-              <Button variant="outline" className="font-semibold">
-                View all reviews
-              </Button>
+
+              {reviews.length > 0 ? (
+                <div className="space-y-6">
+                  {reviews.map((review) => (
+                    <div
+                      key={review.id}
+                      className="border-b pb-4 last:border-b-0 last:pb-0"
+                    >
+                      <div className="flex items-center mb-2">
+                        <Avatar className="h-8 w-8 mr-3">
+                          <AvatarImage
+                            src={review.by.image || "/placeholder-avatar.jpg"}
+                          />
+                          <AvatarFallback>
+                            {review.by.name?.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold text-foreground">
+                            {review.by.name}
+                          </p>
+                          <div className="flex items-center text-yellow-500 text-sm">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${
+                                  i < review.rating
+                                    ? "fill-yellow-500"
+                                    : "text-muted-foreground"
+                                }`}
+                              />
+                            ))}
+                            <span className="ml-2 text-muted-foreground">
+                              {formatDistanceToNow(new Date(review.createdAt), {
+                                addSuffix: true,
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {review.comment}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mb-4">
+                  No reviews yet. Deliver your first project to collect reviews!
+                </p>
+              )}
+
+              {/* Add a "Leave a Review" button if it's not the user's own profile */}
+              {!isOwnProfile && (
+                <Dialog
+                  open={isReviewFormOpen}
+                  onOpenChange={setIsReviewFormOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="font-semibold mt-4">
+                      Leave a Review
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-card text-foreground p-6 rounded-lg max-w-md">
+                    <DialogTitle className="text-2xl font-bold mb-4">
+                      Leave a Review
+                    </DialogTitle>
+                    <ReviewForm
+                      aboutId={userProfile.id}
+                      onReviewSubmitted={handleReviewSuccess}
+                      onCancel={() => setIsReviewFormOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -789,17 +911,30 @@ export default function UserProfilePage() {
                               <ListingForm
                                 initialData={listing}
                                 onSubmit={async (data) => {
-                                  await trpc.listing.update.mutateAsync({
-                                    id: listing.id,
-                                    ...data,
-                                  });
-                                  refetchListings();
-                                  toast.success(
-                                    "Listing updated successfully!"
+                                  updateListingMutation.mutate(
+                                    {
+                                      id: listing.id,
+                                      ...data,
+                                    },
+                                    {
+                                      onSuccess: () => {
+                                        refetchListings();
+                                        toast.success(
+                                          "Listing updated successfully!"
+                                        );
+                                      },
+                                      onError: (error: any) => {
+                                        // Explicitly type error
+                                        toast.error(
+                                          "Failed to update listing: " +
+                                            error.message
+                                        );
+                                      },
+                                    }
                                   );
                                 }}
                                 onCancel={() => {}}
-                                isSubmitting={false}
+                                isSubmitting={updateListingMutation.isPending} // Pass isSubmitting prop
                                 // Add a key to force re-render when initialData changes
                                 key={listing.id}
                               />
@@ -809,12 +944,28 @@ export default function UserProfilePage() {
                             variant="destructive"
                             size="sm"
                             onClick={async () => {
-                              await trpc.listing.delete.mutateAsync({
-                                id: listing.id,
-                              });
-                              refetchListings();
-                              toast.success("Listing deleted successfully!");
+                              deleteListingMutation.mutate(
+                                {
+                                  id: listing.id,
+                                },
+                                {
+                                  onSuccess: () => {
+                                    refetchListings();
+                                    toast.success(
+                                      "Listing deleted successfully!"
+                                    );
+                                  },
+                                  onError: (error: any) => {
+                                    // Explicitly type error
+                                    toast.error(
+                                      "Failed to delete listing: " +
+                                        error.message
+                                    );
+                                  },
+                                }
+                              );
                             }}
+                            disabled={deleteListingMutation.isPending}
                             // Add a key to force re-render when initialData changes
                             key={`delete-${listing.id}`}
                           >
@@ -833,7 +984,10 @@ export default function UserProfilePage() {
               ) : (
                 <p>No services offered yet.</p>
               )}
-              <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+              <Dialog
+                open={isListingFormOpen}
+                onOpenChange={setIsListingFormOpen}
+              >
                 <DialogTrigger asChild>
                   <Button className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-4 py-2 flex items-center mt-4 w-full">
                     <Plus className="mr-2" size={16} /> Post New Product/Service
@@ -842,7 +996,7 @@ export default function UserProfilePage() {
                 <DialogContent className="bg-card text-foreground p-6 rounded-lg max-w-3xl overflow-y-auto max-h-[99vh] ">
                   <ListingForm
                     onSubmit={handleCreateListing}
-                    onCancel={() => setIsFormOpen(false)}
+                    onCancel={() => setIsListingFormOpen(false)}
                     isSubmitting={createListingMutation.isPending} // Pass isSubmitting prop
                     key="create-listing-form" // Add a key to the create form
                   />

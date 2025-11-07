@@ -25,9 +25,34 @@ import { MarketPlaceFilters } from "@/components/MarketPlaceFilters";
 import type { RouterOutputs } from "@my-better-t-app/api/routers/types"; // Use type-only import
 import { useSidebar } from "@/hooks/use-sidebar"; // Import the custom hook
 
-type Listing = RouterOutputs["listing"]["getAll"]["listings"][number];
+import { CategoryEnum } from "@my-better-t-app/db/prisma/generated/enums";
 
-const ListingCard = ({ listing }: { listing: Listing }) => {
+interface MarketplaceListing {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  currency: "ETB" | "USD";
+  deliveryDays: number | null;
+  category: CategoryEnum | null;
+  images: string[];
+  videos: string[];
+  tags: string[];
+  isPublished: boolean;
+  rating: number | null;
+  reviewCount: number;
+  createdAt: string;
+  updatedAt: string;
+  provider: {
+    id: string;
+    name: string;
+    image: string | null;
+    accountType: "INDIVIDUAL" | "ORGANIZATION" | null;
+    location: string | null; // Added location
+  };
+}
+
+const ListingCard = ({ listing }: { listing: MarketplaceListing }) => {
   const isVideo = (url: string) => {
     const videoExtensions = [".mp4", ".webm", ".ogg"];
     return videoExtensions.some((ext) => url.toLowerCase().endsWith(ext));
@@ -95,14 +120,15 @@ const ListingCard = ({ listing }: { listing: Listing }) => {
               <Star
                 key={i}
                 className={`h-4 w-4 ${
-                  i < Math.floor(listing.rating || 0)
+                  i < Math.round(listing.rating || 0)
                     ? "text-yellow-400 fill-yellow-400"
                     : "text-gray-400"
                 }`}
               />
             ))}
             <span className="text-xs ml-1">
-              ({listing.rating?.toFixed(1) || "N/A"})
+              ({listing.rating?.toFixed(1) || "0.0"}) (
+              {listing.reviewCount || 0} reviews)
             </span>
           </div>
           <p className="text-lg font-semibold mt-2">
@@ -121,11 +147,13 @@ export default function MarketplacePage() {
     error,
   } = trpc.listing.getAll.useQuery();
   const { isSidebarOpen, toggleSidebar } = useSidebar();
-  const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
+  const [filteredListings, setFilteredListings] = useState<
+    MarketplaceListing[]
+  >([]);
 
   useEffect(() => {
     if (listingsData?.listings) {
-      setFilteredListings(listingsData.listings as Listing[]);
+      setFilteredListings(listingsData.listings as MarketplaceListing[]);
     }
   }, [listingsData]);
 
@@ -214,7 +242,7 @@ export default function MarketplacePage() {
         <div className="flex flex-1 space-x-8">
           {/* Product Grid */}
           <div className="flex-1 grid grid-cols-3 gap-6">
-            {filteredListings.map((listing: Listing) => (
+            {filteredListings.map((listing: MarketplaceListing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>

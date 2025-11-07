@@ -17,8 +17,9 @@ import {
 } from "@my-better-t-app/db/prisma/generated/enums"; // Corrected import path for enums
 
 export const userRouter = router({
-  getUserProfile: protectedProcedure.query(
-    async ({ ctx: { user, prisma } }) => {
+  getUserProfile: protectedProcedure
+    .input(z.object({ userId: z.string() })) // Add input schema for userId
+    .query(async ({ ctx: { user, prisma }, input }) => {
       if (!user?.id) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
@@ -27,11 +28,12 @@ export const userRouter = router({
       }
 
       const userData = await prisma.user.findUnique({
-        where: { id: user.id },
+        where: { id: input.userId }, // Use input.userId
         select: {
           id: true,
           name: true,
           email: true,
+          emailVerified: true, // Added emailVerified
           image: true,
           bio: true,
           location: true,
@@ -91,8 +93,7 @@ export const userRouter = router({
       }
 
       return userData;
-    }
-  ),
+    }),
 
   uploadProfileImage: protectedProcedure
     .input(z.object({ imageData: z.string() })) // Accept base64 image data
@@ -314,7 +315,7 @@ export const userRouter = router({
         userId: z.string(),
         title: z.string().min(1),
         description: z.string().optional(), // Added description
-        link: z.string().url().min(1),
+        link: z.string().url().optional().or(z.literal("")), // Made link optional
       })
     )
     .mutation(async ({ ctx: { prisma, user }, input }) => {
@@ -364,7 +365,7 @@ export const userRouter = router({
         userId: z.string(),
         title: z.string().min(1).optional(),
         description: z.string().optional(),
-        link: z.string().url().min(1).optional(),
+        link: z.string().url().optional().or(z.literal("")), // Made link optional
       })
     )
     .mutation(async ({ ctx: { prisma, user }, input }) => {
@@ -493,6 +494,7 @@ export const userRouter = router({
           id: true,
           name: true,
           email: true,
+          emailVerified: true, // Added emailVerified
           image: true,
           bio: true,
           location: true,
@@ -978,6 +980,33 @@ export const userRouter = router({
         });
       }
     }),
+
+  sendVerificationEmail: protectedProcedure.mutation(
+    async ({ ctx: { user, req, res } }) => {
+      if (!user?.id || !user.email) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated or email not found",
+        });
+      }
+
+      try {
+        await auth.api.sendVerificationEmail({
+          body: {
+            email: user.email,
+          },
+          headers: fromNodeHeaders(req.headers),
+        });
+        return { message: "Verification email sent successfully!" };
+      } catch (error) {
+        console.error("Error sending verification email:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to send verification email.",
+        });
+      }
+    }
+  ),
 
   getPendingVerifications: protectedProcedure.query(
     async ({ ctx: { user, prisma } }) => {
