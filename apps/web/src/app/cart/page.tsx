@@ -48,7 +48,10 @@ export default function CartPage() {
   const [accountOwner, setAccountOwner] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
   const [paymentSenderLink, setPaymentSenderLink] = useState(""); // New state for payment sender link
-  const [timeLeft, setTimeLeft] = useState(3 * 24 * 60 * 60); // 3 days in seconds
+  const [paymentApprovalTimeLeft, setPaymentApprovalTimeLeft] = useState<
+    number | null
+  >(null);
+  const [isSellerApproved, setIsSellerApproved] = useState(false);
   const createOrderMutation = trpc.order.createOrder.useMutation();
   const confirmDeliveryMutation =
     trpc.order.confirmDeliveryByBuyer.useMutation(); // New mutation
@@ -75,13 +78,44 @@ export default function CartPage() {
     }
   );
 
-  // Countdown effect
+  // Effect to calculate and manage payment approval time left
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prevTime) => (prevTime > 0 ? prevTime - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+    if (buyerOrders && buyerOrders.length > 0) {
+      const pendingPaymentOrder = buyerOrders.find(
+        (order) => order.orderStatus === OrderStatus.PENDING_PAYMENT
+      );
+
+      if (pendingPaymentOrder) {
+        setIsSellerApproved(false);
+        const createdAt = new Date(pendingPaymentOrder.createdAt);
+        const threeDaysInSeconds = 3 * 24 * 60 * 60;
+        const approvalDeadline =
+          createdAt.getTime() / 1000 + threeDaysInSeconds; // Deadline in seconds since epoch
+        const currentTime = Date.now() / 1000; // Current time in seconds since epoch
+        let remainingTime = Math.max(0, approvalDeadline - currentTime);
+
+        setPaymentApprovalTimeLeft(remainingTime);
+
+        const timer = setInterval(() => {
+          remainingTime = Math.max(0, remainingTime - 1);
+          setPaymentApprovalTimeLeft(remainingTime);
+          if (remainingTime <= 0) {
+            clearInterval(timer);
+          }
+        }, 1000);
+
+        return () => clearInterval(timer);
+      } else {
+        // No pending payment order, or all orders are approved/processed
+        setIsSellerApproved(true);
+        setPaymentApprovalTimeLeft(null);
+      }
+    } else {
+      // No orders at all
+      setIsSellerApproved(false);
+      setPaymentApprovalTimeLeft(null);
+    }
+  }, [buyerOrders]);
 
   // Refetch buyer orders when the component mounts or session changes
   useEffect(() => {
@@ -90,8 +124,8 @@ export default function CartPage() {
     }
   }, [session?.user?.id, refetchBuyerOrders]);
 
-  const formatTime = (seconds: number) => {
-    if (seconds <= 0) return "Contact support";
+  const formatTime = (seconds: number | null) => {
+    if (seconds === null || seconds <= 0) return "Contact support";
     const days = Math.floor(seconds / (24 * 60 * 60));
     const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
     const minutes = Math.floor((seconds % (60 * 60)) / 60);
@@ -525,22 +559,36 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* Countdown Timer */}
+          {/* Payment Approval Status / Countdown */}
           <div className="mt-8 p-4 border rounded-md shadow-sm text-center">
             <h3 className="text-lg font-semibold mb-2">
-              Payment Approval Time Left
+              Payment Approval Status
             </h3>
-            <div className="text-2xl font-bold text-[#E0B44B] mb-2">
-              {formatTime(timeLeft)}
-            </div>
-            {timeLeft > 0 ? (
-              <Progress
-                value={(timeLeft / (3 * 24 * 60 * 60)) * 100}
-                className="w-full"
-              />
+            {isSellerApproved ? (
+              <div className="text-lg font-bold text-green-600 mb-2">
+                Seller Approved!
+              </div>
+            ) : paymentApprovalTimeLeft !== null &&
+              paymentApprovalTimeLeft > 0 ? (
+              <>
+                <div className="text-2xl font-bold text-[#E0B44B] mb-2">
+                  {formatTime(paymentApprovalTimeLeft)}
+                </div>
+                <Progress
+                  value={(paymentApprovalTimeLeft / (3 * 24 * 60 * 60)) * 100}
+                  className="w-full"
+                />
+              </>
             ) : (
               <p className="text-red-500 font-semibold">
-                Please contact support regarding your payment.
+                Payment approval time expired. Please{" "}
+                <Link
+                  href={"/support" as any}
+                  className="text-blue-600 hover:underline"
+                >
+                  contact Yalegn Team support
+                </Link>
+                .
               </p>
             )}
           </div>

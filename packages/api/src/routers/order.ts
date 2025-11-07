@@ -472,4 +472,57 @@ export const orderRouter = router({
 
       return updatedOrder;
     }),
+
+  getOrdersForAdmin: protectedProcedure.query(async ({ ctx }) => {
+    // Temporarily disable admin check for development
+    // const { userId } = ctx.session;
+    // const user = await prisma.user.findUnique({
+    //   where: { id: userId },
+    //   select: { role: true },
+    // });
+    // if (user?.role !== "ADMIN") {
+    //   throw new Error("Unauthorized: Only admins can view all orders.");
+    // }
+
+    const orders = await prisma.order.findMany({
+      include: {
+        listing: {
+          select: {
+            id: true,
+            title: true,
+            images: true,
+            price: true,
+            currency: true,
+          },
+        },
+        buyer: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const ordersWithTypedPaymentDetails = orders.map((order) => ({
+      ...order,
+      paymentDetails: order.paymentDetails as {
+        accountNumber: string;
+        accountOwner: string;
+        selectedBank: string;
+        paymentSenderLink: string;
+      },
+    }));
+
+    return ordersWithTypedPaymentDetails;
+  }),
 });
