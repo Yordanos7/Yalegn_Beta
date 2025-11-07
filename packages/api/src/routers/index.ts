@@ -7,6 +7,7 @@ import { jobRouter } from "./job";
 import { conversationRouter } from "./conversation";
 import { messageRouter } from "./message";
 import { reviewRouter } from "./review"; // Import the new review router
+import { orderRouter } from "./order";
 
 export const appRouter = router({
   user: userRouter,
@@ -17,5 +18,6 @@ export const appRouter = router({
   conversation: conversationRouter,
   message: messageRouter,
   review: reviewRouter, // Add the new review router
+  order: orderRouter,
 });
 export type AppRouter = typeof appRouter;

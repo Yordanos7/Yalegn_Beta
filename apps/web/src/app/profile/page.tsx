@@ -41,7 +41,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useSession } from "@/hooks/use-session";
 import { trpc } from "@/utils/trpc";
-import type { AppRouter } from "@my-better-t-app/api/src/routers/index"; // Corrected import path
+import type { AppRouter } from "@my-better-t-app/api"; // Corrected import path
 import type { inferRouterOutputs } from "@trpc/server";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -50,7 +50,7 @@ import { Badge } from "@/components/ui/badge";
 import { VerificationStatus } from "@my-better-t-app/db/prisma/generated/enums"; // Import VerificationStatus
 import { formatDistanceToNow } from "date-fns"; // Import date-fns for time formatting
 import { ReviewForm } from "@/components/review-form"; // Import ReviewForm
-// Removed: import type { Session } from "better-auth"; // No longer needed directly
+import { renderStars } from "@/lib/utils"; // Import renderStars utility
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type UserProfile = RouterOutput["user"]["getUserProfile"] & {
@@ -488,11 +488,11 @@ export default function UserProfilePage() {
                       refetchUserProfile(); // Refetch profile to ensure UI is consistent with new image
                       // Optionally refetch listings if profile changes affect them
                     }}
-                    onCancel={() => {}} // Dialog handles closing
+                    onCancel={() => {}}
                   />
                 </DialogContent>
               </Dialog>
-              <Link href={`/profile/${userId!}`} passHref>
+              <Link href={{ pathname: `/profile/${userId!}` }} passHref>
                 <Button
                   variant="outline"
                   className="font-semibold rounded-md px-6 py-2 flex items-center"
@@ -609,16 +609,12 @@ export default function UserProfilePage() {
             </CardHeader>
             <CardContent className="p-0 text-muted-foreground">
               <div className="flex items-center text-yellow-500 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-6 w-6 ${
-                      i < Math.floor(userProfile.profile?.averageRating || 0)
-                        ? "fill-yellow-500"
-                        : "text-muted-foreground"
-                    }`}
-                  />
-                ))}
+                {renderStars({
+                  rating: userProfile.profile?.averageRating,
+                  starClassName: "h-6 w-6",
+                  fillClassName: "fill-yellow-500",
+                  emptyClassName: "text-muted-foreground",
+                })}
                 <span className="ml-2 text-lg font-bold text-foreground">
                   {userProfile.profile?.averageRating?.toFixed(1) || "0.0"}
                 </span>
@@ -649,16 +645,12 @@ export default function UserProfilePage() {
                             {review.by.name}
                           </p>
                           <div className="flex items-center text-yellow-500 text-sm">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < review.rating
-                                    ? "fill-yellow-500"
-                                    : "text-muted-foreground"
-                                }`}
-                              />
-                            ))}
+                            {renderStars({
+                              rating: review.rating,
+                              starClassName: "h-4 w-4",
+                              fillClassName: "fill-yellow-500",
+                              emptyClassName: "text-muted-foreground",
+                            })}
                             <span className="ml-2 text-muted-foreground">
                               {formatDistanceToNow(new Date(review.createdAt), {
                                 addSuffix: true,

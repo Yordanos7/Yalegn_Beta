@@ -57,7 +57,7 @@ export default function Sidebar({
     { href: "/applications", icon: Briefcase, label: "Applications / Jobs" },
     { href: "/analytics", icon: BarChart, label: "Analytics" },
     { href: "/settings", icon: Settings, label: "Settings" },
-    { href: "/help-support", icon: HelpCircle, label: "Help / Support" },
+    { href: "/support", icon: HelpCircle, label: "Help / Support" },
     { href: "/logout", icon: LogOut, label: "Logout" },
   ];
 
@@ -207,7 +207,7 @@ export default function Sidebar({
                   }`}
                 >
                   <Link
-                    href={item.href}
+                    href={item.href as any}
                     className={`flex items-center ${
                       isActive
                         ? "text-white font-semibold"
@@ -238,7 +238,7 @@ export default function Sidebar({
                   }`}
                 >
                   <Link
-                    href={item.href}
+                    href={item.href as any}
                     className={`flex items-center ${
                       isActive
                         ? "text-white font-semibold"

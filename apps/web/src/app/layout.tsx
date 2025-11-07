@@ -4,6 +4,7 @@ import "../index.css";
 import Providers from "@/components/providers";
 import Header from "@/components/header";
 import { Toaster } from "@/components/ui/sonner"; // Import Toaster
+import { CartProvider } from "@/context/CartContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,11 +22,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <Providers>
-          <div className="grid grid-rows-[auto_1fr] h-svh">
-            <Header />
-            <main className="pt-[112px] bg-background">{children}</main>
-          </div>
-          <Toaster /> {/* Add Toaster component here */}
+          <CartProvider>
+            <div className="grid grid-rows-[auto_1fr] h-svh">
+              <Header />
+              <main className="pt-[112px] bg-background">{children}</main>
+            </div>
+            <Toaster /> {/* Add Toaster component here */}
+          </CartProvider>
         </Providers>
       </body>
     </html>

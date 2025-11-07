@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Star } from "lucide-react"; // Import Star icon
+import React from "react"; // Import React for JSX
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -33,13 +34,15 @@ export function renderStars({
     } else if (roundedRating >= i - 0.5) {
       // Half star
       stars.push(
-        <Star
-          key={i}
-          className={`${starClassName} ${fillClassName}`}
-          style={{
-            clipPath: "polygon(0 0, 50% 0, 50% 100%, 0 100%)", // Clip to show half star
-          }}
-        />
+        <div key={i} className={`relative inline-block ${starClassName}`}>
+          <Star className={`${starClassName} ${emptyClassName}`} />
+          <div
+            className="absolute top-0 left-0 overflow-hidden"
+            style={{ width: "50%" }}
+          >
+            <Star className={`${starClassName} ${fillClassName}`} />
+          </div>
+        </div>
       );
     } else {
       // Empty star

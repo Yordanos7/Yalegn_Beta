@@ -22,6 +22,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@db/*": ["../packages/db/*"],
+      "@repo/db/generated/*": ["../packages/db/prisma/generated/*"], // Explicitly add path for generated enums
       "@my-better-t-app/api": ["../packages/api/src"]
     }
   },

@@ -17,10 +17,20 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useSession } from "@/hooks/use-session"; // Import useSession
 import { ReviewForm } from "@/components/review-form"; // Import ReviewForm
 import { formatDistanceToNow } from "date-fns"; // For date formatting
+import { useCart } from "@/context/CartContext"; // Import useCart
+import { toast } from "sonner"; // Import toast for notifications
+import {
+  OrderStatus,
+  Currency,
+} from "@my-better-t-app/db/prisma/generated/enums"; // Import OrderStatus and Currency enum
+import { Input } from "@/components/ui/input"; // Import Input for file upload
+import { Label } from "@/components/ui/label"; // Import Label for file upload
+// UploadButton has been removed, using standard input for URL
+import { CheckCircle, XCircle } from "lucide-react"; // Import icons for status
 
 interface ListingDetailPageProps {
   params: {
@@ -51,6 +61,40 @@ interface Listing {
   };
   createdAt: string; // Changed from Date to string
   updatedAt: string; // Changed from Date to string
+}
+
+interface OrderWithDetails {
+  id: string;
+  buyerId: string;
+  listingId: string;
+  sellerId: string;
+  quantity: number;
+  totalPrice: number;
+  currency: Currency;
+  paymentDetails: {
+    accountNumber: string;
+    accountOwner: string;
+    selectedBank: string;
+    paymentSenderLink: string;
+  };
+  orderStatus: OrderStatus;
+  deliveryProofUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  listing: {
+    id: string;
+    title: string;
+    images: string[];
+    price: number;
+    currency: Currency;
+  };
+  buyer: {
+    id: string;
+    name: string;
+    image: string | null;
+    email: string | null; // Changed to string | null
+    phone: string | null; // Changed to string | null
+  };
 }
 
 interface RelatedListing {
@@ -96,6 +140,50 @@ export default function ListingDetailPage() {
     }
   );
 
+  // Fetch orders for this listing if the current user is the seller
+  const {
+    data: ordersForListing,
+    isPending: isOrdersPending,
+    error: ordersError,
+    refetch: refetchOrders,
+  } = trpc.order.getOrdersForSeller.useQuery(
+    { listingId: listingId }, // Pass listingId as input
+    {
+      enabled: !!listingData && currentUserId === listingData.provider.id,
+    }
+  );
+
+  const sellerOrders = ordersForListing || [];
+
+  const uploadDeliveryProofMutation =
+    trpc.order.uploadDeliveryProof.useMutation();
+
+  const [deliveryProofUrlInput, setDeliveryProofUrlInput] =
+    useState<string>("");
+
+  const handleDeliveryProofUpload = async (orderId: string) => {
+    if (!deliveryProofUrlInput) {
+      toast.error("Please enter a delivery proof URL.");
+      return;
+    }
+
+    try {
+      await uploadDeliveryProofMutation.mutateAsync({
+        orderId,
+        deliveryProofUrl: deliveryProofUrlInput,
+      });
+      toast.success("Delivery proof uploaded successfully!");
+      setDeliveryProofUrlInput(""); // Clear the input
+      refetchOrders(); // Refetch orders to update status
+    } catch (err: any) {
+      console.error("Error uploading delivery proof:", err);
+      toast.error(
+        `Failed to upload delivery proof: ${err.message || "Unknown error"}`
+      );
+    }
+  };
+
+  // Use listingData directly after the initial fetch
   const listing = listingData as Listing;
 
   const {
@@ -128,12 +216,30 @@ export default function ListingDetailPage() {
 
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0); // this is for image/video carousel
   const [quantity, setQuantity] = useState(1); // Quantity state for purchase
+  const { addToCart } = useCart(); // Use the cart context
 
   useEffect(() => {
     if (listing && listing.images && listing.images.length > 0) {
       setCurrentMediaIndex(0); // Reset to first image when listing changes
     }
   }, [listing]);
+
+  const handleAddToCart = () => {
+    if (!listing) return;
+
+    const itemToAdd = {
+      id: listing.id,
+      name: listing.title,
+      type: "product" as const, // Assuming all marketplace items are products for now
+      provider: listing.provider.name,
+      rating: listing.rating || 0,
+      imageUrl: listing.images[0] || "/placeholder-image.jpg",
+      price: listing.price,
+      isInstant: false, // Assuming products are not instant services
+    };
+    addToCart(itemToAdd, quantity);
+    toast.success(`${quantity} x "${listing.title}" added to cart!`);
+  };
 
   useEffect(() => {
     if (listing?.images && listing.images.length > 0) {
@@ -181,11 +287,175 @@ export default function ListingDetailPage() {
   console.log("Rendering listing:", listing);
   console.log("Listing images array:", listing.images);
   console.log("videoExtensions check:", isVideo(listing.images[0] || ""));
+
+  console.log("show it is seller?", isProvider);
+  console.log("show it is provider?", listing.provider.id);
+  console.log("Debug Info:");
+  console.log("  listingId:", listingId);
+  console.log("  currentUserId:", currentUserId);
+  console.log("  listingData?.provider.id:", listingData?.provider.id);
+  console.log("  isProvider:", isProvider);
+  console.log("  ordersForListing:", ordersForListing);
+  console.log("  sellerOrders.length:", sellerOrders.length);
   return (
     <main className=" mx-auto px-4 py-8 md:py-12 bg-background text-foreground">
       <Button variant="outline" onClick={() => router.back()} className="mb-6">
         &larr; Back to Marketplace
       </Button>
+
+      {isProvider && ( // Temporarily remove sellerOrders.length > 0 for debugging
+        <Card className="p-6 bg-card rounded-lg shadow-sm mb-8">
+          <CardTitle className="text-xl font-semibold mb-4 flex items-center">
+            <CheckCircle className="h-5 w-5 text-green-500 mr-2" /> Orders for
+            Your Listing
+          </CardTitle>
+          <CardContent className="p-0 space-y-6">
+            {sellerOrders.length > 0 ? ( // Add a check here to display orders if available
+              sellerOrders.map((order: OrderWithDetails) => (
+                <React.Fragment key={order.id}>
+                  <div className="border-b pb-4 last:border-b-0 last:pb-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage
+                            src={order.buyer.image || "/placeholder-avatar.jpg"}
+                            alt={order.buyer.name}
+                          />
+                          <AvatarFallback>{order.buyer.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold text-foreground">
+                            {order.buyer.name}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Ordered {order.quantity} item(s)
+                          </p>
+                        </div>
+                      </div>
+                      <Badge
+                        className={`
+                          ${
+                            order.orderStatus === OrderStatus.COMPLETED &&
+                            "bg-green-500"
+                          }
+                          ${
+                            order.orderStatus === OrderStatus.DELIVERED &&
+                            "bg-blue-500"
+                          }
+                          ${
+                            order.orderStatus ===
+                              OrderStatus.PAYMENT_RECEIVED && "bg-yellow-500"
+                          }
+                          ${
+                            order.orderStatus === OrderStatus.PENDING_PAYMENT &&
+                            "bg-orange-500"
+                          }
+                          ${
+                            order.orderStatus === OrderStatus.CANCELLED &&
+                            "bg-red-500"
+                          }
+                        `}
+                      >
+                        {order.orderStatus.replace(/_/g, " ")}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground mt-4">
+                      <div>
+                        <p>
+                          <span className="font-semibold text-foreground">
+                            Total Price:
+                          </span>{" "}
+                          {order.currency} {order.totalPrice.toFixed(2)}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-foreground">
+                            Payment Account:
+                          </span>{" "}
+                          {order.paymentDetails.accountNumber}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-foreground">
+                            Account Owner:
+                          </span>{" "}
+                          {order.paymentDetails.accountOwner}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-foreground">
+                            Selected Bank:
+                          </span>{" "}
+                          {order.paymentDetails.selectedBank}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-foreground">
+                            Payment Link:
+                          </span>{" "}
+                          <a
+                            href={order.paymentDetails.paymentSenderLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            {order.paymentDetails.paymentSenderLink}
+                          </a>
+                        </p>
+                      </div>
+                      {(order.orderStatus === OrderStatus.PAYMENT_RECEIVED ||
+                        order.orderStatus === OrderStatus.DELIVERY_PENDING) && (
+                        <div className="space-y-2">
+                          <Label htmlFor={`delivery-proof-${order.id}`}>
+                            Delivery Proof (e.g., Post Office Receipt Image URL)
+                          </Label>
+                          <Input
+                            id={`delivery-proof-${order.id}`}
+                            type="url"
+                            placeholder="Enter URL for delivery proof"
+                            value={deliveryProofUrlInput}
+                            onChange={(e) =>
+                              setDeliveryProofUrlInput(e.target.value)
+                            }
+                            className="mb-2"
+                          />
+                          <Button
+                            onClick={() => handleDeliveryProofUpload(order.id)}
+                            disabled={
+                              !deliveryProofUrlInput ||
+                              uploadDeliveryProofMutation.isPending
+                            }
+                            className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            {uploadDeliveryProofMutation.isPending
+                              ? "Uploading..."
+                              : "Confirm Delivery"}
+                          </Button>
+                        </div>
+                      )}
+                      {order.orderStatus === OrderStatus.DELIVERED &&
+                        order.deliveryProofUrl && (
+                          <div className="text-sm text-green-600">
+                            <p className="font-semibold">Delivery Confirmed</p>
+                            <a
+                              href={order.deliveryProofUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              View Delivery Proof
+                            </a>
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                </React.Fragment>
+              ))
+            ) : (
+              <p className="text-muted-foreground">
+                No orders for this listing yet.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {/* Left Column: Main Media Display and Thumbnails */}
@@ -414,8 +684,12 @@ export default function ListingDetailPage() {
             >
               Buy Now
             </Button>
-            <Button variant="outline" className="w-full flex items-center">
-              <Plus className="mr-2" size={16} /> Add to Cart
+            <Button
+              variant="outline"
+              className="w-full flex items-center"
+              onClick={handleAddToCart}
+            >
+              <Plus className="mr-2" /> Add to Cart
             </Button>
           </Card>
 

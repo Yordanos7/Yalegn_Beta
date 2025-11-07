@@ -50,6 +50,15 @@ enum PaymentStatus {
   FAILED
 }
 
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAYMENT_RECEIVED
+  DELIVERY_PENDING
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
 enum VerificationStatus {
   NONE
   PENDING
@@ -134,6 +143,8 @@ model User {
   coinPurchases   CoinPurchase[]
   notifications   Notification[]
   adminNotes      AdminNote[]
+  ordersPlaced    Order[]           @relation("BuyerOrders") // Orders placed by this user
+  ordersReceived  Order[]           @relation("SellerOrders") // Orders received by this user
 
   // Auth-related models (from previous auth.prisma)
   sessions          Session[]
@@ -290,8 +301,32 @@ model Listing {
   // relations
   skills        Skill[] @relation("ListingToSkill")
   reviews       Review[] @relation("ListingReviews") // New relation for reviews about this listing
+  orders        Order[]     @relation("ListingOrders") // Orders for this listing
   @@index([providerId])
   @@map("listings")
+}
+
+model Order {
+  id                String      @id @default(cuid()) @map("_id")
+  buyer             User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  buyerId           String
+  listing           Listing     @relation("ListingOrders", fields: [listingId], references: [id])
+  listingId         String
+  seller            User        @relation("SellerOrders", fields: [sellerId], references: [id])
+  sellerId          String
+  quantity          Int
+  totalPrice        Float
+  currency          Currency    @default(ETB)
+  paymentDetails    Json        // Stores accountNumber, accountOwner, selectedBank, paymentSenderLink
+  orderStatus       OrderStatus @default(PENDING_PAYMENT)
+  deliveryProofUrl  String?     // URL to the delivery documentation
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([buyerId])
+  @@index([listingId])
+  @@index([sellerId])
+  @@map("orders")
 }
 
 model Job {

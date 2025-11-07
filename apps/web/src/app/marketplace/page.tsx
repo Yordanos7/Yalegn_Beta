@@ -24,6 +24,7 @@ import React, { useEffect, useState } from "react";
 import { MarketPlaceFilters } from "@/components/MarketPlaceFilters";
 import type { RouterOutputs } from "@my-better-t-app/api/routers/types"; // Use type-only import
 import { useSidebar } from "@/hooks/use-sidebar"; // Import the custom hook
+import { renderStars } from "@/lib/utils"; // Import renderStars helper
 
 import { CategoryEnum } from "@my-better-t-app/db/prisma/generated/enums";
 
@@ -116,16 +117,7 @@ const ListingCard = ({ listing }: { listing: MarketplaceListing }) => {
         <div className="absolute bottom-0 left-0 p-4 text-white w-full z-20">
           <h3 className="text-lg font-bold truncate">{listing.title}</h3>
           <div className="flex items-center mt-1">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`h-4 w-4 ${
-                  i < Math.round(listing.rating || 0)
-                    ? "text-yellow-400 fill-yellow-400"
-                    : "text-gray-400"
-                }`}
-              />
-            ))}
+            {renderStars({ rating: listing.rating, starClassName: "h-4 w-4" })}
             <span className="text-xs ml-1">
               ({listing.rating?.toFixed(1) || "0.0"}) (
               {listing.reviewCount || 0} reviews)
@@ -239,9 +231,9 @@ export default function MarketplacePage() {
         />
 
         {/* Content area for product grid and featured freelancers */}
-        <div className="flex flex-1 space-x-8">
+        <div className="flex flex-1 space-x-8 ">
           {/* Product Grid */}
-          <div className="flex-1 grid grid-cols-3 gap-6">
+          <div className="flex-1 grid grid-cols-3 gap-6 ">
             {filteredListings.map((listing: MarketplaceListing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
