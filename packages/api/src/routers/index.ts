@@ -8,6 +8,7 @@ import { conversationRouter } from "./conversation";
 import { messageRouter } from "./message";
 import { reviewRouter } from "./review"; // Import the new review router
 import { orderRouter } from "./order";
+import { analyticsRouter } from "./analytics";
 
 export const appRouter = router({
   user: userRouter,
@@ -19,5 +20,6 @@ export const appRouter = router({
   message: messageRouter,
   review: reviewRouter, // Add the new review router
   order: orderRouter,
+  analytics: analyticsRouter,
 });
 export type AppRouter = typeof appRouter;
