@@ -22,6 +22,7 @@ import {
   Area,
 } from "recharts";
 import WorldMap from "@/components/WorldMap";
+import GlobalMarketCharts from "@/components/GlobalMarketCharts"; // Import the new component
 import { trpc } from "@/utils/trpc"; // Import tRPC client
 
 // Placeholder for a simple sparkline component for the USD card
@@ -44,7 +45,7 @@ const CurrencySparkline = () => (
 );
 
 export default function AnalyticsPage() {
-  const { isSidebarOpen } = useSidebar();
+  const { isSidebarOpen, toggleSidebar } = useSidebar();
 
   // Fetch data using tRPC
   const { data: currencyData, isLoading: isLoadingCurrency } =
@@ -57,6 +58,10 @@ export default function AnalyticsPage() {
     trpc.analytics.getEarningsVsExpenses.useQuery();
   const { data: userLocations, isLoading: isLoadingUserLocations } =
     trpc.analytics.getUserLocations.useQuery();
+  const {
+    data: userRatingDistribution,
+    isLoading: isLoadingUserRatingDistribution,
+  } = trpc.analytics.getUserRatingDistribution.useQuery();
 
   const usdToEur = currencyData?.usdToEur;
   const usdToGbp = currencyData?.usdToGbp;
@@ -69,12 +74,17 @@ export default function AnalyticsPage() {
 
   const topProductsList = topSellingProducts || [];
   const earningsVsExpensesChartData = earningsVsExpenses || [];
+  const userRatingDistributionChartData = userRatingDistribution || [];
 
   const userLocationsData = userLocations || {};
 
   return (
     <div className="flex min-h-screen bg-background text-foreground font-sans">
-      <Sidebar currentPage="analytics" isSidebarOpen={isSidebarOpen} />
+      <Sidebar
+        currentPage="analytics"
+        isSidebarOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+      />
       <main
         className={`main-content-wrapper ${
           isSidebarOpen ? "md:ml-[200px]" : "md:ml-[60px]"
@@ -84,172 +94,8 @@ export default function AnalyticsPage() {
           Global Market Dashboard
         </h1>
 
-        {/* Live Currency Exchange Section */}
-        <Card className="bg-card p-6 rounded-lg border-none shadow-none mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <Button className="bg-primary text-primary-foreground font-semibold py-2 px-6 rounded-lg hover:bg-primary/80 transition-colors duration-200">
-              Live Currency Exchange
-            </Button>
-            <div className="relative">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                size={18}
-              />
-              <Input
-                type="text"
-                placeholder="Add Currency"
-                className="pl-10 pr-4 py-2 rounded-lg bg-muted border border-border text-foreground focus:ring-0 focus:outline-none w-48 text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Currency Display */}
-            <Card className="bg-card p-6 rounded-lg border border-border shadow-none">
-              <h2 className="text-2xl font-semibold mb-4 text-foreground">
-                USD
-              </h2>
-              {isLoadingCurrency ? (
-                <p>Loading currency data...</p>
-              ) : (
-                <div className="space-y-4">
-                  {/* EUR */}
-                  <div className="flex items-center justify-between text-lg">
-                    <span className="text-foreground">
-                      EUR {usdToEur?.rate.toFixed(2)}
-                    </span>
-                    <div
-                      className={`flex items-center ${
-                        usdToEur && usdToEur.change < 0
-                          ? "text-destructive"
-                          : "text-success"
-                      }`}
-                    >
-                      {usdToEur && usdToEur.change < 0 ? (
-                        <ArrowDown size={16} className="mr-1" />
-                      ) : (
-                        <ArrowUp size={16} className="mr-1" />
-                      )}
-                      <span>({usdToEur?.change.toFixed(2)}%)</span>
-                    </div>
-                  </div>
-                  {/* GBP */}
-                  <div className="flex items-center justify-between text-lg">
-                    <span className="text-foreground">
-                      GBP {usdToGbp?.rate.toFixed(2)}
-                    </span>
-                    <div
-                      className={`flex items-center ${
-                        usdToGbp && usdToGbp.change < 0
-                          ? "text-destructive"
-                          : "text-success"
-                      }`}
-                    >
-                      {usdToGbp && usdToGbp.change < 0 ? (
-                        <ArrowDown size={16} className="mr-1" />
-                      ) : (
-                        <ArrowUp size={16} className="mr-1" />
-                      )}
-                      <span>({usdToGbp?.change.toFixed(2)}%)</span>
-                    </div>
-                  </div>
-                  {/* JPY */}
-                  <div className="flex items-center justify-between text-lg">
-                    <span className="text-foreground">
-                      JPY {usdToJpy?.rate.toFixed(2)}
-                    </span>
-                    <div
-                      className={`flex items-center ${
-                        usdToJpy && usdToJpy.change < 0
-                          ? "text-destructive"
-                          : "text-success"
-                      }`}
-                    >
-                      {usdToJpy && usdToJpy.change < 0 ? (
-                        <ArrowDown size={16} className="mr-1" />
-                      ) : (
-                        <ArrowUp size={16} className="mr-1" />
-                      )}
-                      <span>({usdToJpy?.change.toFixed(2)}%)</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div className="mt-6 flex justify-center">
-                <CurrencySparkline />
-              </div>
-            </Card>
-
-            {/* USD/EUR Exchange Rate Chart */}
-            <Card className="bg-card p-6 rounded-lg border border-border shadow-none">
-              <h2 className="text-xl font-semibold mb-4 text-foreground">
-                USD/EUR Exchange Rate
-              </h2>
-              {isLoadingCurrency ? (
-                <p>Loading chart data...</p>
-              ) : (
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={usdEurChartData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="var(--border)"
-                      />
-                      <XAxis dataKey="name" stroke="var(--muted-foreground)" />
-                      <YAxis stroke="var(--muted-foreground)" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "var(--card)",
-                          borderColor: "var(--border)",
-                          color: "var(--foreground)",
-                          borderRadius: "0.25rem",
-                        }}
-                        itemStyle={{ color: "var(--foreground)" }}
-                        labelStyle={{ color: "var(--foreground)" }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="usdEur"
-                        stroke="var(--chart-1)"
-                        fill="url(#colorUsdEur)"
-                        strokeWidth={2}
-                        activeDot={{
-                          r: 8,
-                          fill: "var(--chart-1)",
-                          stroke: "var(--background)",
-                          strokeWidth: 2,
-                        }}
-                      />
-                      <defs>
-                        <linearGradient
-                          id="colorUsdEur"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor="var(--chart-1)"
-                            stopOpacity={0.8}
-                          />
-                          <stop
-                            offset="95%"
-                            stopColor="var(--chart-1)"
-                            stopOpacity={0.1}
-                          />
-                        </linearGradient>
-                      </defs>
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </Card>
-          </div>
-        </Card>
+        {/* Global Market Dashboard Section */}
+        <GlobalMarketCharts />
 
         {/* Product Sales & Earnings Section */}
         <h1 className="text-2xl font-semibold mb-6 text-foreground">
@@ -371,10 +217,44 @@ export default function AnalyticsPage() {
                   </ResponsiveContainer>
                 </div>
               )}
-              <div className="flex-1 min-h-[200px] lg:min-h-[250px]">
-                <WorldMap userLocations={userLocationsData} />
-              </div>
+
+              <h2 className="text-xl font-semibold mb-4 text-foreground">
+                User Rating Distribution
+              </h2>
+              {isLoadingUserRatingDistribution ? (
+                <p>Loading user rating distribution...</p>
+              ) : (
+                <div className="h-64 mb-6">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={userRatingDistributionChartData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="var(--border)"
+                      />
+                      <XAxis dataKey="name" stroke="var(--muted-foreground)" />
+                      <YAxis stroke="var(--muted-foreground)" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "var(--card)",
+                          borderColor: "var(--border)",
+                          color: "var(--foreground)",
+                          borderRadius: "0.25rem",
+                        }}
+                        itemStyle={{ color: "var(--foreground)" }}
+                        labelStyle={{ color: "var(--foreground)" }}
+                      />
+                      <Bar dataKey="value" fill="var(--chart-3)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              <div className="flex-1 min-h-[200px] lg:min-h-[250px]"></div>
             </Card>
+            <WorldMap userLocations={userLocationsData} />
           </div>
         </Card>
       </main>

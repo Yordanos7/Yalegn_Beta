@@ -1,6 +1,6 @@
-import { publicProcedure, router } from "../trpc";
+import { publicProcedure, router, protectedProcedure } from "../trpc";
 import { z } from "zod";
-// import { prisma } from "@repo/db";
+import prisma from "@my-better-t-app/db";
 
 export const analyticsRouter = router({
   getCurrencyExchangeRates: publicProcedure.query(async () => {
@@ -84,14 +84,14 @@ export const analyticsRouter = router({
     return productDetails;
   }),
 
-  getEarningsVsExpenses: publicProcedure.query(async () => {
-    // For simplicity, let's consider earnings as total amount from completed contracts
-    // and expenses as total amount from orders placed by users (buyers).
-    // This might need refinement based on actual business logic for earnings/expenses.
+  getEarningsVsExpenses: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.user.id;
 
+    // Earnings: Contracts where the current user is the provider and the contract is released
     const earningsData = await prisma.contract.findMany({
       where: {
-        status: "RELEASED", // Assuming 'RELEASED' means earnings for providers
+        providerId: userId,
+        status: "RELEASED",
       },
       select: {
         totalAmount: true,
@@ -102,9 +102,11 @@ export const analyticsRouter = router({
       },
     });
 
+    // Expenses: Orders placed by the current user that are completed
     const expensesData = await prisma.order.findMany({
       where: {
-        orderStatus: "COMPLETED", // Assuming 'COMPLETED' orders represent expenses for buyers
+        buyerId: userId,
+        orderStatus: "COMPLETED",
       },
       select: {
         totalPrice: true,
@@ -175,6 +177,44 @@ export const analyticsRouter = router({
     );
 
     return earningsVsExpensesChartData;
+  }),
+
+  getUserRatingDistribution: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.user.id;
+
+    const reviews = await prisma.review.findMany({
+      where: {
+        aboutId: userId,
+      },
+      select: {
+        rating: true,
+      },
+    });
+
+    // Aggregate ratings to get a distribution
+    const ratingCounts = {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+    };
+
+    reviews.forEach((review) => {
+      if (review.rating >= 1 && review.rating <= 5) {
+        ratingCounts[review.rating.toString() as keyof typeof ratingCounts]++;
+      }
+    });
+
+    // Format for a chart, e.g., an array of objects
+    const ratingDistributionChartData = Object.keys(ratingCounts).map(
+      (key) => ({
+        name: `${key} Star`,
+        value: ratingCounts[key as keyof typeof ratingCounts],
+      })
+    );
+
+    return ratingDistributionChartData;
   }),
 
   getUserLocations: publicProcedure.query(async () => {

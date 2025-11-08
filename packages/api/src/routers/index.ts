@@ -9,6 +9,7 @@ import { messageRouter } from "./message";
 import { reviewRouter } from "./review"; // Import the new review router
 import { orderRouter } from "./order";
 import { analyticsRouter } from "./analytics";
+import { alphaVantageRouter } from "./alpha-vantage";
 
 export const appRouter = router({
   user: userRouter,
@@ -21,5 +22,6 @@ export const appRouter = router({
   review: reviewRouter, // Add the new review router
   order: orderRouter,
   analytics: analyticsRouter,
+  alphaVantage: alphaVantageRouter,
 });
 export type AppRouter = typeof appRouter;
