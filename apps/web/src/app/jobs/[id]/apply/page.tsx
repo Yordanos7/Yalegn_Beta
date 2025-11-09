@@ -14,14 +14,18 @@ import { redirect } from "next/navigation";
 import { FileText, UploadCloud, X } from "lucide-react"; // Added X import
 import { trpc } from "@/utils/trpc"; // Import trpc client
 import { TRPCClientError } from "@trpc/client"; // Import TRPCClientError
-import { type AppRouter } from "@Alpha/api/routers"; // Import AppRouter type
+import { type AppRouter } from "@my-better-t-app/api/src/trpc"; // Corrected import path for AppRouter type
 import { useMutation } from "@tanstack/react-query"; // Import useMutation
+import { useSidebar } from "@/hooks/use-sidebar"; // Import useSidebar hook
+import { router } from "@my-better-t-app/api/src/trpc"; // Import the router object
+type AppRouter = typeof router; // Define AppRouter type from the router object
 
 export default function ApplyToJobPage() {
   const params = useParams();
   const jobId = params.id as string; // Cast to string
   const router = useRouter();
   const { session, isLoading } = useSession();
+  const { isSidebarOpen, toggleSidebar } = useSidebar(); // Use the custom hook
 
   const [proposalMessage, setProposalMessage] = useState("");
   const [budgetOffer, setBudgetOffer] = useState("");
@@ -32,14 +36,18 @@ export default function ApplyToJobPage() {
 
   useEffect(() => {
     if (!isLoading && session?.user?.accountType !== "INDIVIDUAL") {
-      redirect("/access-denied");
+      redirect("/access-denied" as any); // Cast to any
     }
   }, [session, isLoading]);
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen bg-[#202020] text-white">
-        <Sidebar currentPage="job-apply" />
+        <Sidebar
+          currentPage="job-apply"
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
+        />
         <main className="flex-1 p-8 bg-[#202020] flex flex-col items-center justify-center">
           <p className="text-gray-400">Loading user data...</p>
         </main>
@@ -50,7 +58,11 @@ export default function ApplyToJobPage() {
   if (session?.user?.accountType !== "INDIVIDUAL") {
     return (
       <div className="flex min-h-screen bg-[#202020] text-white">
-        <Sidebar currentPage="job-apply" />
+        <Sidebar
+          currentPage="job-apply"
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
+        />
         <main className="flex-1 p-8 bg-[#202020] flex flex-col items-center justify-center">
           <h1 className="text-2xl font-bold text-red-500">Access Denied</h1>
           <p className="text-gray-400">
@@ -75,8 +87,8 @@ export default function ApplyToJobPage() {
       alert("Application Submitted Successfully!");
       router.push(`/jobs/${jobId}`); // Redirect back to job detail page
     },
-    onError: (err: TRPCClientError<AppRouter>) => {
-      // Explicitly type err
+    onError: (err) => {
+      // Removed explicit type for err to match TRPCClientErrorLike
       setError(err.message);
       setIsSubmitting(false);
     },
@@ -130,7 +142,11 @@ export default function ApplyToJobPage() {
 
   return (
     <div className="flex min-h-screen bg-[#202020] text-white">
-      <Sidebar currentPage="job-apply" />
+      <Sidebar
+        currentPage="job-apply"
+        isSidebarOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+      />
 
       <main className="flex-1 p-8 bg-[#202020] flex flex-col">
         <header className="flex flex-col mb-8 bg-[#2C2C2C] p-4 rounded-lg">

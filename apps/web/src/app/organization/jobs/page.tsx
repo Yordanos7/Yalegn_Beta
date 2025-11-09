@@ -26,6 +26,7 @@ import { useSession } from "@/hooks/use-session";
 import { useRouter, redirect } from "next/navigation";
 import { useEffect } from "react";
 import { trpc } from "@/utils/trpc";
+import { useSidebar } from "@/hooks/use-sidebar";
 import {
   JobStatus, // Changed from type import to value import
   JobType,
@@ -49,38 +50,7 @@ interface Job {
 export default function OrganizationJobsPage() {
   const { session, isLoading } = useSession();
   const router = useRouter(); // Keep router for other potential navigations if needed
-
-  useEffect(() => {
-    if (!isLoading && session?.user?.accountType !== "ORGANIZATION") {
-      // Redirect or show access denied if not an organization
-      redirect("/access-denied" as any); // Using redirect for type safety, casting to any to resolve type error
-    }
-  }, [session, isLoading]); // Removed router from dependency array as redirect is not dependent on router instance
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen bg-[#202020] text-white">
-        <Sidebar currentPage="organization-jobs" />
-        <main className="flex-1 p-8 bg-[#202020] flex flex-col items-center justify-center">
-          <p className="text-gray-400">Loading user data...</p>
-        </main>
-      </div>
-    );
-  }
-
-  if (session?.user?.accountType !== "ORGANIZATION") {
-    return (
-      <div className="flex min-h-screen bg-[#202020] text-white">
-        <Sidebar currentPage="organization-jobs" />
-        <main className="flex-1 p-8 bg-[#202020] flex flex-col items-center justify-center">
-          <h1 className="text-2xl font-bold text-red-500">Access Denied</h1>
-          <p className="text-gray-400">
-            You do not have permission to view this page.
-          </p>
-        </main>
-      </div>
-    );
-  }
+  const { isSidebarOpen, toggleSidebar } = useSidebar();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<JobStatus | "All">("All");
@@ -105,6 +75,13 @@ export default function OrganizationJobsPage() {
   );
 
   useEffect(() => {
+    if (!isLoading && session?.user?.accountType !== "ORGANIZATION") {
+      // Redirect or show access denied if not an organization
+      redirect("/access-denied" as any); // Using redirect for type safety, casting to any to resolve type error
+    }
+  }, [session, isLoading]); // Removed router from dependency array as redirect is not dependent on router instance
+
+  useEffect(() => {
     refetch();
   }, [searchQuery, statusFilter, sortOrder, refetch]);
 
@@ -120,9 +97,46 @@ export default function OrganizationJobsPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen bg-[#202020] text-white">
+        <Sidebar
+          currentPage="organization-jobs"
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
+        />
+        <main className="flex-1 p-8 bg-[#202020] flex flex-col items-center justify-center">
+          <p className="text-gray-400">Loading user data...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (session?.user?.accountType !== "ORGANIZATION") {
+    return (
+      <div className="flex min-h-screen bg-[#202020] text-white">
+        <Sidebar
+          currentPage="organization-jobs"
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
+        />
+        <main className="flex-1 p-8 bg-[#202020] flex flex-col items-center justify-center">
+          <h1 className="text-2xl font-bold text-red-500">Access Denied</h1>
+          <p className="text-gray-400">
+            You do not have permission to view this page.
+          </p>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-[#202020] text-white">
-      <Sidebar currentPage="organization-jobs" />
+      <Sidebar
+        currentPage="organization-jobs"
+        isSidebarOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+      />
 
       {/* Main Content */}
       <main className="flex-1 p-8 bg-[#202020] flex flex-col">
