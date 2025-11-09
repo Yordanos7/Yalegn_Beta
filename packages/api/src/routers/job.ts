@@ -139,6 +139,70 @@ export const jobRouter = router({
       return job;
     }),
 
+  getSimilarJobs: protectedProcedure
+    .input(z.object({ jobId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { jobId } = input;
+
+      const currentJob = await ctx.prisma.job.findUnique({
+        where: { id: jobId },
+        include: {
+          requiredSkills: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+
+      if (!currentJob) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Job not found.",
+        });
+      }
+
+      const skillIds = currentJob.requiredSkills.map((skill) => skill.id);
+
+      const similarJobs = await ctx.prisma.job.findMany({
+        where: {
+          id: {
+            not: jobId, // Exclude the current job
+          },
+          status: "OPEN", // Only show open jobs
+          OR: [
+            {
+              requiredSkills: {
+                some: {
+                  id: {
+                    in: skillIds,
+                  },
+                },
+              },
+            },
+            {
+              // Optionally, add other criteria for similarity, e.g., location, category
+              location: currentJob.location,
+            },
+          ],
+        },
+        include: {
+          seeker: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+        },
+        take: 4, // Limit to 4 similar jobs
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      return similarJobs;
+    }),
+
   create: protectedProcedure
     .input(
       z.object({

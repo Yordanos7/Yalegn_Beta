@@ -42,14 +42,14 @@ export default function ApplyToJobPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen bg-[#202020] text-white">
+      <div className="flex min-h-screen bg-background text-foreground">
         <Sidebar
           currentPage="job-apply"
           isSidebarOpen={isSidebarOpen}
           toggleSidebar={toggleSidebar}
         />
-        <main className="flex-1 p-8 bg-[#202020] flex flex-col items-center justify-center">
-          <p className="text-gray-400">Loading user data...</p>
+        <main className="flex-1 p-8 bg-background flex flex-col items-center justify-center">
+          <p className="text-muted-foreground">Loading user data...</p>
         </main>
       </div>
     );
@@ -57,15 +57,15 @@ export default function ApplyToJobPage() {
 
   if (session?.user?.accountType !== "INDIVIDUAL") {
     return (
-      <div className="flex min-h-screen bg-[#202020] text-white">
+      <div className="flex min-h-screen bg-background text-foreground">
         <Sidebar
           currentPage="job-apply"
           isSidebarOpen={isSidebarOpen}
           toggleSidebar={toggleSidebar}
         />
-        <main className="flex-1 p-8 bg-[#202020] flex flex-col items-center justify-center">
-          <h1 className="text-2xl font-bold text-red-500">Access Denied</h1>
-          <p className="text-gray-400">
+        <main className="flex-1 p-8 bg-background flex flex-col items-center justify-center">
+          <h1 className="text-2xl font-bold text-destructive">Access Denied</h1>
+          <p className="text-muted-foreground">
             You do not have permission to view this page.
           </p>
         </main>
@@ -141,23 +141,23 @@ export default function ApplyToJobPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#202020] text-white">
+    <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar
         currentPage="job-apply"
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={toggleSidebar}
       />
 
-      <main className="flex-1 p-8 bg-[#202020] flex flex-col">
-        <header className="flex flex-col mb-8 bg-[#2C2C2C] p-4 rounded-lg">
+      <main className="flex-1 p-4 sm:p-6 md:p-8 bg-background flex flex-col">
+        <header className="flex flex-col mb-8 bg-card p-4 rounded-lg">
           <h1 className="text-2xl font-bold">Apply for Job ID: {jobId}</h1>
-          <p className="text-gray-400">
+          <p className="text-muted-foreground">
             Submit your application for this job posting.
           </p>
         </header>
 
         <ScrollArea className="flex-1 h-full pr-4">
-          <Card className="bg-[#2C2C2C] p-6 rounded-lg">
+          <Card className="bg-card p-4 sm:p-6 rounded-lg">
             <CardHeader>
               <CardTitle className="text-xl font-semibold">
                 Application Details
@@ -166,7 +166,10 @@ export default function ApplyToJobPage() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <Label htmlFor="proposalMessage" className="text-gray-300">
+                  <Label
+                    htmlFor="proposalMessage"
+                    className="text-muted-foreground"
+                  >
                     Proposal Message
                   </Label>
                   <Textarea
@@ -174,13 +177,16 @@ export default function ApplyToJobPage() {
                     value={proposalMessage}
                     onChange={(e) => setProposalMessage(e.target.value)}
                     placeholder="Write a compelling message to the organization."
-                    className="bg-[#3A3A3A] border-none text-white placeholder-gray-400 mt-1 min-h-[150px]"
+                    className="bg-input border-border text-foreground placeholder-muted-foreground mt-1 min-h-[150px]"
                     required
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="budgetOffer" className="text-gray-300">
+                  <Label
+                    htmlFor="budgetOffer"
+                    className="text-muted-foreground"
+                  >
                     Your Budget Offer (ETB)
                   </Label>
                   <Input
@@ -188,16 +194,16 @@ export default function ApplyToJobPage() {
                     value={budgetOffer}
                     onChange={(e) => setBudgetOffer(e.target.value)}
                     placeholder="e.g., 23,000"
-                    className="bg-[#3A3A3A] border-none text-white placeholder-gray-400 mt-1"
+                    className="bg-input border-border text-foreground placeholder-muted-foreground mt-1"
                     required
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="resume" className="text-gray-300">
+                  <Label htmlFor="resume" className="text-muted-foreground">
                     Resume/CV
                   </Label>
-                  <div className="flex items-center space-x-2 mt-1">
+                  <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2 mt-1">
                     <Input
                       id="resume"
                       type="file"
@@ -207,17 +213,17 @@ export default function ApplyToJobPage() {
                     />
                     <Label
                       htmlFor="resume"
-                      className="flex-1 bg-[#3A3A3A] border-none text-white placeholder-gray-400 p-3 rounded-lg cursor-pointer flex items-center justify-center hover:bg-[#4A4A4A] transition-colors"
+                      className="flex-1 bg-input border-border text-foreground placeholder-muted-foreground p-3 rounded-lg cursor-pointer flex items-center justify-center hover:bg-accent transition-colors w-full"
                     >
                       <UploadCloud className="mr-2" size={20} />
                       {resume ? resume.name : "Upload Resume (PDF, DOCX)"}
                     </Label>
                     {resume && (
                       <Button
-                        variant="outline"
+                        variant="destructive"
                         size="sm"
                         onClick={() => setResume(null)}
-                        className="bg-red-500 hover:bg-red-600 text-white"
+                        className="w-full sm:w-auto"
                       >
                         <X size={16} />
                       </Button>
@@ -226,10 +232,13 @@ export default function ApplyToJobPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="coverLetter" className="text-gray-300">
+                  <Label
+                    htmlFor="coverLetter"
+                    className="text-muted-foreground"
+                  >
                     Cover Letter (Optional)
                   </Label>
-                  <div className="flex items-center space-x-2 mt-1">
+                  <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2 mt-1">
                     <Input
                       id="coverLetter"
                       type="file"
@@ -239,7 +248,7 @@ export default function ApplyToJobPage() {
                     />
                     <Label
                       htmlFor="coverLetter"
-                      className="flex-1 bg-[#3A3A3A] border-none text-white placeholder-gray-400 p-3 rounded-lg cursor-pointer flex items-center justify-center hover:bg-[#4A4A4A] transition-colors"
+                      className="flex-1 bg-input border-border text-foreground placeholder-muted-foreground p-3 rounded-lg cursor-pointer flex items-center justify-center hover:bg-accent transition-colors w-full"
                     >
                       <UploadCloud className="mr-2" size={20} />
                       {coverLetter
@@ -248,10 +257,10 @@ export default function ApplyToJobPage() {
                     </Label>
                     {coverLetter && (
                       <Button
-                        variant="outline"
+                        variant="destructive"
                         size="sm"
                         onClick={() => setCoverLetter(null)}
-                        className="bg-red-500 hover:bg-red-600 text-white"
+                        className="w-full sm:w-auto"
                       >
                         <X size={16} />
                       </Button>
@@ -259,11 +268,11 @@ export default function ApplyToJobPage() {
                   </div>
                 </div>
 
-                {error && <p className="text-red-500 text-sm">{error}</p>}
+                {error && <p className="text-destructive text-sm">{error}</p>}
 
                 <Button
                   type="submit"
-                  className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg px-6 py-3"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg px-6 py-3 w-full"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Submitting..." : "Submit Application"}

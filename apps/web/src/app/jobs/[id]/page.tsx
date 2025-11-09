@@ -20,43 +20,65 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/hooks/use-session";
 import { redirect } from "next/navigation";
 import { trpc } from "@/utils/trpc"; // Import trpc
-import type { AppRouter } from "@Alpha/api/routers"; // Import AppRouter
+import type { AppRouter } from "@my-better-t-app/api/src/trpc"; // Import AppRouter
 import type { inferRouterOutputs } from "@trpc/server"; // Import inferRouterOutputs
+import { useSidebar } from "@/hooks/use-sidebar";
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type JobDetails = RouterOutput["job"]["getById"];
+type SimilarJob = RouterOutput["job"]["getSimilarJobs"][number]; // Define type for similar jobs
 
 export default function JobDetailPage() {
   const params = useParams();
   const jobId = params.id as string; // Get job ID from URL
   const router = useRouter();
   const { session, isLoading: isSessionLoading } = useSession();
-
+  const { isSidebarOpen, toggleSidebar } = useSidebar();
   const {
     data: jobDetails,
     isLoading: isJobLoading,
     error: jobError,
   } = trpc.job.getById.useQuery({ id: jobId });
 
-  if (isSessionLoading || isJobLoading) {
+  const {
+    data: similarJobs,
+    isLoading: isSimilarJobsLoading,
+    error: similarJobsError,
+  } = trpc.job.getSimilarJobs.useQuery(
+    { jobId: jobId },
+    {
+      enabled: !!jobDetails, // Only fetch similar jobs if jobDetails is available
+    }
+  );
+
+  if (isSessionLoading || isJobLoading || isSimilarJobsLoading) {
     return (
-      <div className="flex min-h-screen bg-[#202020] text-white">
-        <Sidebar currentPage="job-detail" />
-        <main className="flex-1 p-8 bg-[#202020] flex flex-col items-center justify-center">
-          <p className="text-gray-400">Loading job details...</p>
+      <div className="flex min-h-screen bg-background text-foreground">
+        <Sidebar
+          currentPage="job-detail"
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
+        />
+        <main className="flex-1 p-8 bg-background flex flex-col items-center justify-center">
+          <p className="text-muted-foreground">Loading job details...</p>
         </main>
       </div>
     );
   }
 
-  if (jobError) {
+  if (jobError || similarJobsError) {
     return (
-      <div className="flex min-h-screen bg-[#202020] text-white">
-        <Sidebar currentPage="job-detail" />
-        <main className="flex-1 p-8 bg-[#202020] flex flex-col items-center justify-center">
-          <h1 className="text-2xl font-bold text-red-500">Error</h1>
-          <p className="text-gray-400">
-            Error fetching job details: {jobError.message}
+      <div className="flex min-h-screen bg-background text-foreground">
+        <Sidebar
+          currentPage="job-detail"
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
+        />
+        <main className="flex-1 p-8 bg-background flex flex-col items-center justify-center">
+          <h1 className="text-2xl font-bold text-destructive">Error</h1>
+          <p className="text-muted-foreground">
+            Error fetching job details:{" "}
+            {jobError?.message || similarJobsError?.message}
           </p>
         </main>
       </div>
@@ -65,11 +87,15 @@ export default function JobDetailPage() {
 
   if (!jobDetails) {
     return (
-      <div className="flex min-h-screen bg-[#202020] text-white">
-        <Sidebar currentPage="job-detail" />
-        <main className="flex-1 p-8 bg-[#202020] flex flex-col items-center justify-center">
-          <h1 className="text-2xl font-bold text-red-500">Job Not Found</h1>
-          <p className="text-gray-400">
+      <div className="flex min-h-screen bg-background text-foreground">
+        <Sidebar
+          currentPage="job-detail"
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
+        />
+        <main className="flex-1 p-8 bg-background flex flex-col items-center justify-center">
+          <h1 className="text-2xl font-bold text-destructive">Job Not Found</h1>
+          <p className="text-muted-foreground">
             The job you are looking for does not exist.
           </p>
         </main>
@@ -120,17 +146,21 @@ export default function JobDetailPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#202020] text-white">
-      <Sidebar currentPage="job-detail" />
+    <div className="flex min-h-screen bg-background text-foreground">
+      <Sidebar
+        currentPage="job-detail"
+        isSidebarOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+      />
 
       {/* Main Content */}
-      <main className="flex-1 p-8 bg-[#202020] flex flex-col">
+      <main className="flex-1 p-8 bg-background flex flex-col">
         <ScrollArea className="flex-1 h-full pr-4">
-          <Card className="bg-[#2C2C2C] p-8 rounded-lg mb-8">
+          <Card className="bg-card p-8 rounded-lg mb-8">
             <div className="flex items-start justify-between mb-6">
               <div>
                 <h1 className="text-3xl font-bold mb-2">{jobDetails.title}</h1>
-                <div className="flex items-center text-gray-400 text-sm">
+                <div className="flex items-center text-muted-foreground text-sm">
                   <Avatar className="h-8 w-8 mr-2">
                     <AvatarImage
                       src={
@@ -156,24 +186,13 @@ export default function JobDetailPage() {
                   Apply Now
                 </Button>
               )}
-              {isOrganization && (
-                <Button
-                  variant="outline"
-                  className="bg-[#3A3A3A] border-none text-white"
-                >
-                  Edit Job
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                className="bg-[#3A3A3A] border-none text-white"
-                onClick={handleShare}
-              >
+              {isOrganization && <Button variant="outline">Edit Job</Button>}
+              <Button variant="outline" onClick={handleShare}>
                 <Share2 className="mr-2" size={16} /> Share Job
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-gray-400 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-muted-foreground text-sm">
               <div className="flex items-center">
                 <DollarSign className="mr-2" size={16} />
                 <span>
@@ -203,7 +222,7 @@ export default function JobDetailPage() {
 
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-3">Job Description</h2>
-              <p className="text-gray-300 leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed">
                 {jobDetails.description}
               </p>
             </div>
@@ -215,7 +234,7 @@ export default function JobDetailPage() {
                   <Badge
                     key={skill.name}
                     variant="secondary"
-                    className="bg-[#3A3A3A] text-white px-3 py-1 rounded-full"
+                    className="px-3 py-1 rounded-full"
                   >
                     <Tag className="mr-1" size={14} /> {skill.name}
                   </Badge>
@@ -226,33 +245,31 @@ export default function JobDetailPage() {
             {/* Placeholder for other sections like "About Organization", "Contact Info" etc. */}
           </Card>
 
-          {/* Placeholder for Similar Jobs */}
+          {/* Similar Jobs */}
           <h2 className="text-2xl font-bold mb-4">Similar Jobs</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="bg-[#2C2C2C] p-6 rounded-lg flex items-center justify-between">
-              <div>
-                <p className="text-lg font-semibold">React Native Developer</p>
-                <p className="text-gray-400 text-sm">Tech Solutions Ltd.</p>
-              </div>
-              <Button
-                variant="outline"
-                className="bg-[#3A3A3A] border-none text-white"
+            {similarJobs?.map((job) => (
+              <Card
+                key={job.id}
+                className="bg-card p-6 rounded-lg flex items-center justify-between"
               >
-                View Details
-              </Button>
-            </Card>
-            <Card className="bg-[#2C2C2C] p-6 rounded-lg flex items-center justify-between">
-              <div>
-                <p className="text-lg font-semibold">UI/UX Designer</p>
-                <p className="text-gray-400 text-sm">Creative Agency</p>
-              </div>
-              <Button
-                variant="outline"
-                className="bg-[#3A3A3A] border-none text-white"
-              >
-                View Details
-              </Button>
-            </Card>
+                <div>
+                  <p className="text-lg font-semibold">{job.title}</p>
+                  <p className="text-muted-foreground text-sm">
+                    {job.seeker.name}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/jobs/${job.id}`)}
+                >
+                  View Details
+                </Button>
+              </Card>
+            ))}
+            {similarJobs?.length === 0 && (
+              <p className="text-muted-foreground">No similar jobs found.</p>
+            )}
           </div>
         </ScrollArea>
       </main>

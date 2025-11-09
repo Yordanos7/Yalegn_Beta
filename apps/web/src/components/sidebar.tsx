@@ -34,6 +34,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import logo from "@/../assets/logo.png";
 
 interface SidebarProps {
   currentPage: string;
@@ -70,7 +71,7 @@ export default function Sidebar({
       <div className="flex items-center justify-between mb-8">
         {isSidebarOpen && (
           <div className="flex items-center">
-            <img src="/assets/logo.png" alt="Logo" className="h-8 mr-2" />
+            <img src={logo.src} alt="Logo" className="h-8 mr-2" />
             <span className="text-xl font-bold text-foreground">
               {currentPage === "dashboard" && "Dashboard"}
               {currentPage === "messages" && "Messages"}

@@ -26,7 +26,12 @@ import { type inferRouterOutputs } from "@trpc/server";
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type Conversation = RouterOutput["conversation"]["list"][number];
 type Message = RouterOutput["message"]["list"][number];
-type User = RouterOutput["user"]["list"][number];
+// Define a more specific User type for participants in conversations
+type ParticipantUser = {
+  id: string;
+  name: string;
+  image: string | null;
+};
 
 export default function MessagesPage() {
   const { session } = useSessionContext();
@@ -40,6 +45,7 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState("");
   const [isNewConversationDialogOpen, setIsNewConversationDialogOpen] =
     useState(false);
+  const [searchQuery, setSearchQuery] = useState(""); // New state for search query
 
   const { data: conversations, refetch: refetchConversations } =
     trpc.conversation.list.useQuery(undefined, {
@@ -151,11 +157,6 @@ export default function MessagesPage() {
 
   return (
     <div className="flex min-h-screen bg-[#202020] text-white">
-      <Sidebar
-        currentPage="messages"
-        isSidebarOpen={isSidebarOpen}
-        toggleSidebar={toggleSidebar}
-      />
       <div
         className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
           isSidebarOpen ? "ml-0" : "ml-0"
@@ -197,62 +198,83 @@ export default function MessagesPage() {
                 </DialogContent>
               </Dialog>
             </div>
-            <ScrollArea className="h-[calc(100%-124px)]">
+            <div className="p-4 border-b">
+              <Input
+                placeholder="Search conversations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <ScrollArea className="h-[calc(100%-172px)]">
+              {" "}
+              {/* Adjusted height */}
               {conversations?.length === 0 ? (
                 <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                   No conversations yet. Start a new one!
                 </div>
               ) : (
-                conversations?.map((conversation: Conversation) => {
-                  const otherParticipant = conversation.participants.find(
-                    (p: User) => p.id !== userId
-                  );
-                  const lastMessage = conversation.messages[0];
-                  return (
-                    <div
-                      key={conversation.id}
-                      className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 ${
-                        selectedConversationId === conversation.id
-                          ? "bg-gray-100 dark:bg-gray-800"
-                          : ""
-                      }`}
-                      onClick={() => {
-                        console.log(
-                          "Conversation clicked, setting ID:",
-                          conversation.id
-                        );
-                        setSelectedConversationId(conversation.id);
-                      }}
-                    >
-                      <Avatar>
-                        <AvatarImage
-                          src={
-                            otherParticipant?.image || "/placeholder-avatar.jpg"
-                          }
-                        />
-                        <AvatarFallback>
-                          {otherParticipant?.name?.[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="font-medium">
-                          {otherParticipant?.name || "Unknown User"}
-                        </p>
-                        {lastMessage && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                            {lastMessage.body} -{" "}
-                            {formatDistanceToNow(
-                              new Date(lastMessage.createdAt),
-                              {
-                                addSuffix: true,
-                              }
-                            )}
+                conversations
+                  ?.filter((conversation: Conversation) => {
+                    const otherParticipant = conversation.participants.find(
+                      (p: User) => p.id !== userId
+                    );
+                    return (
+                      otherParticipant?.name
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase()) || false
+                    );
+                  })
+                  .map((conversation: Conversation) => {
+                    const otherParticipant = conversation.participants.find(
+                      (p: User) => p.id !== userId
+                    );
+                    const lastMessage = conversation.messages[0];
+                    return (
+                      <div
+                        key={conversation.id}
+                        className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                          selectedConversationId === conversation.id
+                            ? "bg-gray-100 dark:bg-gray-800"
+                            : ""
+                        }`}
+                        onClick={() => {
+                          console.log(
+                            "Conversation clicked, setting ID:",
+                            conversation.id
+                          );
+                          setSelectedConversationId(conversation.id);
+                        }}
+                      >
+                        <Avatar>
+                          <AvatarImage
+                            src={
+                              otherParticipant?.image ||
+                              "/placeholder-avatar.jpg"
+                            }
+                          />
+                          <AvatarFallback>
+                            {otherParticipant?.name?.[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="font-medium">
+                            {otherParticipant?.name || "Unknown User"}
                           </p>
-                        )}
+                          {lastMessage && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                              {lastMessage.body} -{" "}
+                              {formatDistanceToNow(
+                                new Date(lastMessage.createdAt),
+                                {
+                                  addSuffix: true,
+                                }
+                              )}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  })
               )}
             </ScrollArea>
           </div>
