@@ -22,6 +22,7 @@ import {
 
 import type { AppRouter } from "@my-better-t-app/api/routers/index";
 import { type inferRouterOutputs } from "@trpc/server";
+import { type User } from "@prisma/client"; // Import User type from Prisma client
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type Conversation = RouterOutput["conversation"]["list"][number];
@@ -31,6 +32,8 @@ type ParticipantUser = {
   id: string;
   name: string;
   image: string | null;
+  lastSeen?: Date | null; // Add lastSeen property
+  isOnline?: boolean; // Add isOnline property
 };
 
 export default function MessagesPage() {
@@ -135,7 +138,7 @@ export default function MessagesPage() {
 
     const participant = conversations
       ?.find((c: Conversation) => c.id === selectedConversationId)
-      ?.participants.find((p: User) => p.id !== userId);
+      ?.participants.find((p: ParticipantUser) => p.id !== userId);
 
     if (!participant) {
       console.error("Participant not found for selected conversation.");
@@ -156,7 +159,7 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#202020] text-white">
+    <div className="flex min-h-screen bg-background text-foreground">
       <div
         className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
           isSidebarOpen ? "ml-0" : "ml-0"
@@ -165,13 +168,13 @@ export default function MessagesPage() {
         <div className="flex h-[calc(100vh-64px)] flex-col md:flex-row">
           {/* Conversation List */}
           <div
-            className={`w-full md:w-1/4 border-r ${
+            className={`w-full md:w-1/4 border-r border-border ${
               selectedConversationId
                 ? "hidden md:flex flex-col"
                 : "flex flex-col"
             }`}
           >
-            <div className="flex items-center justify-between p-4">
+            <div className="flex items-center justify-between p-4 bg-card">
               <h2 className="text-lg font-semibold">Conversations</h2>
               <Dialog
                 open={isNewConversationDialogOpen}
@@ -180,7 +183,7 @@ export default function MessagesPage() {
                 <DialogTrigger asChild>
                   <Button size="sm">New</Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="bg-card text-foreground">
                   <DialogHeader>
                     <DialogTitle>Start a new conversation</DialogTitle>
                   </DialogHeader>
@@ -198,25 +201,26 @@ export default function MessagesPage() {
                 </DialogContent>
               </Dialog>
             </div>
-            <div className="p-4 border-b">
+            <div className="p-4 border-b border-border bg-card">
               <Input
                 placeholder="Search conversations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-input border-border text-foreground placeholder-muted-foreground"
               />
             </div>
-            <ScrollArea className="h-[calc(100%-172px)]">
+            <ScrollArea className="h-[calc(100%-172px)] bg-background">
               {" "}
               {/* Adjusted height */}
               {conversations?.length === 0 ? (
-                <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                <div className="p-4 text-center text-muted-foreground">
                   No conversations yet. Start a new one!
                 </div>
               ) : (
                 conversations
                   ?.filter((conversation: Conversation) => {
                     const otherParticipant = conversation.participants.find(
-                      (p: User) => p.id !== userId
+                      (p: ParticipantUser) => p.id !== userId
                     );
                     return (
                       otherParticipant?.name
@@ -226,15 +230,15 @@ export default function MessagesPage() {
                   })
                   .map((conversation: Conversation) => {
                     const otherParticipant = conversation.participants.find(
-                      (p: User) => p.id !== userId
+                      (p: ParticipantUser) => p.id !== userId
                     );
                     const lastMessage = conversation.messages[0];
                     return (
                       <div
                         key={conversation.id}
-                        className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                        className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-accent ${
                           selectedConversationId === conversation.id
-                            ? "bg-gray-100 dark:bg-gray-800"
+                            ? "bg-accent"
                             : ""
                         }`}
                         onClick={() => {
@@ -257,11 +261,11 @@ export default function MessagesPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <p className="font-medium">
+                          <p className="font-medium text-foreground">
                             {otherParticipant?.name || "Unknown User"}
                           </p>
                           {lastMessage && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                            <p className="text-sm text-muted-foreground truncate">
                               {lastMessage.body} -{" "}
                               {formatDistanceToNow(
                                 new Date(lastMessage.createdAt),
@@ -286,7 +290,7 @@ export default function MessagesPage() {
           >
             {selectedConversationId ? (
               <>
-                <div className="flex items-center gap-3 p-4 border-b">
+                <div className="flex items-center gap-3 p-4 border-b border-border bg-card">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -300,7 +304,7 @@ export default function MessagesPage() {
                       viewBox="0 0 24 24"
                       strokeWidth={1.5}
                       stroke="currentColor"
-                      className="w-6 h-6"
+                      className="w-6 h-6 text-foreground"
                     >
                       <path
                         strokeLinecap="round"
@@ -316,8 +320,9 @@ export default function MessagesPage() {
                           ?.find(
                             (c: Conversation) => c.id === selectedConversationId
                           )
-                          ?.participants.find((p: User) => p.id !== userId)
-                          ?.image || "/placeholder-avatar.jpg"
+                          ?.participants.find(
+                            (p: ParticipantUser) => p.id !== userId
+                          )?.image || "/placeholder-avatar.jpg"
                       }
                     />
                     <AvatarFallback>
@@ -326,23 +331,25 @@ export default function MessagesPage() {
                           ?.find(
                             (c: Conversation) => c.id === selectedConversationId
                           )
-                          ?.participants.find((p: User) => p.id !== userId)
-                          ?.name?.[0]
+                          ?.participants.find(
+                            (p: ParticipantUser) => p.id !== userId
+                          )?.name?.[0]
                       }
                     </AvatarFallback>
                   </Avatar>
-                  <h2 className="text-lg font-semibold">
+                  <h2 className="text-lg font-semibold text-foreground">
                     {conversations
                       ?.find(
                         (c: Conversation) => c.id === selectedConversationId
                       )
-                      ?.participants.find((p: User) => p.id !== userId)?.name ||
-                      "Unknown User"}
+                      ?.participants.find(
+                        (p: ParticipantUser) => p.id !== userId
+                      )?.name || "Unknown User"}
                   </h2>
                 </div>
-                <ScrollArea className="flex-1 p-4">
+                <ScrollArea className="flex-1 p-4 bg-background">
                   {messages?.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
                       No messages yet. Be the first to send a message!
                     </div>
                   ) : (
@@ -359,8 +366,8 @@ export default function MessagesPage() {
                           <div
                             className={`max-w-[70%] p-3 rounded-lg ${
                               message.fromUserId === userId
-                                ? "bg-blue-500 text-white"
-                                : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-muted-foreground"
                             }`}
                           >
                             <p className="text-sm">{message.body}</p>
@@ -379,7 +386,7 @@ export default function MessagesPage() {
                     </div>
                   )}
                 </ScrollArea>
-                <div className="p-4 border-t flex items-center gap-2">
+                <div className="p-4 border-t border-border bg-card flex items-center gap-2">
                   <Input
                     placeholder="Type your message..."
                     value={newMessage}
@@ -389,6 +396,7 @@ export default function MessagesPage() {
                         handleSendMessage();
                       }
                     }}
+                    className="bg-input border-border text-foreground placeholder-muted-foreground"
                   />
                   <Button
                     onClick={handleSendMessage}
@@ -399,7 +407,7 @@ export default function MessagesPage() {
                 </div>
               </>
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+              <div className="flex items-center justify-center h-full text-muted-foreground bg-background">
                 Select a conversation to start chatting
               </div>
             )}
@@ -430,19 +438,22 @@ function NewConversationDialog({
 
   return (
     <div>
-      <Input placeholder="Search for users..." />
+      <Input
+        placeholder="Search for users..."
+        className="bg-input border-border text-foreground placeholder-muted-foreground"
+      />
       <ScrollArea className="h-64 mt-4">
         {users?.map((user: User) => (
           <div
             key={user.id}
-            className="flex items-center gap-3 p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="flex items-center gap-3 p-2 cursor-pointer hover:bg-accent"
             onClick={() => handleCreateConversation(user.id)}
           >
             <Avatar>
               <AvatarImage src={user.image || "/placeholder-avatar.jpg"} />
               <AvatarFallback>{user.name?.[0]}</AvatarFallback>
             </Avatar>
-            <p>{user.name}</p>
+            <p className="text-foreground">{user.name}</p>
           </div>
         ))}
       </ScrollArea>
