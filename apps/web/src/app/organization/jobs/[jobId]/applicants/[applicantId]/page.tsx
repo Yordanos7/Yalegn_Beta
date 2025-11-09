@@ -96,14 +96,14 @@ export default function ApplicantDetailPage() {
 
   if (isSessionLoading || isProposalLoading) {
     return (
-      <div className="flex min-h-screen bg-[#202020] text-white">
+      <div className="flex min-h-screen bg-background text-foreground">
         <Sidebar
           currentPage="applicant-detail"
           isSidebarOpen={isSidebarOpen}
           toggleSidebar={toggleSidebar}
         />
         <main className="flex-1 p-8 flex flex-col items-center justify-center">
-          <p className="text-gray-400">Loading applicant details...</p>
+          <p className="text-muted-foreground">Loading applicant details...</p>
         </main>
       </div>
     );
@@ -111,15 +111,15 @@ export default function ApplicantDetailPage() {
 
   if (session?.user?.accountType !== "ORGANIZATION") {
     return (
-      <div className="flex min-h-screen bg-[#202020] text-white">
+      <div className="flex min-h-screen bg-background text-foreground">
         <Sidebar
           currentPage="applicant-detail"
           isSidebarOpen={isSidebarOpen}
           toggleSidebar={toggleSidebar}
         />
         <main className="flex-1 p-8 flex flex-col items-center justify-center">
-          <h1 className="text-2xl font-bold text-red-500">Access Denied</h1>
-          <p className="text-gray-400">
+          <h1 className="text-2xl font-bold text-destructive">Access Denied</h1>
+          <p className="text-muted-foreground">
             You do not have permission to view this page.
           </p>
         </main>
@@ -129,15 +129,15 @@ export default function ApplicantDetailPage() {
 
   if (proposalError) {
     return (
-      <div className="flex min-h-screen bg-[#202020] text-white">
+      <div className="flex min-h-screen bg-background text-foreground">
         <Sidebar
           currentPage="applicant-detail"
           isSidebarOpen={isSidebarOpen}
           toggleSidebar={toggleSidebar}
         />
         <main className="flex-1 p-8 flex flex-col items-center justify-center">
-          <h1 className="text-2xl font-bold text-red-500">Error</h1>
-          <p className="text-gray-400">
+          <h1 className="text-2xl font-bold text-destructive">Error</h1>
+          <p className="text-muted-foreground">
             Failed to load applicant details: {proposalError.message}
           </p>
         </main>
@@ -147,17 +147,17 @@ export default function ApplicantDetailPage() {
 
   if (!proposal) {
     return (
-      <div className="flex min-h-screen bg-[#202020] text-white">
+      <div className="flex min-h-screen bg-background text-foreground">
         <Sidebar
           currentPage="applicant-detail"
           isSidebarOpen={isSidebarOpen}
           toggleSidebar={toggleSidebar}
         />
-        <main className="flex-1 p-8 flex flex-col items-center justify-center">
-          <h1 className="text-2xl font-bold text-red-500">
+        <main className="flex-1 p-8 flex flex-col items-center justify-center ">
+          <h1 className="text-2xl font-bold text-destructive">
             Applicant Not Found
           </h1>
-          <p className="text-gray-400">
+          <p className="text-muted-foreground">
             The applicant you are looking for does not exist for Job ID: {jobId}
             .
           </p>
@@ -233,7 +233,7 @@ export default function ApplicantDetailPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#202020] text-white">
+    <div className="flex">
       <Sidebar
         currentPage="applicant-detail"
         isSidebarOpen={isSidebarOpen}
@@ -245,7 +245,7 @@ export default function ApplicantDetailPage() {
         }`}
       >
         <ScrollArea className="flex-1 h-full pr-4">
-          <Card className="bg-[#2C2C2C] p-8 rounded-lg mb-8">
+          <Card className="bg-card p-8 rounded-lg mb-8">
             <div className="flex items-center mb-6">
               <Avatar className="h-16 w-16 mr-4">
                 <AvatarImage
@@ -258,7 +258,7 @@ export default function ApplicantDetailPage() {
               </Avatar>
               <div>
                 <h1 className="text-3xl font-bold">{proposal.provider.name}</h1>
-                <p className="text-gray-400">
+                <p className="text-muted-foreground">
                   Applying for: {proposal.job.title}
                 </p>
                 <div className="mt-2">{getStatusBadge(proposal.status)}</div>
@@ -271,14 +271,14 @@ export default function ApplicantDetailPage() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="bg-[#3A3A3A] border-none text-white"
+                    className="bg-muted border-none text-foreground"
                   >
                     <Share2 className="mr-2" size={18} /> Share
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-[#2C2C2C] text-white">
+                <DropdownMenuContent className="bg-card text-foreground">
                   <DropdownMenuLabel>Select platform</DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-gray-600" />
+                  <DropdownMenuSeparator className="bg-border" />
                   <DropdownMenuItem onClick={() => handleShare("facebook")}>
                     Facebook
                   </DropdownMenuItem>
@@ -301,14 +301,14 @@ export default function ApplicantDetailPage() {
             {/* === Proposal Details === */}
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-3">Proposal Message</h2>
-              <p className="text-gray-300 leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed">
                 {proposal.coverLetter || "No cover letter provided."}
               </p>
             </div>
 
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-3">Budget Offer</h2>
-              <p className="text-gray-300">
+              <p className="text-muted-foreground">
                 {proposal.currency} {proposal.price}
               </p>
             </div>
@@ -324,17 +324,19 @@ export default function ApplicantDetailPage() {
                         href={attachment}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-[#3A3A3A] p-4 rounded-lg flex flex-col items-center hover:bg-[#4A4A4A] transition-colors"
+                        className="bg-muted p-4 rounded-lg flex flex-col items-center hover:bg-muted/80 transition-colors"
                       >
                         <FileText className="mb-2 text-yellow-500" size={32} />
-                        <span className="text-sm text-center">
+                        <span className="text-sm text-center text-muted-foreground">
                           {attachment.split("/").pop()}
                         </span>
                       </a>
                     )
                   )
                 ) : (
-                  <p className="text-gray-400">No attachments provided.</p>
+                  <p className="text-muted-foreground">
+                    No attachments provided.
+                  </p>
                 )}
               </div>
             </div>
@@ -343,7 +345,7 @@ export default function ApplicantDetailPage() {
             <div className="flex justify-end space-x-4 mt-8">
               <Button
                 variant="outline"
-                className="bg-[#3A3A3A] border-none text-white"
+                className="bg-muted border-none text-foreground"
                 onClick={
                   () =>
                     router.push(

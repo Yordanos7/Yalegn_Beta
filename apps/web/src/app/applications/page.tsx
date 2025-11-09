@@ -38,16 +38,16 @@ export default function ApplicationsPage() {
   console.log("the account type:", session?.user?.accountType);
 
   return (
-    <div className="flex min-h-screen bg-[#202020] text-white">
+    <div className="flex">
       <Sidebar currentPage="applications" />
 
       {/* Main Content */}
-      <main className="flex-1 p-8 bg-[#202020] flex flex-col">
+      <main className="flex-1 p-8 bg-background flex flex-col">
         {/* Main Header for Job Posts */}
-        <header className="flex items-center justify-between mb-8 bg-[#2C2C2C] p-4 rounded-lg">
+        <header className="flex items-center justify-between mb-8 bg-card p-4 rounded-lg">
           <div className="flex flex-col">
-            <h1 className="text-2xl font-bold">Job Posts</h1>
-            <p className="text-gray-400">
+            <h1 className="text-2xl font-bold text-foreground">Job Posts</h1>
+            <p className="text-muted-foreground">
               Explore available job opportunities from various organizations.
             </p>
           </div>
@@ -74,18 +74,18 @@ export default function ApplicationsPage() {
         <div className="flex items-center space-x-4 mb-6">
           <Input
             placeholder="Search by job title..."
-            className="flex-1 bg-[#3A3A3A] border-none text-white placeholder-gray-400"
+            className="flex-1 bg-muted border-none text-foreground placeholder-muted-foreground"
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="bg-[#3A3A3A] border-none text-white"
+                className="bg-muted border-none text-foreground"
               >
                 Category: All
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-[#2C2C2C] text-white border-none">
+            <DropdownMenuContent className="bg-card text-foreground border-none">
               <DropdownMenuItem>All</DropdownMenuItem>
               <DropdownMenuItem>Design</DropdownMenuItem>
               <DropdownMenuItem>Development</DropdownMenuItem>
@@ -96,12 +96,12 @@ export default function ApplicationsPage() {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="bg-[#3A3A3A] border-none text-white"
+                className="bg-muted border-none text-foreground"
               >
                 Sort by: Newest
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-[#2C2C2C] text-white border-none">
+            <DropdownMenuContent className="bg-card text-foreground border-none">
               <DropdownMenuItem>Newest</DropdownMenuItem>
               <DropdownMenuItem>Oldest</DropdownMenuItem>
               <DropdownMenuItem>Budget</DropdownMenuItem>
@@ -116,14 +116,14 @@ export default function ApplicationsPage() {
               <Loader className="animate-spin" size={48} />
             </div>
           ) : error ? (
-            <div className="text-red-500 text-center">
+            <div className="text-destructive text-center">
               Error fetching jobs: {error.message}
             </div>
           ) : jobs && jobs.length > 0 ? (
             jobs.map((job: Job) => (
               <Card
                 key={job.id}
-                className="bg-[#2C2C2C] p-6 rounded-lg mb-4 flex items-center justify-between cursor-pointer"
+                className="bg-card p-6 rounded-lg mb-4 flex items-center justify-between cursor-pointer"
                 onClick={() => router.push(`/jobs/${job.id}`)}
               >
                 <div className="flex items-center">
@@ -132,9 +132,11 @@ export default function ApplicationsPage() {
                     size={32}
                   />
                   <div>
-                    <p className="text-xl font-semibold">{job.title}</p>
-                    <p className="text-gray-400">{job.seeker.name}</p>
-                    <div className="flex items-center text-sm text-gray-400 mt-1">
+                    <p className="text-xl font-semibold text-foreground">
+                      {job.title}
+                    </p>
+                    <p className="text-muted-foreground">{job.seeker.name}</p>
+                    <div className="flex items-center text-sm text-muted-foreground mt-1">
                       <Users className="mr-1" size={16} />
                       <span>Applicants: {job.proposals.length}</span>
                       <DollarSign className="ml-4 mr-1" size={16} />
@@ -190,7 +192,7 @@ export default function ApplicationsPage() {
               </Card>
             ))
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8">
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8">
               <Briefcase size={48} className="mb-4" />
               <p className="text-lg text-center">
                 No job postings available yet. Check back later!
