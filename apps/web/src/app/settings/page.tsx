@@ -351,7 +351,7 @@ const SettingsPage = () => {
                 Current Plan: Free Tier
               </p>
               <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
-                Upgrade Plan
+                The Upgrade plan is coming soon!
               </button>
             </div>
           </section>
@@ -385,44 +385,19 @@ const SettingsPage = () => {
           </section>
 
           <section
-            id="language"
-            className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow"
-          >
-            <h2 className="text-2xl font-semibold mb-4">Language & Region</h2>
-            <p>Set your preferred language and regional format.</p>
-            <div className="mt-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="language-select"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Language
-                </label>
-                <select
-                  id="language-select"
-                  className="mt-1 block w-1/2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  value={selectedLanguage}
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                >
-                  <option>English</option>
-                  <option>Spanish</option>
-                  <option>French</option>
-                </select>
-              </div>
-            </div>
-          </section>
-
-          <section
             id="help"
             className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow"
           >
             <h2 className="text-2xl font-semibold mb-4">Help & Support</h2>
             <p>Find answers to common questions or contact support.</p>
             <div className="mt-4 space-y-2">
-              <a href="#" className="block text-blue-600 hover:underline">
+              <a href="/faq" className="block text-blue-600 hover:underline">
                 FAQ
               </a>
-              <a href="#" className="block text-blue-600 hover:underline">
+              <a
+                href="/support"
+                className="block text-blue-600 hover:underline"
+              >
                 Contact Support
               </a>
             </div>
