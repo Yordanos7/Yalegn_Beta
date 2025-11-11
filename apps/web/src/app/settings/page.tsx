@@ -4,14 +4,18 @@ import React, { useState, useEffect } from "react";
 import { useSession } from "@/hooks/use-session";
 import { trpc } from "@/utils/trpc";
 import { toast } from "sonner";
-import { Loader } from "lucide-react";
+import { Loader, Cloud, Bot, Brain, Cpu, Workflow } from "lucide-react"; // Added Cloud, Brain, Workflow icons
+
 import { useTheme } from "next-themes"; // For appearance settings
+import LogoutConfirmationDialog from "@/components/ui/logout-confirmation-dialog";
 import Link from "next/link";
 
 const SettingsPage = () => {
   const { session, isLoading: isSessionLoading } = useSession() as any;
   const [showChangePasswordTooltip, setShowChangePasswordTooltip] =
     useState(false);
+  const [showGoogleDriveTooltip, setShowGoogleDriveTooltip] = useState(false); // New state for Google Drive tooltip
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false); // New state for Delete Account dialog
   const userId = session?.user?.id;
   const { theme, setTheme } = useTheme(); // For appearance settings
 
@@ -111,6 +115,16 @@ const SettingsPage = () => {
     });
   };
 
+  const handleDeleteAccount = () => {
+    console.log("User account deleted!");
+    // In a real application, you would call your API to delete the user's account.
+    setShowDeleteAccountDialog(false);
+  };
+
+  const handleCloseDeleteAccountDialog = () => {
+    setShowDeleteAccountDialog(false);
+  };
+
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
@@ -118,7 +132,7 @@ const SettingsPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Sidebar for navigation within settings */}
         <aside className="md:col-span-1">
-          <nav className="space-y-2">
+          <nav className="space-y-2 hidden md:block">
             <a
               href="#account"
               className="block px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -161,12 +175,7 @@ const SettingsPage = () => {
             >
               Appearance
             </a>
-            <a
-              href="#language"
-              className="block px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              Language & Region
-            </a>
+
             <a
               href="#help"
               className="block px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -369,9 +378,31 @@ const SettingsPage = () => {
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Google Drive
                 </span>
-                <button className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700">
-                  Connect
-                </button>
+                <div
+                  className="relative inline-block"
+                  onMouseEnter={() => setShowGoogleDriveTooltip(true)}
+                  onMouseLeave={() => setShowGoogleDriveTooltip(false)}
+                >
+                  <button className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700">
+                    Connect
+                  </button>
+                  {showGoogleDriveTooltip && (
+                    <div className="absolute z-10 p-10 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm dark:bg-gray-700 bottom-full left-1/2 -translate-x-1/2 mb-2 flex flex-col items-start space-y-1">
+                      <div className="flex items-center mb-2x ">
+                        <Cloud size={70} className="mr-2 " />
+                        Connect your Google Drive account.
+                      </div>
+                      <div className="flex items-center">
+                        <Brain size={70} className="mr-2" />
+                        Real time system integration and AI integration.
+                      </div>
+                      <div className="flex items-center">
+                        <Workflow size={70} className="mr-2" />
+                        Automated workflows for efficiency with n8n.
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </section>
@@ -449,15 +480,24 @@ const SettingsPage = () => {
               Delete Account
             </h2>
             <p className="text-red-700 dark:text-red-300">
-              Permanently delete your account and all associated data. This
-              action cannot be undone.
+              you can delete your account and all associated data.
             </p>
-            <button className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+            <button
+              className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              onClick={() => setShowDeleteAccountDialog(true)}
+            >
               Delete My Account
             </button>
           </section>
         </main>
       </div>
+      <LogoutConfirmationDialog
+        isOpen={showDeleteAccountDialog}
+        onClose={handleCloseDeleteAccountDialog}
+        onConfirm={handleDeleteAccount}
+        title="Are you sure you want to delete your account?"
+        description="This action is irreversible. All your data will be permanently removed."
+      />
     </div>
   );
 };

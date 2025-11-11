@@ -197,7 +197,7 @@ export default function MarketplacePage() {
 
       {/* Main Content */}
       <main
-        className={`flex-1 p-8 bg-[#202020] flex flex-col transition-all duration-300 ease-in-out ${
+        className={`flex-1 p-4 md:p-8 bg-[#202020] flex flex-col transition-all duration-300 ease-in-out ${
           isSidebarOpen ? "ml-0" : "ml-0"
         }`}
       >
@@ -231,16 +231,13 @@ export default function MarketplacePage() {
         />
 
         {/* Content area for product grid and featured freelancers */}
-        <div className="flex flex-1 space-x-8 ">
+        <div className="flex flex-col md:flex-row flex-1 md:space-x-8 space-y-8 md:space-y-0">
           {/* Product Grid */}
-          <div className="flex-1 grid grid-cols-3 gap-6 ">
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredListings.map((listing: MarketplaceListing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>
-
-          {/* Featured Freelancers Sidebar */}
-          <Card className=""></Card>
         </div>
       </main>
     </div>

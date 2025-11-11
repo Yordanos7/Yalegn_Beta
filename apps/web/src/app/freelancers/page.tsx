@@ -100,7 +100,7 @@ export default function FreelancersPage() {
   console.log("Freelancers data:", freelancers);
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Filter Section */}
       <FreelancerFilters filters={filters} setFilters={setFilters} />
 
@@ -111,7 +111,7 @@ export default function FreelancersPage() {
       {isLoading ? (
         <div className="text-white">Loading freelancers...</div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {freelancers && freelancers.length > 0 ? (
             freelancers.map((freelancer: Freelancer) => (
               <FreelancerCard key={freelancer.id} freelancer={freelancer} />

@@ -59,7 +59,7 @@ export default function FreelancerCard({ freelancer }: FreelancerCardProps) {
     freelancer.profile?.freelancerLevel?.replace(/_/g, " ") || "N/A";
 
   return (
-    <div className="bg-[#2C2C2C] p-6 rounded-lg shadow-md text-white flex flex-col items-center text-center w-150">
+    <div className="bg-[#2C2C2C] p-6 rounded-lg shadow-md text-white flex flex-col items-center text-center w-full">
       <div className="relative w-24 h-24 mb-4">
         <Image
           src={freelancer.image || "/placeholder-avatar.jpg"}
@@ -83,7 +83,7 @@ export default function FreelancerCard({ freelancer }: FreelancerCardProps) {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mt-4">
         {/* About Section */}
         <div className="text-left">
           <h4 className="text-lg font-semibold mb-2">About</h4>

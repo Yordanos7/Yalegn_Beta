@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, Filter } from "lucide-react"; // Added Filter icon
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"; // Import Sheet components
 import type {
   FreelancerFiltersState,
   RateType,
@@ -113,9 +120,9 @@ export default function FreelancerFilters({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-4 mb-8 bg-[#2C2C2C] p-3 rounded-lg">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-start gap-4 mb-8 bg-[#2C2C2C] p-3 rounded-lg">
       {/* Search Input */}
-      <div className="relative flex-1 min-w-[180px] sm:min-w-[200px]">
+      <div className="relative w-full sm:w-auto flex-grow">
         <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
           size={20}
@@ -130,7 +137,7 @@ export default function FreelancerFilters({
       </div>
 
       {/* Location Input */}
-      <div className="relative flex-1 min-w-[180px] sm:min-w-[200px]">
+      <div className="relative w-full sm:w-auto flex-grow">
         <Input
           type="text"
           placeholder="Location"
@@ -140,178 +147,383 @@ export default function FreelancerFilters({
         />
       </div>
 
-      {/* Category Filter */}
-      <Select
-        onValueChange={handleCategoryChange}
-        value={filters.category || ""}
-      >
-        <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
-          <SelectValue placeholder="Category" />
-        </SelectTrigger>
-        <SelectContent className="bg-[#3A3A3A] text-white">
-          {isLoadingCategories ? (
-            <SelectItem value="loading" disabled>
-              Loading...
-            </SelectItem>
-          ) : (
-            categoryData?.categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.name}>
-                {cat.label}
+      {/* Filter Button for small screens */}
+      <Sheet>
+        <SheetTrigger asChild className="sm:hidden">
+          <Button
+            variant="outline"
+            className="w-full bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] hover:text-white"
+          >
+            <Filter className="mr-2" size={16} />
+            Filters
+          </Button>
+        </SheetTrigger>
+        <SheetContent
+          side="right"
+          className="bg-[#2C2C2C] text-white w-full max-w-xs sm:max-w-md overflow-y-auto"
+        >
+          <SheetHeader>
+            <SheetTitle className="text-white">Filter Freelancers</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-4 py-4">
+            {/* Category Filter */}
+            <Select
+              onValueChange={handleCategoryChange}
+              value={filters.category || ""}
+            >
+              <SelectTrigger className="w-full bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#3A3A3A] text-white">
+                {isLoadingCategories ? (
+                  <SelectItem value="loading" disabled>
+                    Loading...
+                  </SelectItem>
+                ) : (
+                  categoryData?.categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.name}>
+                      {cat.label}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+
+            {/* Rate Type Filter */}
+            <Select
+              onValueChange={handleRateTypeChange}
+              value={filters.rateType || ""}
+            >
+              <SelectTrigger className="w-full bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+                <SelectValue placeholder="Rate Type" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#3A3A3A] text-white">
+                <SelectItem value="HOURLY">Hourly</SelectItem>
+                <SelectItem value="FIXED">Fixed Price</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Experiences Filter */}
+            <Select
+              onValueChange={handleExperiencesChange}
+              value={filters.experiences || ""}
+            >
+              <SelectTrigger className="w-full bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+                <SelectValue placeholder="Experiences" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#3A3A3A] text-white">
+                {isLoadingExperiences ? (
+                  <SelectItem value="loading" disabled>
+                    Loading...
+                  </SelectItem>
+                ) : (
+                  experienceData?.experienceLevels.map((exp) => (
+                    <SelectItem key={exp.id} value={exp.name}>
+                      {exp.label}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+
+            {/* Language Filter */}
+            <Select
+              onValueChange={handleLanguageChange}
+              value={filters.language || ""}
+            >
+              <SelectTrigger className="w-full bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+                <SelectValue placeholder="Language" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#3A3A3A] text-white">
+                <SelectItem value="English">English</SelectItem>
+                <SelectItem value="Amharic">Amharic</SelectItem>
+                <SelectItem value="Spanish">Spanish</SelectItem>
+                {/* Add more languages as needed */}
+              </SelectContent>
+            </Select>
+
+            {/* Rating Filter */}
+            <Select
+              onValueChange={handleRatingChange}
+              value={filters.rating?.toString() || ""}
+            >
+              <SelectTrigger className="w-full bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+                <SelectValue placeholder="Rating" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#3A3A3A] text-white">
+                <SelectItem value="5">5 Stars</SelectItem>
+                <SelectItem value="4">4 Stars & Up</SelectItem>
+                <SelectItem value="3">3 Stars & Up</SelectItem>
+                {/* Add more rating options */}
+              </SelectContent>
+            </Select>
+
+            {/* Level Filter */}
+            <Select
+              onValueChange={handleLevelChange}
+              value={filters.level || ""}
+            >
+              <SelectTrigger className="w-full bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+                <SelectValue placeholder="Level" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#3A3A3A] text-white">
+                {isLoadingLevels ? (
+                  <SelectItem value="loading" disabled>
+                    Loading...
+                  </SelectItem>
+                ) : (
+                  levelData?.freelancerLevels.map((lvl) => (
+                    <SelectItem key={lvl.id} value={lvl.name}>
+                      {lvl.label}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+
+            {/* Estimated Delivery Filter */}
+            <Select
+              onValueChange={handleEstimatedDeliveryChange}
+              value={filters.estimatedDelivery || ""}
+            >
+              <SelectTrigger className="w-full bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+                <SelectValue placeholder="Estimated Delivery" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#3A3A3A] text-white">
+                {isLoadingDelivery ? (
+                  <SelectItem value="loading" disabled>
+                    Loading...
+                  </SelectItem>
+                ) : (
+                  deliveryData?.deliveryTimes.map((time) => (
+                    <SelectItem key={time.id} value={time.name}>
+                      {time.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+
+            {/* Is Verified Filter (Toggle Button or Select) */}
+            <Select
+              onValueChange={(value) =>
+                handleIsVerifiedChange(value === "true")
+              }
+              value={filters.isVerified?.toString() || ""}
+            >
+              <SelectTrigger className="w-full bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+                <SelectValue placeholder="Verified" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#3A3A3A] text-white">
+                <SelectItem value="true">Verified</SelectItem>
+                <SelectItem value="false">Not Verified</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Is Open To Work Filter (Toggle Button or Select) */}
+            <Select
+              onValueChange={(value) =>
+                handleIsOpenToWorkChange(value === "true")
+              }
+              value={filters.isOpenToWork?.toString() || ""}
+            >
+              <SelectTrigger className="w-full bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+                <SelectValue placeholder="Open to Work" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#3A3A3A] text-white">
+                <SelectItem value="true">Open to Work</SelectItem>
+                <SelectItem value="false">Not Open to Work</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Clear Filters Button */}
+            <Button
+              variant="ghost"
+              className="text-gray-400 hover:text-white flex items-center w-full justify-center"
+              onClick={clearFilters}
+            >
+              <X className="mr-1" size={16} />
+              Clear
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Filters for large screens */}
+      <div className="hidden sm:flex flex-wrap items-center gap-4 flex-grow">
+        {/* Category Filter */}
+        <Select
+          onValueChange={handleCategoryChange}
+          value={filters.category || ""}
+        >
+          <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#3A3A3A] text-white">
+            {isLoadingCategories ? (
+              <SelectItem value="loading" disabled>
+                Loading...
               </SelectItem>
-            ))
-          )}
-        </SelectContent>
-      </Select>
+            ) : (
+              categoryData?.categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.name}>
+                  {cat.label}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
 
-      {/* Rate Type Filter */}
-      <Select
-        onValueChange={handleRateTypeChange}
-        value={filters.rateType || ""}
-      >
-        <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
-          <SelectValue placeholder="Rate Type" />
-        </SelectTrigger>
-        <SelectContent className="bg-[#3A3A3A] text-white">
-          <SelectItem value="HOURLY">Hourly</SelectItem>
-          <SelectItem value="FIXED">Fixed Price</SelectItem>
-        </SelectContent>
-      </Select>
+        {/* Rate Type Filter */}
+        <Select
+          onValueChange={handleRateTypeChange}
+          value={filters.rateType || ""}
+        >
+          <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+            <SelectValue placeholder="Rate Type" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#3A3A3A] text-white">
+            <SelectItem value="HOURLY">Hourly</SelectItem>
+            <SelectItem value="FIXED">Fixed Price</SelectItem>
+          </SelectContent>
+        </Select>
 
-      {/* Experiences Filter */}
-      <Select
-        onValueChange={handleExperiencesChange}
-        value={filters.experiences || ""}
-      >
-        <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
-          <SelectValue placeholder="Experiences" />
-        </SelectTrigger>
-        <SelectContent className="bg-[#3A3A3A] text-white">
-          {isLoadingExperiences ? (
-            <SelectItem value="loading" disabled>
-              Loading...
-            </SelectItem>
-          ) : (
-            experienceData?.experienceLevels.map((exp) => (
-              <SelectItem key={exp.id} value={exp.name}>
-                {exp.label}
+        {/* Experiences Filter */}
+        <Select
+          onValueChange={handleExperiencesChange}
+          value={filters.experiences || ""}
+        >
+          <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+            <SelectValue placeholder="Experiences" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#3A3A3A] text-white">
+            {isLoadingExperiences ? (
+              <SelectItem value="loading" disabled>
+                Loading...
               </SelectItem>
-            ))
-          )}
-        </SelectContent>
-      </Select>
+            ) : (
+              experienceData?.experienceLevels.map((exp) => (
+                <SelectItem key={exp.id} value={exp.name}>
+                  {exp.label}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
 
-      {/* Language Filter */}
-      <Select
-        onValueChange={handleLanguageChange}
-        value={filters.language || ""}
-      >
-        <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
-          <SelectValue placeholder="Language" />
-        </SelectTrigger>
-        <SelectContent className="bg-[#3A3A3A] text-white">
-          <SelectItem value="English">English</SelectItem>
-          <SelectItem value="Amharic">Amharic</SelectItem>
-          <SelectItem value="Spanish">Spanish</SelectItem>
-          {/* Add more languages as needed */}
-        </SelectContent>
-      </Select>
+        {/* Language Filter */}
+        <Select
+          onValueChange={handleLanguageChange}
+          value={filters.language || ""}
+        >
+          <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+            <SelectValue placeholder="Language" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#3A3A3A] text-white">
+            <SelectItem value="English">English</SelectItem>
+            <SelectItem value="Amharic">Amharic</SelectItem>
+            <SelectItem value="Spanish">Spanish</SelectItem>
+            {/* Add more languages as needed */}
+          </SelectContent>
+        </Select>
 
-      {/* Rating Filter */}
-      <Select
-        onValueChange={handleRatingChange}
-        value={filters.rating?.toString() || ""}
-      >
-        <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
-          <SelectValue placeholder="Rating" />
-        </SelectTrigger>
-        <SelectContent className="bg-[#3A3A3A] text-white">
-          <SelectItem value="5">5 Stars</SelectItem>
-          <SelectItem value="4">4 Stars & Up</SelectItem>
-          <SelectItem value="3">3 Stars & Up</SelectItem>
-          {/* Add more rating options */}
-        </SelectContent>
-      </Select>
+        {/* Rating Filter */}
+        <Select
+          onValueChange={handleRatingChange}
+          value={filters.rating?.toString() || ""}
+        >
+          <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+            <SelectValue placeholder="Rating" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#3A3A3A] text-white">
+            <SelectItem value="5">5 Stars</SelectItem>
+            <SelectItem value="4">4 Stars & Up</SelectItem>
+            <SelectItem value="3">3 Stars & Up</SelectItem>
+            {/* Add more rating options */}
+          </SelectContent>
+        </Select>
 
-      {/* Level Filter */}
-      <Select onValueChange={handleLevelChange} value={filters.level || ""}>
-        <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
-          <SelectValue placeholder="Level" />
-        </SelectTrigger>
-        <SelectContent className="bg-[#3A3A3A] text-white">
-          {isLoadingLevels ? (
-            <SelectItem value="loading" disabled>
-              Loading...
-            </SelectItem>
-          ) : (
-            levelData?.freelancerLevels.map((lvl) => (
-              <SelectItem key={lvl.id} value={lvl.name}>
-                {lvl.label}
+        {/* Level Filter */}
+        <Select onValueChange={handleLevelChange} value={filters.level || ""}>
+          <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+            <SelectValue placeholder="Level" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#3A3A3A] text-white">
+            {isLoadingLevels ? (
+              <SelectItem value="loading" disabled>
+                Loading...
               </SelectItem>
-            ))
-          )}
-        </SelectContent>
-      </Select>
+            ) : (
+              levelData?.freelancerLevels.map((lvl) => (
+                <SelectItem key={lvl.id} value={lvl.name}>
+                  {lvl.label}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
 
-      {/* Estimated Delivery Filter */}
-      <Select
-        onValueChange={handleEstimatedDeliveryChange}
-        value={filters.estimatedDelivery || ""}
-      >
-        <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
-          <SelectValue placeholder="Estimated Delivery" />
-        </SelectTrigger>
-        <SelectContent className="bg-[#3A3A3A] text-white">
-          {isLoadingDelivery ? (
-            <SelectItem value="loading" disabled>
-              Loading...
-            </SelectItem>
-          ) : (
-            deliveryData?.deliveryTimes.map((time) => (
-              <SelectItem key={time.id} value={time.name}>
-                {time.name}
+        {/* Estimated Delivery Filter */}
+        <Select
+          onValueChange={handleEstimatedDeliveryChange}
+          value={filters.estimatedDelivery || ""}
+        >
+          <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+            <SelectValue placeholder="Estimated Delivery" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#3A3A3A] text-white">
+            {isLoadingDelivery ? (
+              <SelectItem value="loading" disabled>
+                Loading...
               </SelectItem>
-            ))
-          )}
-        </SelectContent>
-      </Select>
+            ) : (
+              deliveryData?.deliveryTimes.map((time) => (
+                <SelectItem key={time.id} value={time.name}>
+                  {time.name}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
 
-      {/* Is Verified Filter (Toggle Button or Select) */}
-      <Select
-        onValueChange={(value) => handleIsVerifiedChange(value === "true")}
-        value={filters.isVerified?.toString() || ""}
-      >
-        <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
-          <SelectValue placeholder="Verified" />
-        </SelectTrigger>
-        <SelectContent className="bg-[#3A3A3A] text-white">
-          <SelectItem value="true">Verified</SelectItem>
-          <SelectItem value="false">Not Verified</SelectItem>
-        </SelectContent>
-      </Select>
+        {/* Is Verified Filter (Toggle Button or Select) */}
+        <Select
+          onValueChange={(value) => handleIsVerifiedChange(value === "true")}
+          value={filters.isVerified?.toString() || ""}
+        >
+          <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+            <SelectValue placeholder="Verified" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#3A3A3A] text-white">
+            <SelectItem value="true">Verified</SelectItem>
+            <SelectItem value="false">Not Verified</SelectItem>
+          </SelectContent>
+        </Select>
 
-      {/* Is Open To Work Filter (Toggle Button or Select) */}
-      <Select
-        onValueChange={(value) => handleIsOpenToWorkChange(value === "true")}
-        value={filters.isOpenToWork?.toString() || ""}
-      >
-        <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
-          <SelectValue placeholder="Open to Work" />
-        </SelectTrigger>
-        <SelectContent className="bg-[#3A3A3A] text-white">
-          <SelectItem value="true">Open to Work</SelectItem>
-          <SelectItem value="false">Not Open to Work</SelectItem>
-        </SelectContent>
-      </Select>
+        {/* Is Open To Work Filter (Toggle Button or Select) */}
+        <Select
+          onValueChange={(value) => handleIsOpenToWorkChange(value === "true")}
+          value={filters.isOpenToWork?.toString() || ""}
+        >
+          <SelectTrigger className="w-full sm:w-[160px] bg-[#3A3A3A] border-none text-gray-400 hover:text-white">
+            <SelectValue placeholder="Open to Work" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#3A3A3A] text-white">
+            <SelectItem value="true">Open to Work</SelectItem>
+            <SelectItem value="false">Not Open to Work</SelectItem>
+          </SelectContent>
+        </Select>
 
-      {/* Clear Filters Button */}
-      <Button
-        variant="ghost"
-        className="text-gray-400 hover:text-white flex items-center"
-        onClick={clearFilters}
-      >
-        <X className="mr-1" size={16} />
-        Clear
-      </Button>
+        {/* Clear Filters Button */}
+        <Button
+          variant="ghost"
+          className="text-gray-400 hover:text-white flex items-center w-full sm:w-auto justify-center"
+          onClick={clearFilters}
+        >
+          <X className="mr-1" size={16} />
+          Clear
+        </Button>
+      </div>
     </div>
   );
 }

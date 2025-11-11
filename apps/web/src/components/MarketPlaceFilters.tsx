@@ -11,10 +11,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Search, ChevronDown, ShoppingCart } from "lucide-react";
+import { Search, ChevronDown, ShoppingCart, Filter, X } from "lucide-react"; // Added Filter icon and X
 import Link from "next/link";
 import { trpc } from "@/utils/trpc";
 import { CategoryEnum } from "@my-better-t-app/db/prisma/generated/enums"; // Import CategoryEnum
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"; // Import Sheet components
 
 interface Category {
   id: string;
@@ -176,11 +183,19 @@ export const MarketPlaceFilters: React.FC<FilterProps> = ({
     onFilteredListingsChange(memoizedFilteredListings);
   }, [memoizedFilteredListings, onFilteredListingsChange]);
 
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedCategory(null);
+    setPriceRange({ min: null, max: null });
+    setShippingLocation(null);
+    setEstimatedDelivery(null);
+  };
+
   console.log("this is category I get from Backend", dynamicCategories);
 
   return (
-    <div className="flex items-center space-x-4 mb-8 bg-[#2C2C2C] p-3 rounded-lg">
-      <div className="relative flex-1">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-start gap-4 mb-8 bg-[#2C2C2C] p-3 rounded-lg">
+      <div className="relative w-full sm:w-auto flex-grow">
         <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
           size={20}
@@ -194,171 +209,381 @@ export const MarketPlaceFilters: React.FC<FilterProps> = ({
         />
       </div>
 
-      {/* Category Filter */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+      {/* Filter Button for small screens */}
+      <Sheet>
+        <SheetTrigger asChild className="sm:hidden">
           <Button
-            variant="ghost"
-            className="text-gray-400 hover:text-white flex items-center"
-            disabled={isCategoriesPending}
+            variant="outline"
+            className="w-full bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] hover:text-white"
           >
-            Category ({selectedCategory || "All"}){" "}
-            <ChevronDown className="ml-1" size={16} />
+            <Filter className="mr-2" size={16} />
+            Filters
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-[#3A3A3A] text-white border-none">
-          <DropdownMenuLabel>Select Category</DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-gray-600" />
-          {isCategoriesPending ? (
-            <DropdownMenuItem disabled>Loading categories...</DropdownMenuItem>
-          ) : (
-            <>
-              <DropdownMenuItem
-                onClick={() => setSelectedCategory(null)}
-                className="hover:bg-[#4A4A4A] cursor-pointer"
-              >
-                All
-              </DropdownMenuItem>
-              {dynamicCategories.map(
-                (category: { id: string; name: string; slug: string }) => (
+        </SheetTrigger>
+        <SheetContent
+          side="right"
+          className="bg-[#2C2C2C] text-white w-full max-w-xs sm:max-w-md overflow-y-auto"
+        >
+          <SheetHeader>
+            <SheetTitle className="text-white">Filter Marketplace</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-4 py-4">
+            {/* Category Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="text-gray-400 hover:text-white flex items-center w-full justify-center"
+                  disabled={isCategoriesPending}
+                >
+                  Category ({selectedCategory || "All"}){" "}
+                  <ChevronDown className="ml-1" size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-[#3A3A3A] text-white border-none">
+                <DropdownMenuLabel>Select Category</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-gray-600" />
+                {isCategoriesPending ? (
+                  <DropdownMenuItem disabled>
+                    Loading categories...
+                  </DropdownMenuItem>
+                ) : (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => setSelectedCategory(null)}
+                      className="hover:bg-[#4A4A4A] cursor-pointer"
+                    >
+                      All
+                    </DropdownMenuItem>
+                    {dynamicCategories.map(
+                      (category: {
+                        id: string;
+                        name: string;
+                        slug: string;
+                      }) => (
+                        <DropdownMenuItem
+                          key={category.id}
+                          onClick={() => setSelectedCategory(category.id)}
+                          className="hover:bg-[#4A4A4A] cursor-pointer"
+                        >
+                          {category.name}
+                        </DropdownMenuItem>
+                      )
+                    )}
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Price Range Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="text-gray-400 hover:text-white flex items-center w-full justify-center"
+                >
+                  Price Range (
+                  {priceRange.min !== null || priceRange.max !== null
+                    ? `$${priceRange.min || 0} - $${priceRange.max || "Max"}`
+                    : "All"}
+                  ) <ChevronDown className="ml-1" size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-[#3A3A3A] text-white border-none p-2">
+                <DropdownMenuLabel>Set Price Range</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-gray-600" />
+                <div className="flex flex-col space-y-2 p-2">
+                  <Input
+                    type="number"
+                    placeholder="Min Price"
+                    value={priceRange.min !== null ? priceRange.min : ""}
+                    onChange={(e) =>
+                      setPriceRange((prev) => ({
+                        ...prev,
+                        min: e.target.value ? parseFloat(e.target.value) : null,
+                      }))
+                    }
+                    className="bg-[#2C2C2C] border-none text-white focus:ring-0 focus:outline-none"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max Price"
+                    value={priceRange.max !== null ? priceRange.max : ""}
+                    onChange={(e) =>
+                      setPriceRange((prev) => ({
+                        ...prev,
+                        max: e.target.value ? parseFloat(e.target.value) : null,
+                      }))
+                    }
+                    className="bg-[#2C2C2C] border-none text-white focus:ring-0 focus:outline-none"
+                  />
+                  <Button
+                    onClick={() => setPriceRange({ min: null, max: null })}
+                    variant="ghost"
+                    className="text-gray-400 hover:text-white"
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Shipping Location Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="text-gray-400 hover:text-white flex items-center w-full justify-center"
+                >
+                  Shipping Location ({shippingLocation || "All"}){" "}
+                  <ChevronDown className="ml-1" size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-[#3A3A3A] text-white border-none">
+                <DropdownMenuLabel>Select Location</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-gray-600" />
+                <DropdownMenuItem
+                  onClick={() => setShippingLocation(null)}
+                  className="hover:bg-[#4A4A4A] cursor-pointer"
+                >
+                  All
+                </DropdownMenuItem>
+                {dynamicLocations.map((location) => (
                   <DropdownMenuItem
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
+                    key={location}
+                    onClick={() => setShippingLocation(location)}
                     className="hover:bg-[#4A4A4A] cursor-pointer"
                   >
-                    {category.name}
+                    {location}
                   </DropdownMenuItem>
-                )
-              )}
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-      {/* Price Range Filter */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="text-gray-400 hover:text-white flex items-center"
-          >
-            Price Range (
-            {priceRange.min !== null || priceRange.max !== null
-              ? `$${priceRange.min || 0} - $${priceRange.max || "Max"}`
-              : "All"}
-            ) <ChevronDown className="ml-1" size={16} />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-[#3A3A3A] text-white border-none p-2">
-          <DropdownMenuLabel>Set Price Range</DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-gray-600" />
-          <div className="flex flex-col space-y-2 p-2">
-            <Input
-              type="number"
-              placeholder="Min Price"
-              value={priceRange.min !== null ? priceRange.min : ""}
-              onChange={(e) =>
-                setPriceRange((prev) => ({
-                  ...prev,
-                  min: e.target.value ? parseFloat(e.target.value) : null,
-                }))
-              }
-              className="bg-[#2C2C2C] border-none text-white focus:ring-0 focus:outline-none"
-            />
-            <Input
-              type="number"
-              placeholder="Max Price"
-              value={priceRange.max !== null ? priceRange.max : ""}
-              onChange={(e) =>
-                setPriceRange((prev) => ({
-                  ...prev,
-                  max: e.target.value ? parseFloat(e.target.value) : null,
-                }))
-              }
-              className="bg-[#2C2C2C] border-none text-white focus:ring-0 focus:outline-none"
-            />
+            {/* Estimated Delivery Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="text-gray-400 hover:text-white flex items-center w-full justify-center"
+                >
+                  Estimated Delivery (
+                  {estimatedDelivery !== null
+                    ? `${estimatedDelivery} Days`
+                    : "Any"}
+                  ) <ChevronDown className="ml-1" size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-[#3A3A3A] text-white border-none">
+                <DropdownMenuLabel>Select Delivery Time</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-gray-600" />
+                <DropdownMenuItem
+                  onClick={() => setEstimatedDelivery(null)}
+                  className="hover:bg-[#4A4A4A] cursor-pointer"
+                >
+                  Any
+                </DropdownMenuItem>
+                {dynamicDeliveryOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => setEstimatedDelivery(option.value)}
+                    className="hover:bg-[#4A4A4A] cursor-pointer"
+                  >
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Clear Filters Button */}
             <Button
-              onClick={() => setPriceRange({ min: null, max: null })}
               variant="ghost"
-              className="text-gray-400 hover:text-white"
+              className="text-gray-400 hover:text-white flex items-center w-full justify-center"
+              onClick={() => {
+                setSearchTerm("");
+                setSelectedCategory(null);
+                setPriceRange({ min: null, max: null });
+                setShippingLocation(null);
+                setEstimatedDelivery(null);
+              }}
             >
+              <X className="mr-1" size={16} />
               Clear
             </Button>
           </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </SheetContent>
+      </Sheet>
 
-      {/* Shipping Location Filter */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="text-gray-400 hover:text-white flex items-center"
-          >
-            Shipping Location ({shippingLocation || "All"}){" "}
-            <ChevronDown className="ml-1" size={16} />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-[#3A3A3A] text-white border-none">
-          <DropdownMenuLabel>Select Location</DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-gray-600" />
-          <DropdownMenuItem
-            onClick={() => setShippingLocation(null)}
-            className="hover:bg-[#4A4A4A] cursor-pointer"
-          >
-            All
-          </DropdownMenuItem>
-          {dynamicLocations.map((location) => (
+      {/* Filters for large screens */}
+      <div className="hidden sm:flex flex-wrap items-center gap-4 flex-grow">
+        {/* Category Filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="text-gray-400 hover:text-white flex items-center w-full sm:w-auto justify-center"
+              disabled={isCategoriesPending}
+            >
+              Category ({selectedCategory || "All"}){" "}
+              <ChevronDown className="ml-1" size={16} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="bg-[#3A3A3A] text-white border-none">
+            <DropdownMenuLabel>Select Category</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-gray-600" />
+            {isCategoriesPending ? (
+              <DropdownMenuItem disabled>
+                Loading categories...
+              </DropdownMenuItem>
+            ) : (
+              <>
+                <DropdownMenuItem
+                  onClick={() => setSelectedCategory(null)}
+                  className="hover:bg-[#4A4A4A] cursor-pointer"
+                >
+                  All
+                </DropdownMenuItem>
+                {dynamicCategories.map(
+                  (category: { id: string; name: string; slug: string }) => (
+                    <DropdownMenuItem
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className="hover:bg-[#4A4A4A] cursor-pointer"
+                    >
+                      {category.name}
+                    </DropdownMenuItem>
+                  )
+                )}
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Price Range Filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="text-gray-400 hover:text-white flex items-center w-full sm:w-auto justify-center"
+            >
+              Price Range (
+              {priceRange.min !== null || priceRange.max !== null
+                ? `$${priceRange.min || 0} - $${priceRange.max || "Max"}`
+                : "All"}
+              ) <ChevronDown className="ml-1" size={16} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="bg-[#3A3A3A] text-white border-none p-2">
+            <DropdownMenuLabel>Set Price Range</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-gray-600" />
+            <div className="flex flex-col space-y-2 p-2">
+              <Input
+                type="number"
+                placeholder="Min Price"
+                value={priceRange.min !== null ? priceRange.min : ""}
+                onChange={(e) =>
+                  setPriceRange((prev) => ({
+                    ...prev,
+                    min: e.target.value ? parseFloat(e.target.value) : null,
+                  }))
+                }
+                className="bg-[#2C2C2C] border-none text-white focus:ring-0 focus:outline-none"
+              />
+              <Input
+                type="number"
+                placeholder="Max Price"
+                value={priceRange.max !== null ? priceRange.max : ""}
+                onChange={(e) =>
+                  setPriceRange((prev) => ({
+                    ...prev,
+                    max: e.target.value ? parseFloat(e.target.value) : null,
+                  }))
+                }
+                className="bg-[#2C2C2C] border-none text-white focus:ring-0 focus:outline-none"
+              />
+              <Button
+                onClick={() => setPriceRange({ min: null, max: null })}
+                variant="ghost"
+                className="text-gray-400 hover:text-white"
+              >
+                Clear
+              </Button>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Shipping Location Filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="text-gray-400 hover:text-white flex items-center w-full sm:w-auto justify-center"
+            >
+              Shipping Location ({shippingLocation || "All"}){" "}
+              <ChevronDown className="ml-1" size={16} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="bg-[#3A3A3A] text-white border-none">
+            <DropdownMenuLabel>Select Location</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-gray-600" />
             <DropdownMenuItem
-              key={location}
-              onClick={() => setShippingLocation(location)}
+              onClick={() => setShippingLocation(null)}
               className="hover:bg-[#4A4A4A] cursor-pointer"
             >
-              {location}
+              All
             </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            {dynamicLocations.map((location) => (
+              <DropdownMenuItem
+                key={location}
+                onClick={() => setShippingLocation(location)}
+                className="hover:bg-[#4A4A4A] cursor-pointer"
+              >
+                {location}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-      {/* Estimated Delivery Filter */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="text-gray-400 hover:text-white flex items-center"
-          >
-            Estimated Delivery (
-            {estimatedDelivery !== null ? `${estimatedDelivery} Days` : "Any"}){" "}
-            <ChevronDown className="ml-1" size={16} />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-[#3A3A3A] text-white border-none">
-          <DropdownMenuLabel>Select Delivery Time</DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-gray-600" />
-          <DropdownMenuItem
-            onClick={() => setEstimatedDelivery(null)}
-            className="hover:bg-[#4A4A4A] cursor-pointer"
-          >
-            Any
-          </DropdownMenuItem>
-          {dynamicDeliveryOptions.map((option) => (
+        {/* Estimated Delivery Filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="text-gray-400 hover:text-white flex items-center w-full sm:w-auto justify-center"
+            >
+              Estimated Delivery (
+              {estimatedDelivery !== null ? `${estimatedDelivery} Days` : "Any"}
+              ) <ChevronDown className="ml-1" size={16} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="bg-[#3A3A3A] text-white border-none">
+            <DropdownMenuLabel>Select Delivery Time</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-gray-600" />
             <DropdownMenuItem
-              key={option.value}
-              onClick={() => setEstimatedDelivery(option.value)}
+              onClick={() => setEstimatedDelivery(null)}
               className="hover:bg-[#4A4A4A] cursor-pointer"
             >
-              {option.label}
+              Any
             </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            {dynamicDeliveryOptions.map((option) => (
+              <DropdownMenuItem
+                key={option.value}
+                onClick={() => setEstimatedDelivery(option.value)}
+                className="hover:bg-[#4A4A4A] cursor-pointer"
+              >
+                {option.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-      <Link href="/freelancers">
-        <Button className="bg-[#3A3A3A] hover:bg-[#4A4A4A] text-gray-300 font-semibold rounded-lg px-4 py-2 flex items-center">
-          <ShoppingCart className="mr-2" size={16} />
-          Freelancers
-        </Button>
-      </Link>
+        <Link href="/freelancers" className="w-full sm:w-auto">
+          <Button className="bg-[#3A3A3A] hover:bg-[#4A4A4A] text-gray-300 font-semibold rounded-lg px-4 py-2 flex items-center w-full justify-center">
+            <ShoppingCart className="mr-2" size={16} />
+            Freelancers
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 };

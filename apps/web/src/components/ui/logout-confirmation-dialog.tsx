@@ -17,22 +17,23 @@ interface LogoutConfirmationDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  title?: string;
+  description?: string;
 }
 
 const LogoutConfirmationDialog: React.FC<LogoutConfirmationDialogProps> = ({
   isOpen,
   onClose,
   onConfirm,
+  title = "Are you sure you want to log out?",
+  description = "You will be securely logged out of your account. You can always log back in later.",
 }) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
-          <AlertDialogDescription>
-            You will be securely logged out of your account. You can always log
-            back in later.
-          </AlertDialogDescription>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel asChild>
@@ -42,7 +43,7 @@ const LogoutConfirmationDialog: React.FC<LogoutConfirmationDialogProps> = ({
           </AlertDialogCancel>
           <AlertDialogAction asChild>
             <Button variant="destructive" onClick={onConfirm}>
-              Logout
+              Confirm
             </Button>
           </AlertDialogAction>
         </AlertDialogFooter>
