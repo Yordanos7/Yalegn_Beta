@@ -125,6 +125,8 @@ model User {
   coins           Int               @default(0)
   wallet          Wallet?           @relation("UserWallet")
   walletId        String?           @unique // One-to-one relation with Wallet
+  lastSeen        DateTime?         // Timestamp of last activity
+  isOnline        Boolean           @default(false) // Real-time online status
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   isOpenToWork    Boolean           @default(false)

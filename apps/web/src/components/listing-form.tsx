@@ -54,7 +54,7 @@ export function ListingForm({
   const [deliveryDays, setDeliveryDays] = useState(
     initialData?.deliveryDays?.toString() || ""
   );
-  const [categoryId, setCategoryId] = useState(initialData?.category || ""); // Changed to category
+  const [category, setCategory] = useState(initialData?.category || ""); // Changed to category
   const [images, setImages] = useState<string[]>(initialData?.images || []);
   const [videos, setVideos] = useState<string[]>(initialData?.videos || []);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -69,7 +69,7 @@ export function ListingForm({
     initialData?.isPublished || false
   );
 
-  const { data, isPending: isCategoriesPending } =
+  const { data: categoriesData, isPending: isCategoriesPending } =
     trpc.category.getAll.useQuery();
 
   const handleAddTag = () => {
@@ -176,7 +176,7 @@ export function ListingForm({
       price: parseFloat(price),
       currency,
       deliveryDays: deliveryDays ? parseInt(deliveryDays) : undefined,
-      categoryId,
+      category, // Use 'category' state
       images: finalImages,
       videos: finalVideos,
       tags,
@@ -276,8 +276,8 @@ export function ListingForm({
               Category
             </Label>
             <Select
-              value={categoryId}
-              onValueChange={setCategoryId}
+              value={category}
+              onValueChange={setCategory}
               disabled={isCategoriesPending}
             >
               <SelectTrigger className="bg-[#3A3A3A] border-none text-white mt-1">
@@ -289,9 +289,9 @@ export function ListingForm({
                     Loading...
                   </SelectItem>
                 ) : (
-                  (data?.categories || []).map(
+                  (categoriesData?.categories || []).map(
                     (cat: { id: string; name: string }) => (
-                      <SelectItem key={cat.id} value={cat.id}>
+                      <SelectItem key={cat.id} value={cat.name}>
                         {cat.name}
                       </SelectItem>
                     )

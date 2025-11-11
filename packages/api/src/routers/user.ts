@@ -650,7 +650,7 @@ export const userRouter = router({
     return prisma.user.findMany({
       where: {
         id: {
-          not: userId,
+          not: userId as string, // Assert userId as string
         },
         // Removed isOpenToWork: true to allow all users (except the current one) to be listed as potential conversation partners.
       },
@@ -664,6 +664,8 @@ export const userRouter = router({
         isVerified: true, // Added isVerified
         isOpenToWork: true,
         languages: true, // Added languages
+        lastSeen: true, // Include lastSeen
+        isOnline: true, // Include isOnline
         createdAt: true, // Added createdAt
         profile: {
           select: {

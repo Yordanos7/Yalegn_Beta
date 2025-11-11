@@ -27,6 +27,8 @@ export const conversationRouter = router({
             id: true,
             name: true,
             image: true,
+            lastSeen: true, // Include lastSeen
+            isOnline: true, // Include isOnline
           },
         },
         messages: {

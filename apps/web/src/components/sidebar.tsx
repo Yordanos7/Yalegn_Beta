@@ -55,6 +55,7 @@ export default function Sidebar({
     { href: "/messages", icon: MessageSquare, label: "Messages" },
     { href: "/wallet", icon: Wallet, label: "Wallet" },
     { href: "/my-listings", icon: List, label: "My Listings" },
+    { href: "/lists", icon: List, label: "Lists" },
     { href: "/applications", icon: Briefcase, label: "Applications / Jobs" },
     { href: "/analytics", icon: BarChart, label: "Analytics" },
     { href: "/settings", icon: Settings, label: "Settings" },

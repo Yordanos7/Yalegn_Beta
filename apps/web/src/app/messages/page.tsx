@@ -27,20 +27,37 @@ import { type User } from "@prisma/client"; // Import User type from Prisma clie
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type Conversation = RouterOutput["conversation"]["list"][number];
 type Message = RouterOutput["message"]["list"][number];
-// Define a more specific User type for participants in conversations
-type ParticipantUser = {
-  id: string;
-  name: string;
-  image: string | null;
-  lastSeen?: Date | null; // Add lastSeen property
-  isOnline?: boolean; // Add isOnline property
-};
+// Define a more specific User type for participants in conversations by inferring from the conversation output
+type ParticipantUser = Conversation["participants"][number];
 
 export default function MessagesPage() {
   const { session } = useSessionContext();
   const utils = trpc.useUtils(); // Use trpc.useUtils() for invalidation
   const userId = session?.user?.id; // Correctly access userId from the nested user object
   const { isSidebarOpen, toggleSidebar } = useSidebar(); // Use the custom hook
+
+  const updateUserStatusMutation = trpc.user.updateUserStatus.useMutation();
+
+  useEffect(() => {
+    if (!userId) return;
+
+    // Set user online and update lastSeen when component mounts
+    updateUserStatusMutation.mutate({ isOnline: true, lastSeen: new Date() });
+
+    // Update lastSeen every 30 seconds
+    const interval = setInterval(() => {
+      updateUserStatusMutation.mutate({ lastSeen: new Date() });
+    }, 30000); // 30 seconds
+
+    // Set user offline when component unmounts
+    return () => {
+      clearInterval(interval);
+      updateUserStatusMutation.mutate({
+        isOnline: false,
+        lastSeen: new Date(),
+      });
+    };
+  }, [userId]);
 
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
@@ -233,6 +250,14 @@ export default function MessagesPage() {
                       (p: ParticipantUser) => p.id !== userId
                     );
                     const lastMessage = conversation.messages[0];
+                    // Use the isOnline status directly if available, otherwise calculate from lastSeen
+                    const isOnline =
+                      otherParticipant?.isOnline ??
+                      (otherParticipant?.lastSeen &&
+                        new Date().getTime() -
+                          new Date(otherParticipant.lastSeen).getTime() <
+                          5 * 60 * 1000); // Online if lastSeen is within 5 minutes
+
                     return (
                       <div
                         key={conversation.id}
@@ -249,17 +274,22 @@ export default function MessagesPage() {
                           setSelectedConversationId(conversation.id);
                         }}
                       >
-                        <Avatar>
-                          <AvatarImage
-                            src={
-                              otherParticipant?.image ||
-                              "/placeholder-avatar.jpg"
-                            }
-                          />
-                          <AvatarFallback>
-                            {otherParticipant?.name?.[0]}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="relative">
+                          <Avatar>
+                            <AvatarImage
+                              src={
+                                otherParticipant?.image ||
+                                "/placeholder-avatar.jpg"
+                              }
+                            />
+                            <AvatarFallback>
+                              {otherParticipant?.name?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          {isOnline && (
+                            <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" />
+                          )}
+                        </div>
                         <div className="flex-1">
                           <p className="font-medium text-foreground">
                             {otherParticipant?.name || "Unknown User"}
@@ -272,6 +302,15 @@ export default function MessagesPage() {
                                 {
                                   addSuffix: true,
                                 }
+                              )}
+                            </p>
+                          )}
+                          {!isOnline && otherParticipant?.lastSeen && (
+                            <p className="text-xs text-muted-foreground">
+                              Last seen:{" "}
+                              {formatDistanceToNow(
+                                new Date(otherParticipant.lastSeen),
+                                { addSuffix: true }
                               )}
                             </p>
                           )}
