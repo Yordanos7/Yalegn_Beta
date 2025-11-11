@@ -60,7 +60,7 @@ export default function Sidebar({
     { href: "/analytics", icon: BarChart, label: "Analytics" },
     { href: "/settings", icon: Settings, label: "Settings" },
     { href: "/support", icon: HelpCircle, label: "Help / Support" },
-    { href: "/logout", icon: LogOut, label: "Logout" },
+    { href: "/logout-confirmation-dialog", icon: LogOut, label: "Logout" },
   ];
 
   return (

@@ -18,6 +18,8 @@ import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import UserMenu from "./user-menu";
 import logo from "@/../assets/logo.png";
+import LogoutConfirmationDialog from "./ui/logout-confirmation-dialog";
+import { useRouter } from "next/navigation";
 
 const desktopNavItems = [
   { href: "/dashboard", label: "Dashboard" },
@@ -40,7 +42,14 @@ const mobileNavItems = [
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const { data: session } = authClient.useSession();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await authClient.signOut();
+    router.push("/");
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50  backdrop-blur-md border-b border-border shadow-sm min-h-[112px] bg-background/5">
@@ -101,6 +110,18 @@ const Header = () => {
           <div className="md:hidden mt-4 pb-4 flex flex-col gap-4 animate-fade-in">
             {mobileNavItems.map((item) => {
               const Icon = item.icon;
+              if (item.href === "/logout") {
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => setLogoutDialogOpen(true)}
+                    className="flex items-center text-foreground hover:text-primary transition-colors font-medium py-2 w-full text-left"
+                  >
+                    <Icon className="mr-3" size={20} />
+                    {item.label}
+                  </button>
+                );
+              }
               return (
                 <Link
                   key={item.href}
@@ -133,6 +154,11 @@ const Header = () => {
           </div>
         )}
       </nav>
+      <LogoutConfirmationDialog
+        isOpen={logoutDialogOpen}
+        onClose={() => setLogoutDialogOpen(false)}
+        onConfirm={handleLogout}
+      />
     </header>
   );
 };

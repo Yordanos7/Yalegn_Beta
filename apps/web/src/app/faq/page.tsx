@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 const FAQPage = () => {
   const faqs = [
@@ -53,6 +54,15 @@ const FAQPage = () => {
             <p className="text-muted-foreground">{faq.answer}</p>
           </div>
         ))}
+      </div>
+      <div className="max-w-3xl mx-auto mt-12 text-center text-muted-foreground">
+        <p>
+          If you have any additional questions, please don't hesitate to{" "}
+          <Link href="/support" className="text-orange-400">
+            contact us
+          </Link>
+          .
+        </p>
       </div>
     </div>
   );
