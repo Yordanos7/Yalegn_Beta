@@ -6,9 +6,12 @@ import { trpc } from "@/utils/trpc";
 import { toast } from "sonner";
 import { Loader } from "lucide-react";
 import { useTheme } from "next-themes"; // For appearance settings
+import Link from "next/link";
 
 const SettingsPage = () => {
   const { session, isLoading: isSessionLoading } = useSession() as any;
+  const [showChangePasswordTooltip, setShowChangePasswordTooltip] =
+    useState(false);
   const userId = session?.user?.id;
   const { theme, setTheme } = useTheme(); // For appearance settings
 
@@ -42,6 +45,12 @@ const SettingsPage = () => {
     useState(false);
   const [profileVisibility, setProfileVisibility] = useState("Public");
   const [selectedLanguage, setSelectedLanguage] = useState("English");
+  const [securitySettings, setSecuritySettings] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("twoFactorAuth") || "Enable";
+    }
+    return "Enable";
+  });
 
   useEffect(() => {
     if (userProfile) {
@@ -91,6 +100,16 @@ const SettingsPage = () => {
       </div>
     );
   }
+
+  // here i will create function that just make the state of enabel and disable security state
+
+  const toggleSecuritySettings = () => {
+    setSecuritySettings((prev) => {
+      const newState = prev === "Enable" ? "Disable" : "Enable";
+      localStorage.setItem("twoFactorAuth", newState);
+      return newState;
+    });
+  };
 
   return (
     <div className="container mx-auto py-10">
@@ -311,13 +330,31 @@ const SettingsPage = () => {
                 >
                   Two-Factor Authentication
                 </label>
-                <button className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600">
-                  Enable
+                <button
+                  className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                  onClick={toggleSecuritySettings}
+                >
+                  {securitySettings}
                 </button>
               </div>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                Change Password
-              </button>
+              <div
+                className="relative inline-block"
+                onMouseEnter={() => setShowChangePasswordTooltip(true)}
+                onMouseLeave={() => setShowChangePasswordTooltip(false)}
+              >
+                <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                  Change Password
+                </button>
+                {showChangePasswordTooltip && (
+                  <div className="absolute z-10 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm dark:bg-gray-700 bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap">
+                    To change your password, please{" "}
+                    <a href="/support" className="underline text-orange-400">
+                      contact support
+                    </a>
+                    .
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
