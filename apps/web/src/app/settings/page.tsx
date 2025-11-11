@@ -260,6 +260,7 @@ const SettingsPage = () => {
                   onChange={(e) =>
                     setPushNotificationsEnabled(e.target.checked)
                   }
+                  disabled
                 />
               </div>
             </div>
