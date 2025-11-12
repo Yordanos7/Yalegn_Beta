@@ -5,7 +5,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient, trpc, trpcClient } from "@/utils/trpc";
 import { ThemeProvider } from "./theme-provider";
-import { Toaster } from "./ui/sonner";
 import { useSession } from "@/hooks/use-session"; // Import the new useSession hook
 import React from "react";
 
@@ -50,7 +49,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           <ReactQueryDevtools />
         </trpc.Provider>
       </QueryClientProvider>
-      <Toaster richColors />
     </ThemeProvider>
   );
 }
