@@ -15,6 +15,10 @@ import { trpc } from "@/utils/trpc";
 import { useSession } from "@/hooks/use-session";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import {
+  CreateListingDialog,
+  EditListingDialog,
+} from "@/components/listing-dialogs";
 
 export default function ListsPage() {
   const { session } = useSession();
@@ -25,12 +29,12 @@ export default function ListsPage() {
     data: listings,
     isLoading,
     refetch,
-  } = trpc.listing.getUsersListings.useQuery(
+  } = trpc.listing.getByUserId.useQuery(
     { userId: userId || "" },
     { enabled: !!userId }
   );
 
-  const deleteListingMutation = trpc.listing.deleteListing.useMutation({
+  const deleteListingMutation = trpc.listing.delete.useMutation({
     onSuccess: () => {
       toast.success("Listing deleted successfully!");
       refetch();
@@ -42,12 +46,8 @@ export default function ListsPage() {
 
   const handleDelete = async (listingId: string) => {
     if (window.confirm("Are you sure you want to delete this listing?")) {
-      await deleteListingMutation.mutateAsync({ listingId });
+      await deleteListingMutation.mutateAsync({ id: listingId });
     }
-  };
-
-  const handleEdit = (listingId: string) => {
-    router.push(`/marketplace/${listingId}/edit`);
   };
 
   if (isLoading) {
@@ -72,14 +72,12 @@ export default function ListsPage() {
     <div className="flex min-h-screen flex-col items-center p-4 md:p-8">
       <div className="w-full max-w-6xl flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">My Listings</h1>
+        <CreateListingDialog onListingCreated={refetch} />
       </div>
 
       <Card className="w-full max-w-6xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">All Listings</CardTitle>
-          <Button size="sm" onClick={() => router.push("/marketplace/create")}>
-            Create New Listing
-          </Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -100,13 +98,10 @@ export default function ListsPage() {
                   <TableCell>${listing.price}</TableCell>
                   <TableCell>{listing.isPublished ? "Yes" : "No"}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(listing.id)}
-                    >
-                      Edit
-                    </Button>
+                    <EditListingDialog
+                      listing={listing}
+                      onListingUpdated={refetch}
+                    />
                     <Button
                       variant="destructive"
                       size="sm"

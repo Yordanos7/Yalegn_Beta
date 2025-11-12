@@ -25,8 +25,8 @@ interface ListingFormProps {
     description: string;
     price: number;
     currency: "ETB" | "USD";
-    deliveryDays?: number;
-    category?: string;
+    deliveryDays?: number | null;
+    category?: string | null; // Allow null for category
     images: string[];
     videos?: string[];
     tags: string[];
@@ -54,7 +54,9 @@ export function ListingForm({
   const [deliveryDays, setDeliveryDays] = useState(
     initialData?.deliveryDays?.toString() || ""
   );
-  const [category, setCategory] = useState(initialData?.category || ""); // Changed to category
+  const [category, setCategory] = useState<string | null>(
+    initialData?.category || null
+  ); // Allow null for category
   const [images, setImages] = useState<string[]>(initialData?.images || []);
   const [videos, setVideos] = useState<string[]>(initialData?.videos || []);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -175,8 +177,8 @@ export function ListingForm({
       description,
       price: parseFloat(price),
       currency,
-      deliveryDays: deliveryDays ? parseInt(deliveryDays) : undefined,
-      category, // Use 'category' state
+      deliveryDays: deliveryDays ? parseInt(deliveryDays) : null, // Send null if empty
+      category: category === "" ? null : category, // Send null if category is an empty string
       images: finalImages,
       videos: finalVideos,
       tags,

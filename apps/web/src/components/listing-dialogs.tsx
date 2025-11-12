@@ -66,8 +66,8 @@ interface EditListingDialogProps {
     description: string;
     price: number;
     currency: "ETB" | "USD";
-    deliveryDays?: number;
-    category?: string;
+    deliveryDays?: number | null; // Allow null for deliveryDays
+    category?: string | null; // Allow null for category
     images: string[];
     videos?: string[];
     tags: string[];
