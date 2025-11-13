@@ -43,6 +43,7 @@ export function ListingForm({
   onCancel,
   isSubmitting = false,
 }: ListingFormProps) {
+  console.log("ListingForm initialData:", initialData); // Add console log here
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState(
     initialData?.description || ""

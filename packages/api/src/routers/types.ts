@@ -8,7 +8,7 @@ export const ListingCreateInput = z.object({
   price: z.number().positive("Price must be a positive number"),
   currency: z.enum(["ETB", "USD"]).default("ETB"),
   deliveryDays: z.number().int().positive().nullable().optional(),
-  categoryId: z.string().optional(),
+  category: z.string().nullable().optional(), // Changed from categoryId to category and made nullable
   images: z.array(z.string()).default([]),
   videos: z.array(z.string()).default([]),
   tags: z.array(z.string()).default([]),

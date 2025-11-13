@@ -11,8 +11,8 @@ const updateListingSchema = z.object({
   description: z.string().min(1, "Description is required").optional(),
   price: z.number().positive("Price must be a positive number").optional(),
   currency: z.enum(["ETB", "USD"]).optional(),
-  deliveryDays: z.number().int().positive().optional(),
-  category: z.nativeEnum(CategoryEnum).optional().nullable(), // Changed from categoryId to category
+  deliveryDays: z.number().int().positive().optional().nullable(),
+  category: z.nativeEnum(CategoryEnum).optional().nullable(),
   images: z.array(z.string()).optional(),
   videos: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
@@ -29,19 +29,19 @@ export const listingRouter = router({
       );
       const userId = user!.id;
 
-      const { categoryId, images, videos, ...restInput } = input;
+      const { category, images, videos, ...restInput } = input;
 
       const listing = await prisma.listing.create({
         data: {
           ...restInput,
           images,
           videos,
-          ...(categoryId && { category: categoryId as CategoryEnum }), // Connect category by its enum value
+          ...(category && { category: category as CategoryEnum }),
           providerId: userId,
           slug: `${input.title
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-*|-*$/g, "")}-${Date.now()}`, // Ensure unique slug
+            .replace(/^-*|-*$/g, "")}-${Date.now()}`,
         },
       });
       return listing;
@@ -74,7 +74,7 @@ export const listingRouter = router({
               name: true,
               image: true,
               accountType: true,
-              location: true, // Include location
+              location: true,
             },
           },
         },
@@ -101,7 +101,7 @@ export const listingRouter = router({
               name: true,
               image: true,
               accountType: true,
-              location: true, // Include location in getAll query
+              location: true,
             },
           },
         },
@@ -174,7 +174,7 @@ export const listingRouter = router({
               name: true,
               image: true,
               accountType: true,
-              location: true, // Include location in getAll query
+              location: true,
             },
           },
         },
@@ -199,12 +199,12 @@ export const listingRouter = router({
         where: {
           category: input.categoryId as CategoryEnum,
           id: {
-            not: input.listingId, // Exclude the current listing
+            not: input.listingId,
           },
-          isPublished: true, // Only show published listings
+          isPublished: true,
         },
-        take: 5, // Limit to 5 related listings
-        orderBy: { createdAt: "desc" }, // Order by creation date
+        take: 5,
+        orderBy: { createdAt: "desc" },
         select: {
           id: true,
           title: true,
@@ -221,7 +221,7 @@ export const listingRouter = router({
   update: protectedProcedure
     .input(updateListingSchema)
     .mutation(async ({ ctx: { prisma, user }, input }) => {
-      const { id, category, ...data } = input; // Extract category
+      const { id, category, ...data } = input;
       const userId = user!.id;
 
       const existingListing = await prisma.listing.findUnique({
@@ -239,7 +239,7 @@ export const listingRouter = router({
         where: { id },
         data: {
           ...data,
-          ...(category && { category: category }), // Update category
+          ...(category && { category: category }),
           ...(data.title && {
             slug: data.title
               .toLowerCase()
