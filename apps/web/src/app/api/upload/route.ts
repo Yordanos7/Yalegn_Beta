@@ -29,10 +29,10 @@ export async function POST(request: Request) {
 
     // Construct the public URL for the uploaded file
     const publicPath = `/uploads/${filename}`;
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"; // Use environment variable or default
-    const fullUrl = `${baseUrl}${publicPath}`;
+    // const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"; // Use environment variable or default
+    // const fullUrl = `${baseUrl}${publicPath}`;
 
-    return NextResponse.json({ success: true, filePath: fullUrl });
+    return NextResponse.json({ success: true, filePath: publicPath }); // Return publicPath (relative)
   } catch (error) {
     console.error("Error uploading file:", error);
     return NextResponse.json(

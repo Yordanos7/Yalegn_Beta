@@ -156,7 +156,7 @@ export function ProfileEditForm({
       }
 
       const data = await response.json();
-      return data.path;
+      return data.filePath; // Corrected from data.path to data.filePath
     } catch (error: any) {
       console.error("Upload error:", error);
       throw new Error("Failed to upload file: " + error.message);

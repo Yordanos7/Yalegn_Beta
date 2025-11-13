@@ -15,10 +15,18 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
+  Play, // Import Play icon
 } from "lucide-react";
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import { useSession } from "@/hooks/use-session"; // Import useSession
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"; // Import Dialog components
 // ReviewForm will be moved to cart page
 import { formatDistanceToNow } from "date-fns"; // For date formatting
 import { useCart } from "@/context/CartContext"; // Import useCart
@@ -48,6 +56,7 @@ interface Listing {
   categoryId?: string;
   category?: string; // Corrected: category is a string (CategoryEnum value)
   images: string[];
+  videos: string[]; // Add videos array
   tags: string[];
   isPublished: boolean;
   rating?: number;
@@ -233,6 +242,7 @@ export default function ListingDetailPage() {
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0); // this is for image/video carousel
   const [quantity, setQuantity] = useState(1); // Quantity state for purchase
   const { addToCart } = useCart(); // Use the cart context
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false); // State for video modal
 
   useEffect(() => {
     if (listing && listing.images && listing.images.length > 0) {
@@ -316,6 +326,8 @@ export default function ListingDetailPage() {
   console.log("  sellerOrders.length:", sellerOrders.length);
   console.log("  currentUserId:", currentUserId);
   console.log("  listing.provider.id:", listing.provider.id);
+  console.log("  listing.images:", listing.images);
+  console.log("  listing.images.some(isVideo):", listing.images.some(isVideo));
 
   return (
     <main className=" mx-auto px-4 py-8 md:py-12 bg-background text-foreground">
@@ -608,6 +620,41 @@ export default function ListingDetailPage() {
               <div className="w-full h-[400px] bg-muted rounded-md flex items-center justify-center text-muted-foreground">
                 No media available
               </div>
+            )}
+
+            {/* "Watch Video" Button */}
+            {listing.videos && listing.videos.length > 0 && (
+              <Dialog
+                open={isVideoModalOpen}
+                onOpenChange={setIsVideoModalOpen}
+              >
+                <DialogTrigger asChild>
+                  <Button className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md px-6 py-2 flex items-center justify-center">
+                    <Play className="mr-2 h-5 w-5" /> Watch Video
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden">
+                  <DialogTitle className="sr-only">Watch Video</DialogTitle>
+                  <DialogDescription className="sr-only">
+                    Playing the product video.
+                  </DialogDescription>
+                  <div className="relative w-full h-[450px] bg-black">
+                    <video
+                      src={listing.videos[0] || ""}
+                      controls
+                      autoPlay
+                      loop
+                      className="w-full h-full object-contain"
+                      onError={(e) =>
+                        console.error(
+                          "Modal video error:",
+                          e.currentTarget.error
+                        )
+                      }
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
             )}
 
             {/* Thumbnails */}

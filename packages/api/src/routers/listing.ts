@@ -221,7 +221,7 @@ export const listingRouter = router({
   update: protectedProcedure
     .input(updateListingSchema)
     .mutation(async ({ ctx: { prisma, user }, input }) => {
-      const { id, category, ...data } = input;
+      const { id, category, images, videos, ...restData } = input;
       const userId = user!.id;
 
       const existingListing = await prisma.listing.findUnique({
@@ -238,10 +238,12 @@ export const listingRouter = router({
       const updatedListing = await prisma.listing.update({
         where: { id },
         data: {
-          ...data,
-          ...(category && { category: category }),
-          ...(data.title && {
-            slug: data.title
+          ...restData,
+          ...(category !== undefined && { category: category }), // Handle null explicitly
+          ...(images !== undefined && { images: images }), // Explicitly handle images
+          ...(videos !== undefined && { videos: videos }), // Explicitly handle videos
+          ...(restData.title && {
+            slug: restData.title
               .toLowerCase()
               .replace(/[^a-z0-9]+/g, "-")
               .replace(/^-*|-*$/g, ""),

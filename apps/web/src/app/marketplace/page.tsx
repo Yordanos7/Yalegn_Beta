@@ -25,6 +25,7 @@ import { MarketPlaceFilters } from "@/components/MarketPlaceFilters";
 import type { RouterOutputs } from "@my-better-t-app/api/routers/types"; // Use type-only import
 import { useSidebar } from "@/hooks/use-sidebar"; // Import the custom hook
 import { renderStars } from "@/lib/utils"; // Import renderStars helper
+import { useSession } from "@/hooks/use-session"; // Import useSession hook
 
 import { CategoryEnum } from "@my-better-t-app/db/prisma/generated/enums";
 
@@ -133,6 +134,7 @@ const ListingCard = ({ listing }: { listing: MarketplaceListing }) => {
 };
 
 export default function MarketplacePage() {
+  const { session } = useSession(); // Call useSession hook to get the session object
   const {
     data: listingsData,
     isPending,
@@ -217,10 +219,17 @@ export default function MarketplacePage() {
             <Button className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md px-4 py-2">
               Products
             </Button>
-            <Avatar className="h-8 w-8">
-              <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-              <AvatarFallback>CN</AvatarFallback>
-            </Avatar>
+            <Link href="/profile" passHref>
+              <Avatar className="h-8 w-8 cursor-pointer">
+                <AvatarImage
+                  src={session?.user?.image || "https://github.com/shadcn.png"}
+                  alt={session?.user?.name || "User"}
+                />
+                <AvatarFallback>
+                  {session?.user?.name?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
           </div>
         </header>
 

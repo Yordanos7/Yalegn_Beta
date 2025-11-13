@@ -9,8 +9,7 @@ export const auth = betterAuth({
   trustedOrigins: [process.env.CORS_ORIGIN || ""],
   emailAndPassword: {
     enabled: true,
-    requireVerification: true, // Enable email verification
-    sendVerificationEmail: true, // Explicitly enable here as well
+    requireEmailVerification: true, // Enable email verification
     onSignUp: async (user: { email: any; password: any; name: any }) => {
       console.log("onSignUp callback triggered:", user);
       // This is where you can add custom logic before the user is created
@@ -19,6 +18,7 @@ export const auth = betterAuth({
     },
   },
   email: {
+    enabled: true, // Enable the email feature globally
     sendVerificationEmail: true, // Enable email verification directly at the email level
     provider: {
       type: "mailersend", // Using MailerSend
@@ -29,13 +29,14 @@ export const auth = betterAuth({
   session: {
     // Add session configuration
     freshAge: 60 * 60 * 24 * 7, // 7 days
-    callbacks: {
-      refresh: async (userId: string) => {
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-        });
-        return user;
-      },
+  },
+  callbacks: {
+    // Moved callbacks to the top level of betterAuth configuration
+    refresh: async (userId: string) => {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+      return user;
     },
   },
 

@@ -141,7 +141,7 @@ export function ListingForm({
         console.log("Upload API response:", result); // Log the response from the upload API
 
         if (result.success) {
-          return result.path;
+          return result.filePath; // Corrected from result.path to result.filePath
         } else {
           console.error("Error uploading file:", result.error);
           return null;
@@ -279,7 +279,7 @@ export function ListingForm({
               Category
             </Label>
             <Select
-              value={category}
+              value={category ?? undefined} // Convert null to undefined for the Select component
               onValueChange={setCategory}
               disabled={isCategoriesPending}
             >
