@@ -9,7 +9,7 @@ export const auth = betterAuth({
   trustedOrigins: [process.env.CORS_ORIGIN || ""],
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true, // Enable email verification
+    // requireEmailVerification: true, // Enable email verification
     onSignUp: async (user: { email: any; password: any; name: any }) => {
       console.log("onSignUp callback triggered:", user);
       // This is where you can add custom logic before the user is created
@@ -18,7 +18,7 @@ export const auth = betterAuth({
     },
   },
   email: {
-    enabled: true, // Enable the email feature globally
+    // enabled: true, // Enable the email feature globally
     sendVerificationEmail: true, // Enable email verification directly at the email level
     provider: {
       type: "mailersend", // Using MailerSend
