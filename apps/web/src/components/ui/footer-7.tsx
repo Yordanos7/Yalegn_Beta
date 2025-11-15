@@ -79,19 +79,19 @@ export const Footer7 = ({
   legalLinks = defaultLegalLinks,
 }: Footer7Props) => {
   const currentLogo = {
-    url: "/",
+    url: "/" as string, // Explicitly cast to string to satisfy LinkProps
     src: logo, // Use the imported logo directly
     alt: "Yalegn Logo",
     title: "Yalegn",
   };
 
   return (
-    <section className="py-32">
-      <div className="container mx-auto">
-        <div className="flex w-full flex-col justify-between gap-10 lg:flex-row lg:items-start lg:text-left">
-          <div className="flex w-full flex-col justify-between gap-6 lg:items-start">
+    <section className="py-8 md:py-16 lg:py-20">
+      <div className="container mx-auto px-4">
+        <div className="flex w-full flex-col justify-between gap-6 lg:flex-row lg:items-start lg:text-left">
+          <div className="flex w-full flex-col justify-between gap-6 lg:items-start text-center lg:text-left">
             {/* Logo */}
-            <div className="flex items-center gap-2 lg:justify-start">
+            <div className="flex items-center gap-2 justify-center lg:justify-start">
               <Link
                 href={currentLogo.url}
                 className="flex items-center gap-2 group"
@@ -100,17 +100,19 @@ export const Footer7 = ({
                   src={currentLogo.src}
                   alt={currentLogo.alt}
                   title={currentLogo.title}
-                  className="h-20 w-20"
+                  className="h-16 w-16 md:h-20 md:w-20"
                   width={80} // Specify width for Next.js Image component
                   height={80} // Specify height for Next.js Image component
                 />
               </Link>
-              <h2 className="text-xl font-semibold">{currentLogo.title}</h2>
+              <h2 className="text-lg md:text-xl font-semibold">
+                {currentLogo.title}
+              </h2>
             </div>
-            <p className="max-w-[70%] text-sm text-muted-foreground">
+            <p className="max-w-full text-sm text-muted-foreground px-4 lg:px-0">
               {description}
             </p>
-            <ul className="flex items-center space-x-6 text-muted-foreground">
+            <ul className="flex items-center justify-center lg:justify-start space-x-4 md:space-x-6 text-muted-foreground">
               {socialLinks.map((social, idx) => (
                 <li key={idx} className="font-medium hover:text-primary">
                   <a href={social.href} aria-label={social.label}>
@@ -120,10 +122,12 @@ export const Footer7 = ({
               ))}
             </ul>
           </div>
-          <div className="grid w-full gap-6 md:grid-cols-3 lg:gap-20">
+          <div className="grid w-full gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:gap-10 text-center sm:text-left">
             {sections.map((section, sectionIdx) => (
               <div key={sectionIdx}>
-                <h3 className="mb-4 font-bold">{section.title}</h3>
+                <h3 className="mb-4 font-bold text-base md:text-lg">
+                  {section.title}
+                </h3>
                 <ul className="space-y-3 text-sm text-muted-foreground">
                   {section.links.map((link, linkIdx) => (
                     <li
@@ -138,9 +142,9 @@ export const Footer7 = ({
             ))}
           </div>
         </div>
-        <div className="mt-8 flex flex-col justify-between gap-4 border-t py-8 text-xs font-medium text-muted-foreground md:flex-row md:items-center md:text-left">
+        <div className="mt-6 flex flex-col justify-between gap-4 border-t py-6 text-xs font-medium text-muted-foreground md:flex-row md:items-center md:text-left text-center">
           <p className="order-2 lg:order-1">{copyright}</p>
-          <ul className="order-1 flex flex-col gap-2 md:order-2 md:flex-row">
+          <ul className="order-1 flex flex-col gap-2 md:order-2 md:flex-row justify-center md:justify-start">
             {legalLinks.map((link, idx) => (
               <li key={idx} className="hover:text-primary">
                 <a href={link.href}> {link.name}</a>

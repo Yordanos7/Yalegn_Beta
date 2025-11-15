@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { HeroParallax } from "@/components/HeroPage";
-import { Component as ImageAutoSlider } from "@/components/ui/image-auto-slider";
+import { Blog8Demo } from "@/components/ui/blog8-demo";
 import Footer from "@/components/Footer";
 import { Wellcome } from "@/components/Wellcome";
 
@@ -92,7 +92,7 @@ export default function Home() {
     <>
       <HeroParallax />
       <Wellcome />
-      <ImageAutoSlider />
+      <Blog8Demo />
       <Footer />
     </>
   );

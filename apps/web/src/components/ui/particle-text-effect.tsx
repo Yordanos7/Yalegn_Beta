@@ -177,7 +177,7 @@ interface ParticleTextEffectProps {
 
 const DEFAULT_WORDS = [
   "YALEGN",
-  "21st.dev",
+  "ETHIOIA'S",
   "CREATIVE",
   "SOLUTIONS",
   "INNOVATE",

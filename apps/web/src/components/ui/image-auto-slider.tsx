@@ -76,7 +76,7 @@ export const Component = () => {
       `}</style>
 
       <div
-        className={`w-full min-h-screen ${bgColorClass} relative overflow-hidden flex items-center justify-center`}
+        className={`w-full  ${bgColorClass} relative overflow-hidden flex items-center justify-center`}
       >
         {/* Background gradient */}
         <div
