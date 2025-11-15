@@ -4,6 +4,7 @@ import { trpc } from "@/utils/trpc";
 import { HeroParallax } from "@/components/HeroPage";
 import { Component as ImageAutoSlider } from "@/components/ui/image-auto-slider";
 import Footer from "@/components/Footer";
+import { Wellcome } from "@/components/Wellcome";
 
 // import Footer from "@/components/Footer";
 const products = [
@@ -90,6 +91,7 @@ export default function Home() {
   return (
     <>
       <HeroParallax />
+      <Wellcome />
       <ImageAutoSlider />
       <Footer />
     </>

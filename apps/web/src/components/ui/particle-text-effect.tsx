@@ -447,7 +447,7 @@ export function ParticleTextEffect({
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
       <canvas
         ref={canvasRef}
-        className="border rounded-lg "
+        className=" rounded-lg "
         style={{ maxWidth: "100%", height: "auto" }}
       />
     </div>
