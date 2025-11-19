@@ -444,7 +444,7 @@ export function ParticleTextEffect({
   }, [words]); // Re-run effect if words change
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
+    <div className="flex flex-col items-center justify-center h-48  bg-background p-4">
       <canvas
         ref={canvasRef}
         className=" rounded-lg "
