@@ -123,18 +123,47 @@ export default function UserProfilePage() {
       toast.error("Failed to delete portfolio item: " + error.message);
     },
   });
-  const sendVerificationEmailMutation =
-    trpc.user.sendVerificationEmail.useMutation({
-      onSuccess: () => {
-        toast.success("Verification email sent! Please check your inbox.");
-        refetchUserProfile(); // Refetch user profile to update emailVerified status
-      },
-      onError: (error: { message: string }) => {
-        toast.error("Failed to send verification email.", {
-          description: error.message,
-        });
-      },
-    });
+
+  // Email verification state
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
+
+  const handleSendVerificationEmail = async () => {
+    setIsSendingVerification(true);
+    try {
+      const response = await fetch(
+        `${
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+        }/api/auth/send-verification-email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // Important: include cookies for authentication
+          body: JSON.stringify({
+            email: userProfile?.email,
+            callbackURL: `${window.location.origin}/profile?verified=true`,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Better-auth error:", errorText);
+        throw new Error("Failed to send verification email");
+      }
+
+      toast.success("Verification email sent! Please check your inbox.");
+      refetchUserProfile(); // Refetch user profile to update emailVerified status
+    } catch (error: any) {
+      console.error("Error sending verification email:", error);
+      toast.error("Failed to send verification email.", {
+        description: error.message || "Please try again later.",
+      });
+    } finally {
+      setIsSendingVerification(false);
+    }
+  };
 
   const {
     data: userProfile,
@@ -177,6 +206,23 @@ export default function UserProfilePage() {
       setIsFreelancerPublic(userProfile.profile.isPublicFreelancer);
     }
   }, [userProfile]);
+
+  // Handle email verification callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const verified = urlParams.get("verified");
+
+    if (verified === "true") {
+      toast.success("Email verified successfully!", {
+        description:
+          "Your email has been verified. Your profile completion has been updated.",
+      });
+      refetchUserProfile(); // Refetch to update emailVerified status
+
+      // Clean up URL
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [refetchUserProfile]);
 
   const togglePublicStatusMutation =
     trpc.user.toggleFreelancerPublicStatus.useMutation({
@@ -555,11 +601,16 @@ export default function UserProfilePage() {
             <CardContent className="p-0 text-muted-foreground">
               <div className="space-y-2">
                 <div className="flex items-center">
-                  <CheckCircle className="h-5 w-5 mr-2 text-green-500" /> Faida
-                  ID Verified
+                  {userProfile.verification?.status ===
+                  VerificationStatus.APPROVED ? (
+                    <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+                  ) : (
+                    <XCircle className="h-5 w-5 mr-2 text-red-500" />
+                  )}{" "}
+                  Faida ID Verified
                 </div>
                 <div className="flex items-center">
-                  <CheckCircle className="h-5 w-5 mr-2 text-green-500" /> Phone
+                  <XCircle className="h-5 w-5 mr-2 text-red-500" /> Phone
                   Verified
                 </div>
                 <div className="flex items-center">
@@ -571,24 +622,65 @@ export default function UserProfilePage() {
                   Email Verified
                 </div>
                 <div className="flex items-center">
-                  <CheckCircle className="h-5 w-5 mr-2 text-green-500" />{" "}
-                  Portfolio Verified
+                  <XCircle className="h-5 w-5 mr-2 text-red-500" /> Portfolio
+                  Verified
                 </div>
               </div>
-              <Button variant="outline" className="mt-4 font-semibold">
+
+              {!userProfile.emailVerified && (
+                <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <Mail className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
+                        Email Not Verified
+                      </h4>
+                      <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-3">
+                        Verify your email to increase your profile completion
+                        and build trust with clients.
+                      </p>
+                      <Button
+                        className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold"
+                        onClick={handleSendVerificationEmail}
+                        disabled={isSendingVerification}
+                      >
+                        {isSendingVerification ? (
+                          <>
+                            <Loader className="mr-2 h-4 w-4 animate-spin" />
+                            Sending Verification Email...
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="mr-2 h-4 w-4" />
+                            Send Verification Email
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {userProfile.emailVerified && (
+                <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <div className="flex-1">
+                      <h4 className="text-sm font-semibold text-green-800 dark:text-green-200">
+                        Email Verified Successfully!
+                      </h4>
+                      <p className="text-xs text-green-700 dark:text-green-300">
+                        Your email has been verified. This helps build trust
+                        with clients.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <Button variant="outline" className="mt-4 font-semibold w-full">
                 Unlock all badges to build client trust
               </Button>
-              {!userProfile.emailVerified && (
-                <Button
-                  className="mt-4 font-semibold w-full"
-                  onClick={() => sendVerificationEmailMutation.mutate()}
-                  disabled={sendVerificationEmailMutation.isPending}
-                >
-                  {sendVerificationEmailMutation.isPending
-                    ? "Sending..."
-                    : "Verify Email"}
-                </Button>
-              )}
             </CardContent>
           </Card>
 

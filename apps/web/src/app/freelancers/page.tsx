@@ -100,29 +100,57 @@ export default function FreelancersPage() {
   console.log("Freelancers data:", freelancers);
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Filter Section */}
-      <FreelancerFilters filters={filters} setFilters={setFilters} />
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Filter Section */}
+        <FreelancerFilters filters={filters} setFilters={setFilters} />
 
-      {/* Freelancer List Section */}
-      <h2 className="text-2xl font-bold mb-4 text-white">
-        Available Freelancers
-      </h2>
-      {isLoading ? (
-        <div className="text-white">Loading freelancers...</div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {freelancers && freelancers.length > 0 ? (
-            freelancers.map((freelancer: Freelancer) => (
-              <FreelancerCard key={freelancer.id} freelancer={freelancer} />
-            ))
+        {/* Freelancer List Section */}
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">
+                Available Freelancers
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {freelancers && freelancers.length > 0
+                  ? `${freelancers.length} freelancer${
+                      freelancers.length !== 1 ? "s" : ""
+                    } found`
+                  : "No freelancers found"}
+              </p>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-card border border-border rounded-xl h-96 animate-pulse"
+                />
+              ))}
+            </div>
           ) : (
-            <div className="col-span-full text-white">
-              No freelancers found matching your criteria.
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {freelancers && freelancers.length > 0 ? (
+                freelancers.map((freelancer: Freelancer) => (
+                  <FreelancerCard key={freelancer.id} freelancer={freelancer} />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-muted-foreground text-lg">
+                    No freelancers found matching your criteria.
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Try adjusting your filters to see more results.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
