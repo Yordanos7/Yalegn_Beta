@@ -7,6 +7,9 @@ import { getSocket } from "@/utils/socket";
 import { useSessionContext } from "@/components/providers"; // Use the new useSessionContext hook
 import Sidebar from "@/components/sidebar"; // Import Sidebar
 import { useSidebar } from "@/hooks/use-sidebar"; // Import the custom hook
+import { useOnlineStatus } from "@/hooks/use-online-status"; // Import online status hook
+import { UserOnlineStatus } from "@/components/UserOnlineStatus"; // Import status component
+import { EmojiPicker } from "@/components/EmojiPicker"; // Import emoji picker
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -36,28 +39,8 @@ export default function MessagesPage() {
   const userId = session?.user?.id; // Correctly access userId from the nested user object
   const { isSidebarOpen, toggleSidebar } = useSidebar(); // Use the custom hook
 
-  const updateUserStatusMutation = trpc.user.updateUserStatus.useMutation();
-
-  useEffect(() => {
-    if (!userId) return;
-
-    // Set user online and update lastSeen when component mounts
-    updateUserStatusMutation.mutate({ isOnline: true, lastSeen: new Date() });
-
-    // Update lastSeen every 30 seconds
-    const interval = setInterval(() => {
-      updateUserStatusMutation.mutate({ lastSeen: new Date() });
-    }, 30000); // 30 seconds
-
-    // Set user offline when component unmounts
-    return () => {
-      clearInterval(interval);
-      updateUserStatusMutation.mutate({
-        isOnline: false,
-        lastSeen: new Date(),
-      });
-    };
-  }, [userId]);
+  // Use the online status hook to track user presence
+  useOnlineStatus(userId);
 
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
@@ -332,14 +315,14 @@ export default function MessagesPage() {
                               )}
                             </p>
                           )}
-                          {!isOnline && otherParticipant?.lastSeen && (
-                            <p className="text-xs text-muted-foreground">
-                              Last seen:{" "}
-                              {formatDistanceToNow(
-                                new Date(otherParticipant.lastSeen),
-                                { addSuffix: true }
-                              )}
-                            </p>
+                          {otherParticipant && (
+                            <UserOnlineStatus
+                              userId={otherParticipant.id}
+                              isOnline={otherParticipant.isOnline}
+                              lastSeen={otherParticipant.lastSeen}
+                              showText={true}
+                              size="sm"
+                            />
                           )}
                         </div>
                       </div>
@@ -403,15 +386,59 @@ export default function MessagesPage() {
                       }
                     </AvatarFallback>
                   </Avatar>
-                  <h2 className="text-lg font-semibold text-foreground">
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold text-foreground">
+                      {conversations
+                        ?.find(
+                          (c: Conversation) => c.id === selectedConversationId
+                        )
+                        ?.participants.find(
+                          (p: ParticipantUser) => p.id !== userId
+                        )?.name || "Unknown User"}
+                    </h2>
                     {conversations
                       ?.find(
                         (c: Conversation) => c.id === selectedConversationId
                       )
                       ?.participants.find(
                         (p: ParticipantUser) => p.id !== userId
-                      )?.name || "Unknown User"}
-                  </h2>
+                      ) && (
+                      <UserOnlineStatus
+                        userId={
+                          conversations
+                            ?.find(
+                              (c: Conversation) =>
+                                c.id === selectedConversationId
+                            )
+                            ?.participants.find(
+                              (p: ParticipantUser) => p.id !== userId
+                            )?.id || ""
+                        }
+                        isOnline={
+                          conversations
+                            ?.find(
+                              (c: Conversation) =>
+                                c.id === selectedConversationId
+                            )
+                            ?.participants.find(
+                              (p: ParticipantUser) => p.id !== userId
+                            )?.isOnline
+                        }
+                        lastSeen={
+                          conversations
+                            ?.find(
+                              (c: Conversation) =>
+                                c.id === selectedConversationId
+                            )
+                            ?.participants.find(
+                              (p: ParticipantUser) => p.id !== userId
+                            )?.lastSeen
+                        }
+                        showText={true}
+                        size="sm"
+                      />
+                    )}
+                  </div>
                 </div>
                 <ScrollArea className="flex-1 p-4 bg-background">
                   {messages?.length === 0 ? (
@@ -436,7 +463,9 @@ export default function MessagesPage() {
                                 : "bg-muted text-muted-foreground"
                             }`}
                           >
-                            <p className="text-sm">{message.body}</p>
+                            <p className="text-sm whitespace-pre-wrap break-words">
+                              {message.body}
+                            </p>
                             <p className="text-xs opacity-75 mt-1">
                               {formatDistanceToNow(
                                 new Date(message.createdAt),
@@ -453,12 +482,18 @@ export default function MessagesPage() {
                   )}
                 </ScrollArea>
                 <div className="p-4 border-t border-border bg-card flex items-center gap-2">
+                  <EmojiPicker
+                    onEmojiSelect={(emoji) => {
+                      setNewMessage((prev) => prev + emoji);
+                    }}
+                  />
                   <Input
                     placeholder="Type your message..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={(e) => {
-                      if (e.key === "Enter") {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
                         handleSendMessage();
                       }
                     }}

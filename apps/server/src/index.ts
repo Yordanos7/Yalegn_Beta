@@ -136,6 +136,19 @@ io.on("connection", (socket) => {
     console.log(`User ${socket.id} left conversation ${conversationId}`);
   });
 
+  // Handle user online status
+  socket.on("userOnline", (userId: string) => {
+    console.log(`User ${userId} is now online`);
+    // Broadcast to all connected clients
+    io.emit("userOnline", userId);
+  });
+
+  socket.on("userOffline", (data: { userId: string; lastSeen: Date }) => {
+    console.log(`User ${data.userId} is now offline`);
+    // Broadcast to all connected clients
+    io.emit("userOffline", data);
+  });
+
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
   });

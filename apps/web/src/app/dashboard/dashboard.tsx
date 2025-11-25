@@ -16,6 +16,7 @@ import {
 } from "lucide-react"; // Assuming lucide-react is installed
 import Sidebar from "@/components/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar"; // Import the custom hook
+import { useOnlineStatus } from "@/hooks/use-online-status"; // Import online status hook
 import { NotificationBell } from "@/components/NotificationBell";
 import { useState, useMemo, useEffect } from "react";
 import {
@@ -42,6 +43,9 @@ export default function Dashboard() {
 
   const { session } = useSession();
   const userId = session?.user?.id;
+
+  // Track user online status
+  useOnlineStatus(userId);
 
   const { data: sellerOrders, isLoading: isLoadingSellerOrders } =
     trpc.order.getOrdersForSeller.useQuery({});
