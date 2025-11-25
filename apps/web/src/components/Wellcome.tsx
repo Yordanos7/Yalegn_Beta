@@ -8,7 +8,7 @@ export const Wellcome = () => {
   const { theme } = useTheme();
 
   return (
-    <div className="flex flex-col items-center justify-center p-4 bg-background">
+    <div className="flex flex-col items-center justify-center p-4  bg-background">
       <div className="w-full p-4 rounded-xl bg-background md:p-32">
         <div className="flex justify-center mb-6">
           <Sparkles size={48} className="text-primary" />

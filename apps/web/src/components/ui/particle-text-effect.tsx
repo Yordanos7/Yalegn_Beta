@@ -199,7 +199,13 @@ export function ParticleTextEffect({
     isRightClick: false,
   });
 
-  const pixelSteps = 6;
+  // Adjust pixel density based on canvas width for better text rendering
+  const getPixelSteps = (canvasWidth: number) => {
+    if (canvasWidth < 500) return 3; // Mobile - denser particles
+    if (canvasWidth < 768) return 4; // Tablet
+    return 5; // Desktop
+  };
+
   const drawAsPoints = true;
 
   const generateRandomCanvasPos = (
@@ -239,11 +245,24 @@ export function ParticleTextEffect({
     const offscreenCtx = offscreenCanvas.getContext("2d")!;
 
     // Adjust font size based on canvas width for responsiveness
-    const fontSize = Math.max(40, canvas.width / 10); // Min 40px, scales with width
+    const baseFontSize = canvas.width / 6.5; // Better ratio for mobile
+    const fontSize = Math.max(40, Math.min(baseFontSize, 140)); // Min 40px, max 140px
     offscreenCtx.fillStyle = "white";
     offscreenCtx.font = `bold ${fontSize}px Arial`;
     offscreenCtx.textAlign = "center";
     offscreenCtx.textBaseline = "middle";
+
+    // Measure text to ensure it fits
+    const metrics = offscreenCtx.measureText(word);
+    const textWidth = metrics.width;
+
+    // Scale down if text is too wide (leave 10% padding on each side)
+    let finalFontSize = fontSize;
+    if (textWidth > canvas.width * 0.85) {
+      finalFontSize = (fontSize * canvas.width * 0.85) / textWidth;
+      offscreenCtx.font = `bold ${finalFontSize}px Arial`;
+    }
+
     offscreenCtx.fillText(word, canvas.width / 2, canvas.height / 2);
 
     const imageData = offscreenCtx.getImageData(
@@ -262,6 +281,9 @@ export function ParticleTextEffect({
 
     const particles = particlesRef.current;
     let particleIndex = 0;
+
+    // Use dynamic pixel steps based on canvas width
+    const pixelSteps = getPixelSteps(canvas.width);
 
     const coordsIndexes: number[] = [];
     for (let i = 0; i < pixels.length; i += pixelSteps * 4) {
@@ -303,7 +325,9 @@ export function ParticleTextEffect({
 
           particle.maxSpeed = Math.random() * 6 + 4;
           particle.maxForce = particle.maxSpeed * 0.05;
-          particle.particleSize = Math.random() * 6 + 6;
+          // Smaller particles on mobile for better text clarity
+          const baseSize = canvas.width < 500 ? 4 : 6;
+          particle.particleSize = Math.random() * 4 + baseSize;
           particle.colorBlendRate = Math.random() * 0.0275 + 0.0025;
 
           particles.push(particle);
@@ -391,12 +415,25 @@ export function ParticleTextEffect({
     if (!canvas) return;
 
     const setCanvasSize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      nextWord(words[wordIndexRef.current], canvas); // Redraw text on resize
+      const container = canvas.parentElement;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+      }
+      if (particlesRef.current.length > 0) {
+        nextWord(words[wordIndexRef.current], canvas);
+      }
     };
 
-    setCanvasSize(); // Initial size
+    // Set initial size
+    const container = canvas.parentElement;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    }
+
     window.addEventListener("resize", setCanvasSize);
 
     nextWord(words[0], canvas);
@@ -441,15 +478,12 @@ export function ParticleTextEffect({
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("contextmenu", handleContextMenu);
     };
-  }, [words]); // Re-run effect if words change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [words, theme]); // Re-run effect if words or theme change
 
   return (
-    <div className="flex flex-col items-center justify-center h-48  bg-background p-4">
-      <canvas
-        ref={canvasRef}
-        className=" rounded-lg "
-        style={{ maxWidth: "100%", height: "auto" }}
-      />
+    <div className="relative w-full h-[300px] sm:h-[350px] md:h-[400px] bg-transparent overflow-hidden">
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
     </div>
   );
 }
