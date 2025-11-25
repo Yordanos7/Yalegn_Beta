@@ -983,6 +983,41 @@ export const userRouter = router({
       }
     }),
 
+  updateUserStatus: protectedProcedure
+    .input(
+      z.object({
+        isOnline: z.boolean().optional(),
+        lastSeen: z.date().optional(),
+      })
+    )
+    .mutation(async ({ ctx: { user, prisma }, input }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      try {
+        const updateData: { isOnline?: boolean; lastSeen?: Date } = {};
+        if (input.isOnline !== undefined) updateData.isOnline = input.isOnline;
+        if (input.lastSeen !== undefined) updateData.lastSeen = input.lastSeen;
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: updateData,
+        });
+
+        return { success: true };
+      } catch (error) {
+        console.error("Error updating user status:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update user status",
+        });
+      }
+    }),
+
   sendVerificationEmail: protectedProcedure.mutation(
     async ({ ctx: { user } }) => {
       if (!user?.id || !user.email) {

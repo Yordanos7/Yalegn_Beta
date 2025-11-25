@@ -6,18 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress"; // Assuming a progress component exists or will be created
 import {
-  Bell,
   Search,
   Coins, // Assuming a Coins icon exists or will be created
-  Home,
-  MessageSquare,
-  Wallet,
-  List,
-  Briefcase,
-  BarChart,
-  Settings,
-  HelpCircle,
-  LogOut,
   DollarSign,
   Package,
   Send,
@@ -26,6 +16,7 @@ import {
 } from "lucide-react"; // Assuming lucide-react is installed
 import Sidebar from "@/components/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar"; // Import the custom hook
+import { NotificationBell } from "@/components/NotificationBell";
 import { useState, useMemo, useEffect } from "react";
 import {
   LineChart,
@@ -300,7 +291,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex flex-wrap items-center justify-center sm:justify-end space-x-2 sm:space-x-4">
-              <Bell className="text-muted-foreground" size={24} />
+              <NotificationBell />
               <div className="flex items-center bg-muted px-3 py-1 rounded-full text-sm">
                 <Coins className="mr-2 text-yellow-500" size={16} />
                 <span>250 Coins</span>

@@ -1,6 +1,6 @@
 // packages/api/src/routers/message.ts
 import { z } from "zod";
-import { protectedProcedure, publicProcedure, router, t } from "..";
+import { protectedProcedure, router } from "..";
 
 export const messageRouter = router({
   getUnreadCount: protectedProcedure.query(async ({ ctx }) => {

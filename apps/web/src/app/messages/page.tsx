@@ -22,13 +22,13 @@ import {
 
 import type { AppRouter } from "@my-better-t-app/api/routers/index";
 import { type inferRouterOutputs } from "@trpc/server";
-import { type User } from "@prisma/client"; // Import User type from Prisma client
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type Conversation = RouterOutput["conversation"]["list"][number];
 type Message = RouterOutput["message"]["list"][number];
 // Define a more specific User type for participants in conversations by inferring from the conversation output
 type ParticipantUser = Conversation["participants"][number];
+type UserForDialog = RouterOutput["user"]["list"][number];
 
 export default function MessagesPage() {
   const { session } = useSessionContext();
@@ -78,6 +78,15 @@ export default function MessagesPage() {
         enabled: !!selectedConversationId,
       }
     );
+  const { data: unreadByConversation, refetch: refetchUnread } =
+    trpc.message.getUnreadByConversation.useQuery(undefined, {
+      enabled: !!userId,
+    });
+  const markAsReadMutation = trpc.message.markAsRead.useMutation({
+    onSuccess: () => {
+      refetchUnread();
+    },
+  });
   const sendMessageMutation = trpc.message.send.useMutation({
     onSuccess: () => {
       setNewMessage("");
@@ -112,6 +121,9 @@ export default function MessagesPage() {
     if (selectedConversationId) {
       socket.emit("joinConversation", selectedConversationId);
 
+      // Mark messages as read when conversation is opened
+      markAsReadMutation.mutate({ conversationId: selectedConversationId });
+
       const handleNewMessage = (newMessage: Message) => {
         if (newMessage.conversationId === selectedConversationId) {
           // Update the query cache with the new message
@@ -128,6 +140,13 @@ export default function MessagesPage() {
           );
           // Invalidate conversations to update the last message preview
           utils.conversation.list.invalidate();
+          // Refetch unread counts
+          refetchUnread();
+          // Mark as read if this is the active conversation
+          markAsReadMutation.mutate({ conversationId: selectedConversationId });
+        } else {
+          // If message is for a different conversation, just refetch unread counts
+          refetchUnread();
         }
       };
 
@@ -258,6 +277,9 @@ export default function MessagesPage() {
                           new Date(otherParticipant.lastSeen).getTime() <
                           5 * 60 * 1000); // Online if lastSeen is within 5 minutes
 
+                    const unreadCount =
+                      unreadByConversation?.[conversation.id] || 0;
+
                     return (
                       <div
                         key={conversation.id}
@@ -274,7 +296,7 @@ export default function MessagesPage() {
                           setSelectedConversationId(conversation.id);
                         }}
                       >
-                        <div className="relative">
+                        <div className="relative flex flex-col items-center">
                           <Avatar>
                             <AvatarImage
                               src={
@@ -288,6 +310,11 @@ export default function MessagesPage() {
                           </Avatar>
                           {isOnline && (
                             <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" />
+                          )}
+                          {unreadCount > 0 && (
+                            <span className="mt-1 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                              {unreadCount > 99 ? "99+" : unreadCount}
+                            </span>
                           )}
                         </div>
                         <div className="flex-1">
@@ -482,7 +509,7 @@ function NewConversationDialog({
         className="bg-input border-border text-foreground placeholder-muted-foreground"
       />
       <ScrollArea className="h-64 mt-4">
-        {users?.map((user: User) => (
+        {users?.map((user: UserForDialog) => (
           <div
             key={user.id}
             className="flex items-center gap-3 p-2 cursor-pointer hover:bg-accent"
