@@ -100,7 +100,8 @@ class Particle {
 
     if (drawAsPoints) {
       ctx.fillStyle = `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`;
-      ctx.fillRect(this.pos.x, this.pos.y, 2, 2);
+      // Slightly larger points for better visibility
+      ctx.fillRect(this.pos.x, this.pos.y, 3, 3);
     } else {
       ctx.fillStyle = `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`;
       ctx.beginPath();

@@ -6,12 +6,6 @@ import logo from "@/../assets/logo.png"; // Import the logo image
 import type { StaticImageData } from "next/image"; // Import StaticImageData type
 
 interface Footer7Props {
-  logo?: {
-    url: string;
-    src: string | StaticImageData; // Allow StaticImageData for Next.js Image component
-    alt: string;
-    title: string;
-  };
   sections?: Array<{
     title: string;
     links: Array<{ name: string; href: string }>;
@@ -79,42 +73,43 @@ export const Footer7 = ({
   legalLinks = defaultLegalLinks,
 }: Footer7Props) => {
   const currentLogo = {
-    url: "/" as string, // Explicitly cast to string to satisfy LinkProps
-    src: logo, // Use the imported logo directly
+    url: "/",
+    src: logo,
     alt: "Yalegn Logo",
     title: "Yalegn",
   };
 
   return (
-    <section className="py-8 md:py-16 lg:py-20">
+    <section className="py-8 md:py-12 lg:py-16">
       <div className="container mx-auto px-4">
-        <div className="flex w-full flex-col justify-between gap-6 lg:flex-row lg:items-start lg:text-left">
-          <div className="flex w-full flex-col justify-between gap-6 lg:items-start text-center lg:text-left">
+        <div className="flex w-full flex-col gap-8 lg:flex-row lg:gap-12">
+          {/* Logo and Social Section */}
+          <div className="flex flex-col gap-4 lg:w-1/3 text-center lg:text-left">
             {/* Logo */}
             <div className="flex items-center gap-2 justify-center lg:justify-start">
-              <Link
-                href={currentLogo.url}
-                className="flex items-center gap-2 group"
-              >
+              <Link href="/" className="flex items-center gap-2 group">
                 <Image
                   src={currentLogo.src}
                   alt={currentLogo.alt}
                   title={currentLogo.title}
-                  className="h-16 w-16 md:h-20 md:w-20"
-                  width={80} // Specify width for Next.js Image component
-                  height={80} // Specify height for Next.js Image component
+                  className="h-12 w-12 md:h-16 md:w-16"
+                  width={64}
+                  height={64}
                 />
               </Link>
-              <h2 className="text-lg md:text-xl font-semibold">
+              <h2 className="text-base md:text-lg font-semibold">
                 {currentLogo.title}
               </h2>
             </div>
-            <p className="max-w-full text-sm text-muted-foreground px-4 lg:px-0">
+            <p className="text-sm text-muted-foreground max-w-md mx-auto lg:mx-0">
               {description}
             </p>
-            <ul className="flex items-center justify-center lg:justify-start space-x-4 md:space-x-6 text-muted-foreground">
+            <ul className="flex items-center justify-center lg:justify-start gap-4 text-muted-foreground">
               {socialLinks.map((social, idx) => (
-                <li key={idx} className="font-medium hover:text-primary">
+                <li
+                  key={idx}
+                  className="font-medium hover:text-primary transition-colors"
+                >
                   <a href={social.href} aria-label={social.label}>
                     {social.icon}
                   </a>
@@ -122,17 +117,19 @@ export const Footer7 = ({
               ))}
             </ul>
           </div>
-          <div className="grid w-full gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:gap-10 text-center sm:text-left">
+
+          {/* Links Section - 2 columns on mobile, 3 on tablet+ */}
+          <div className="grid grid-cols-2 gap-6 sm:gap-8 md:grid-cols-3 lg:flex-1 text-left">
             {sections.map((section, sectionIdx) => (
               <div key={sectionIdx}>
-                <h3 className="mb-4 font-bold text-base md:text-lg">
+                <h3 className="mb-3 font-bold text-sm md:text-base">
                   {section.title}
                 </h3>
-                <ul className="space-y-3 text-sm text-muted-foreground">
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   {section.links.map((link, linkIdx) => (
                     <li
                       key={linkIdx}
-                      className="font-medium hover:text-primary"
+                      className="font-medium hover:text-primary transition-colors"
                     >
                       <a href={link.href}>{link.name}</a>
                     </li>
@@ -142,12 +139,14 @@ export const Footer7 = ({
             ))}
           </div>
         </div>
-        <div className="mt-6 flex flex-col justify-between gap-4 border-t py-6 text-xs font-medium text-muted-foreground md:flex-row md:items-center md:text-left text-center">
-          <p className="order-2 lg:order-1">{copyright}</p>
-          <ul className="order-1 flex flex-col gap-2 md:order-2 md:flex-row justify-center md:justify-start">
+
+        {/* Bottom Section */}
+        <div className="mt-8 flex flex-col gap-3 border-t pt-6 text-xs text-muted-foreground md:flex-row md:justify-between md:items-center text-center md:text-left">
+          <p>{copyright}</p>
+          <ul className="flex flex-wrap gap-4 justify-center md:justify-end">
             {legalLinks.map((link, idx) => (
-              <li key={idx} className="hover:text-primary">
-                <a href={link.href}> {link.name}</a>
+              <li key={idx} className="hover:text-primary transition-colors">
+                <a href={link.href}>{link.name}</a>
               </li>
             ))}
           </ul>
