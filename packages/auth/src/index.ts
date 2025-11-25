@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "@my-better-t-app/db";
-import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
+import { Resend } from "resend";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -21,41 +21,63 @@ export const auth = betterAuth({
   emailVerification: {
     sendOnSignUp: false, // Don't send automatically on signup
     sendVerificationEmail: async ({ user, url }) => {
-      // Custom email sending logic
-      const mailersend = await import("mailersend").then((m) => m.MailerSend);
-      const { EmailParams, Sender, Recipient } = await import("mailersend");
+      // Use Resend for email sending (works in dev and production)
+      const resend = new Resend(process.env.RESEND_API_KEY);
 
-      const mailerSend = new mailersend({
-        apiKey: process.env.MAILERSEND_API_KEY!,
-      });
+      try {
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
+          to: user.email,
+          subject: "Verify your email address",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 28px;">Verify Your Email</h1>
+              </div>
+              <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
+                <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">Hi ${
+                  user.name || "there"
+                },</p>
+                <p style="font-size: 16px; color: #374151; margin-bottom: 30px;">
+                  Thank you for signing up! Please verify your email address to complete your registration and unlock all features.
+                </p>
+                <div style="text-align: center; margin: 40px 0;">
+                  <a href="${url}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    Verify Email Address
+                  </a>
+                </div>
+                <p style="font-size: 14px; color: #6b7280; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                  Or copy and paste this link into your browser:
+                </p>
+                <p style="font-size: 12px; color: #9ca3af; word-break: break-all; background: #f9fafb; padding: 12px; border-radius: 6px; margin-top: 10px;">
+                  ${url}
+                </p>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                  <p style="font-size: 12px; color: #9ca3af; margin: 5px 0;">
+                    ⏱️ This link will expire in 24 hours.
+                  </p>
+                  <p style="font-size: 12px; color: #9ca3af; margin: 5px 0;">
+                    🔒 If you didn't request this email, you can safely ignore it.
+                  </p>
+                </div>
+              </div>
+              <div style="text-align: center; margin-top: 20px;">
+                <p style="font-size: 12px; color: #9ca3af;">
+                  © ${new Date().getFullYear()} Yalegn. All rights reserved.
+                </p>
+              </div>
+            </div>
+          `,
+          text: `Hi ${
+            user.name || "there"
+          },\n\nPlease verify your email address by clicking this link:\n\n${url}\n\nThis link will expire in 24 hours.\n\nIf you didn't request this email, you can safely ignore it.`,
+        });
 
-      const sentFrom = new Sender(process.env.MAILERSEND_FROM_EMAIL!, "Yalegn");
-
-      const recipients = [new Recipient(user.email, user.name || "User")];
-
-      const emailParams = new EmailParams()
-        .setFrom(sentFrom)
-        .setTo(recipients)
-        .setSubject("Verify your email address")
-        .setHtml(
-          `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>Verify Your Email Address</h2>
-            <p>Hi ${user.name || "there"},</p>
-            <p>Please click the button below to verify your email address:</p>
-            <a href="${url}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;">
-              Verify Email
-            </a>
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="color: #666; word-break: break-all;">${url}</p>
-            <p>This link will expire in 24 hours.</p>
-            <p>If you didn't request this email, you can safely ignore it.</p>
-          </div>
-          `
-        )
-        .setText(`Verify your email: ${url}`);
-
-      await mailerSend.email.send(emailParams);
+        console.log("✅ Verification email sent successfully to:", user.email);
+      } catch (error) {
+        console.error("❌ Failed to send verification email:", error);
+        throw error;
+      }
     },
   },
   session: {
