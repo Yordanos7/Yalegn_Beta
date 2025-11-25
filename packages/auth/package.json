@@ -24,6 +24,7 @@
     "better-auth": "^1.3.28",
     "dotenv": "^17.2.2",
     "zod": "^4.1.11",
-    "@my-better-t-app/db": "*"
+    "@my-better-t-app/db": "*",
+    "mailersend": "^2.3.0"
   }
 }

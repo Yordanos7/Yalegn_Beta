@@ -17,13 +17,44 @@ export const auth = betterAuth({
       return user;
     },
   },
-  email: {
-    // enabled: true, // Enable the email feature globally
-    sendVerificationEmail: true, // Enable email verification directly at the email level
-    provider: {
-      type: "mailersend", // Using MailerSend
-      apiKey: process.env.MAILERSEND_API_KEY!, // Ensure this env var is set
-      fromEmail: process.env.MAILERSEND_FROM_EMAIL!, // Ensure this env var is set
+  emailVerification: {
+    sendOnSignUp: false, // Don't send automatically on signup
+    sendVerificationEmail: async ({ user, url, token }) => {
+      // Custom email sending logic
+      const mailersend = await import("mailersend").then((m) => m.MailerSend);
+      const { EmailParams, Sender, Recipient } = await import("mailersend");
+
+      const mailerSend = new mailersend({
+        apiKey: process.env.MAILERSEND_API_KEY!,
+      });
+
+      const sentFrom = new Sender(process.env.MAILERSEND_FROM_EMAIL!, "Yalegn");
+
+      const recipients = [new Recipient(user.email, user.name || "User")];
+
+      const emailParams = new EmailParams()
+        .setFrom(sentFrom)
+        .setTo(recipients)
+        .setSubject("Verify your email address")
+        .setHtml(
+          `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>Verify Your Email Address</h2>
+            <p>Hi ${user.name || "there"},</p>
+            <p>Please click the button below to verify your email address:</p>
+            <a href="${url}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;">
+              Verify Email
+            </a>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="color: #666; word-break: break-all;">${url}</p>
+            <p>This link will expire in 24 hours.</p>
+            <p>If you didn't request this email, you can safely ignore it.</p>
+          </div>
+          `
+        )
+        .setText(`Verify your email: ${url}`);
+
+      await mailerSend.email.send(emailParams);
     },
   },
   session: {
