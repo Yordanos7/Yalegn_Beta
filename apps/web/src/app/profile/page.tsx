@@ -132,7 +132,7 @@ export default function UserProfilePage() {
     try {
       const response = await fetch(
         `${
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+          process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000"
         }/api/auth/send-verification-email`,
         {
           method: "POST",
