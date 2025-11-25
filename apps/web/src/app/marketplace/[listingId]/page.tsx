@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { SendMessageButton } from "@/components/SendMessageButton";
 import {
   Star,
   MessageSquare,
@@ -814,11 +815,21 @@ export default function ListingDetailPage() {
             </Button>
             <Button
               variant="outline"
-              className="w-full flex items-center"
+              className="w-full flex items-center mb-2"
               onClick={handleAddToCart}
             >
               <Plus className="mr-2" /> Add to Cart
             </Button>
+            <SendMessageButton
+              recipientId={listing.provider.id}
+              recipientName={listing.provider.name}
+              recipientImage={listing.provider.image}
+              variant="outline"
+              size="default"
+              showIcon={true}
+              buttonText="Contact Seller"
+              className="w-full"
+            />
           </Card>
 
           {/* Customer Reviews Summary */}

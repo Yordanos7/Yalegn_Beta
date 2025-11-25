@@ -1,6 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { CheckCircle } from "lucide-react";
+import { SendMessageButton } from "@/components/SendMessageButton";
 import type {
   CategoryEnum,
   ExperienceLevel as PrismaExperienceLevel,
@@ -145,6 +146,20 @@ export default function FreelancerCard({ freelancer }: FreelancerCardProps) {
               : "Not specified"}
           </p>
         </div>
+      </div>
+
+      {/* Send Message Button */}
+      <div className="w-full mt-4">
+        <SendMessageButton
+          recipientId={freelancer.id}
+          recipientName={freelancer.name}
+          recipientImage={freelancer.image || undefined}
+          variant="default"
+          size="default"
+          showIcon={true}
+          buttonText="Send Message"
+          className="w-full"
+        />
       </div>
     </div>
   );
