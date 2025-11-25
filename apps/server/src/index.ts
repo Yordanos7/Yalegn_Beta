@@ -99,7 +99,8 @@ app.post(
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true })); // Also increase limit for urlencoded
 
-app.all("/api/auth{/*path}", toNodeHandler(auth));
+// Better-auth handles all /api/auth/* routes including email verification
+app.use("/api/auth", toNodeHandler(auth));
 
 app.use(
   "/trpc",

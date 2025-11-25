@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "@my-better-t-app/db";
+import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -19,7 +20,7 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendOnSignUp: false, // Don't send automatically on signup
-    sendVerificationEmail: async ({ user, url, token }) => {
+    sendVerificationEmail: async ({ user, url }) => {
       // Custom email sending logic
       const mailersend = await import("mailersend").then((m) => m.MailerSend);
       const { EmailParams, Sender, Recipient } = await import("mailersend");

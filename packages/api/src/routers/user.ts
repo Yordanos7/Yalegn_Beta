@@ -984,7 +984,7 @@ export const userRouter = router({
     }),
 
   sendVerificationEmail: protectedProcedure.mutation(
-    async ({ ctx: { user, req, res } }) => {
+    async ({ ctx: { user } }) => {
       if (!user?.id || !user.email) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
@@ -993,12 +993,27 @@ export const userRouter = router({
       }
 
       try {
-        await auth.api.sendVerificationEmail({
-          body: {
-            email: user.email,
-          },
-          headers: fromNodeHeaders(req.headers),
-        });
+        // Use better-auth's built-in sendVerificationEmail method
+        const response = await fetch(
+          `${process.env.BETTER_AUTH_URL}/api/auth/send-verification-email`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: user.email,
+              callbackURL: `${process.env.CORS_ORIGIN}/profile?verified=true`,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const error = await response.text();
+          console.error("Better-auth verification error:", error);
+          throw new Error("Failed to send verification email");
+        }
+
         return { message: "Verification email sent successfully!" };
       } catch (error) {
         console.error("Error sending verification email:", error);

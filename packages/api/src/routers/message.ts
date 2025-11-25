@@ -3,6 +3,80 @@ import { z } from "zod";
 import { protectedProcedure, publicProcedure, router, t } from "..";
 
 export const messageRouter = router({
+  getUnreadCount: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session?.userId;
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const unreadCount = await ctx.prisma.message.count({
+      where: {
+        toUserId: userId,
+        isRead: false,
+      },
+    });
+
+    return { unreadCount };
+  }),
+
+  getUnreadByConversation: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session?.userId;
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const conversations = await ctx.prisma.conversation.findMany({
+      where: {
+        participants: {
+          some: {
+            id: userId,
+          },
+        },
+      },
+      select: {
+        id: true,
+        messages: {
+          where: {
+            toUserId: userId,
+            isRead: false,
+          },
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    const unreadByConversation: Record<string, number> = {};
+    conversations.forEach((conv) => {
+      unreadByConversation[conv.id] = conv.messages.length;
+    });
+
+    return unreadByConversation;
+  }),
+
+  markAsRead: protectedProcedure
+    .input(z.object({ conversationId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session?.userId;
+      if (!userId) {
+        throw new Error("Not authenticated");
+      }
+
+      await ctx.prisma.message.updateMany({
+        where: {
+          conversationId: input.conversationId,
+          toUserId: userId,
+          isRead: false,
+        },
+        data: {
+          isRead: true,
+        },
+      });
+
+      return { success: true };
+    }),
+
   list: protectedProcedure
     .input(z.object({ conversationId: z.string() }))
     .query(async ({ ctx, input }) => {
