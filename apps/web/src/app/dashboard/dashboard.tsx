@@ -2,26 +2,16 @@
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress"; // Assuming a progress component exists or will be created
-import {
-  Search,
-  Coins, // Assuming a Coins icon exists or will be created
-  DollarSign,
-  Package,
-  Send,
-  TrendingUp,
-  Star,
-} from "lucide-react"; // Assuming lucide-react is installed
+import { Progress } from "@/components/ui/progress";
+import { DollarSign, Package, Send, TrendingUp, Star } from "lucide-react";
 import Sidebar from "@/components/sidebar";
-import { useSidebar } from "@/hooks/use-sidebar"; // Import the custom hook
-import { useOnlineStatus } from "@/hooks/use-online-status"; // Import online status hook
+import { useSidebar } from "@/hooks/use-sidebar";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 import { NotificationBell } from "@/components/NotificationBell";
+import { CoinDisplay } from "@/components/CoinDisplay";
 import { useState, useMemo, useEffect } from "react";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -30,13 +20,13 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import { trpc } from "@/utils/trpc"; // Import trpc
-import { useSession } from "@/hooks/use-session"; // Import useSession
-import { skipToken } from "@tanstack/react-query"; // Import skipToken
+import { trpc } from "@/utils/trpc";
+import { useSession } from "@/hooks/use-session";
+import { skipToken } from "@tanstack/react-query";
 
 export default function Dashboard() {
-  const { isSidebarOpen, toggleSidebar } = useSidebar(); // Use the custom hook
-  const [timeRange, setTimeRange] = useState("Year"); // State for time range
+  const { isSidebarOpen, toggleSidebar } = useSidebar();
+  const [timeRange, setTimeRange] = useState("Year");
   const [earningsData, setEarningsData] = useState<
     { name: string; earnings: number }[]
   >([]);
@@ -46,6 +36,17 @@ export default function Dashboard() {
 
   // Track user online status
   useOnlineStatus(userId);
+
+  // Silently claim daily bonus on mount (no popup)
+  const claimDailyBonusMutation = trpc.coins.claimDailyBonus.useMutation();
+
+  useEffect(() => {
+    if (userId) {
+      // Try to claim daily bonus on dashboard load (silently)
+      claimDailyBonusMutation.mutate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const { data: sellerOrders, isLoading: isLoadingSellerOrders } =
     trpc.order.getOrdersForSeller.useQuery({});
@@ -127,22 +128,23 @@ export default function Dashboard() {
   const profileCompletion = useMemo(() => {
     if (!userProfile) return 0;
 
-    const totalFields = 10; // Example: name, email, bio, location, accountType, headline, hourlyRate, mainCategory, skills, verificationStatus
     let completedFields = 0;
+    const totalFields = 3; // Only: Email Verified, Portfolio, Faida ID Verified
 
-    if (userProfile.name) completedFields++;
-    if (userProfile.email) completedFields++;
-    if (userProfile.bio) completedFields++;
-    if (userProfile.location) completedFields++;
-    if (userProfile.accountType) completedFields++;
-    if (userProfile.profile?.headline) completedFields++;
-    if (userProfile.profile?.hourlyRate) completedFields++;
-    if (userProfile.profile?.mainCategory) completedFields++;
-    if (userProfile.profile?.skills && userProfile.profile.skills.length > 0)
+    // Email Verified (required)
+    if (userProfile.emailVerified) completedFields++;
+
+    // Portfolio (at least one item with link)
+    if (
+      userProfile.profile?.portfolio &&
+      userProfile.profile.portfolio.length > 0
+    )
       completedFields++;
+
+    // Faida ID Verified (approved)
     if (userProfile.verification?.status === "APPROVED") completedFields++;
 
-    return (completedFields / totalFields) * 100;
+    return Math.round((completedFields / totalFields) * 100);
   }, [userProfile]);
 
   const totalEarnings = useMemo(() => {
@@ -276,34 +278,34 @@ export default function Dashboard() {
             <div className="flex items-center mb-4 sm:mb-0">
               <Avatar className="h-10 w-10 mr-4">
                 <AvatarImage
-                  src="https://github.com/shadcn.png"
-                  alt="@shadcn"
-                />{" "}
-                {/* Placeholder profile image */}
-                <AvatarFallback>CN</AvatarFallback>
+                  src={userProfile?.image || "/placeholder-avatar.jpg"}
+                  alt={userProfile?.name || "User"}
+                />
+                <AvatarFallback>
+                  {userProfile?.name
+                    ? userProfile.name.charAt(0).toUpperCase()
+                    : "U"}
+                </AvatarFallback>
               </Avatar>
               <div className="relative w-full sm:w-auto">
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  size={20}
-                />
-                <Input
-                  type="text"
-                  placeholder="Search"
-                  className="pl-10 pr-4 py-2 rounded-lg bg-input border-none text-foreground focus:ring-0 focus:outline-none w-full"
-                />
+                <h1 className=" text-foreground">
+                  {isLoadingUserProfile ? (
+                    "Loading..."
+                  ) : (
+                    <>
+                      Welcome to Your Yalegn Dashboard,{" "}
+                      <span className="text-primary">
+                        {userProfile?.name || "User"}
+                      </span>
+                      !
+                    </>
+                  )}
+                </h1>
               </div>
             </div>
             <div className="flex flex-wrap items-center justify-center sm:justify-end space-x-2 sm:space-x-4">
               <NotificationBell />
-              <div className="flex items-center bg-muted px-3 py-1 rounded-full text-sm">
-                <Coins className="mr-2 text-yellow-500" size={16} />
-                <span>250 Coins</span>
-              </div>
-              <div className="flex items-center bg-muted px-3 py-1 rounded-full text-sm">
-                <Coins className="mr-2 text-yellow-500" size={16} />
-                <span>250 cns</span>
-              </div>
+              <CoinDisplay />
               <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg px-4 py-2 mt-2 sm:mt-0">
                 Create New Listing
               </Button>
@@ -462,40 +464,107 @@ export default function Dashboard() {
           </Card>
 
           {/* Profile Completion */}
-          <Card className="bg-card p-6 rounded-lg flex flex-col md:flex-row items-center justify-between text-center md:text-left">
-            <div className="flex flex-col md:flex-row items-center mb-4 md:mb-0">
-              <span className="mr-4">
-                Profile Completion:{" "}
-                {isLoadingUserProfile
-                  ? "..."
-                  : `${profileCompletion.toFixed(0)}%`}
-              </span>
-              <div className="w-full md:w-48 mb-2 md:mb-0">
-                <Progress
-                  value={isLoadingUserProfile ? 0 : profileCompletion}
-                  className="h-2 bg-muted"
-                  indicatorClassName="bg-yellow-500"
-                />
-              </div>
-              <Avatar className="h-10 w-10 ml-0 md:ml-4 mt-2 md:mt-0">
-                <AvatarImage
-                  src={userProfile?.image || "https://github.com/shadcn.png"}
-                  alt={userProfile?.name || "User Avatar"}
-                />{" "}
-                <AvatarFallback>
-                  {userProfile?.name ? userProfile.name[0] : "CN"}
-                </AvatarFallback>
-              </Avatar>
-              {userProfile?.verification?.status !== "APPROVED" && (
-                <div className="flex flex-col md:flex-row items-center md:ml-4 mt-2 md:mt-0 gap-4">
-                  <p className="ml-0 md:ml-4 mt-2 md:mt-0 text-sm text-muted-foreground">
-                    Tips: Verify ID for 20% higher trust
-                  </p>
-                  <div className="">
-                    <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg px-4 py-2 mt-4 md:mt-0">
-                      Complete Your Profile
-                    </Button>
+          <Card className="bg-card p-6 rounded-lg">
+            <div className="flex flex-col space-y-4">
+              {/* Header with Avatar and Completion */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage
+                      src={userProfile?.image || "/placeholder-avatar.jpg"}
+                      alt={userProfile?.name || "User Avatar"}
+                    />
+                    <AvatarFallback>
+                      {userProfile?.name
+                        ? userProfile.name.charAt(0).toUpperCase()
+                        : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-lg font-semibold">
+                      Profile Completion
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {isLoadingUserProfile
+                        ? "Loading..."
+                        : `${profileCompletion}% Complete`}
+                    </p>
                   </div>
+                </div>
+                <div className="text-right">
+                  <div
+                    className={`text-3xl font-bold ${
+                      profileCompletion === 100
+                        ? "text-green-500"
+                        : "text-yellow-500"
+                    }`}
+                  >
+                    {isLoadingUserProfile ? "..." : `${profileCompletion}%`}
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <Progress
+                value={isLoadingUserProfile ? 0 : profileCompletion}
+                className="h-3 bg-muted"
+                indicatorClassName={
+                  profileCompletion === 100 ? "bg-green-500" : "bg-yellow-500"
+                }
+              />
+
+              {/* Completion Checklist */}
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center">
+                    {userProfile?.emailVerified ? (
+                      <span className="text-green-500 mr-2">✓</span>
+                    ) : (
+                      <span className="text-red-500 mr-2">✗</span>
+                    )}
+                    Email Verified
+                  </span>
+                  <span className="text-muted-foreground">33%</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center">
+                    {userProfile?.profile?.portfolio &&
+                    userProfile.profile.portfolio.length > 0 ? (
+                      <span className="text-green-500 mr-2">✓</span>
+                    ) : (
+                      <span className="text-red-500 mr-2">✗</span>
+                    )}
+                    Portfolio Added
+                  </span>
+                  <span className="text-muted-foreground">33%</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center">
+                    {userProfile?.verification?.status === "APPROVED" ? (
+                      <span className="text-green-500 mr-2">✓</span>
+                    ) : (
+                      <span className="text-red-500 mr-2">✗</span>
+                    )}
+                    Faida ID Verified
+                  </span>
+                  <span className="text-muted-foreground">33%</span>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              {profileCompletion === 100 ? (
+                <div className="pt-2"></div>
+              ) : (
+                <div className="pt-2">
+                  <Button
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg"
+                    onClick={() => (window.location.href = "/profile")}
+                  >
+                    Complete Your Profile
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center mt-2">
+                    Complete your profile to unlock all features
+                  </p>
                 </div>
               )}
             </div>

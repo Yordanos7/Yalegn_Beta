@@ -834,7 +834,20 @@ export const userRouter = router({
 
       const currentUser = await prisma.user.findUnique({
         where: { id: user.id },
-        select: { accountType: true },
+        select: {
+          accountType: true,
+          emailVerified: true,
+          verification: {
+            select: {
+              status: true,
+            },
+          },
+          profile: {
+            select: {
+              portfolio: true,
+            },
+          },
+        },
       });
 
       if (currentUser?.accountType !== AccountType.INDIVIDUAL) {
@@ -842,6 +855,26 @@ export const userRouter = router({
           code: "FORBIDDEN",
           message:
             "Only individual accounts can be listed as public freelancers.",
+        });
+      }
+
+      // Check if profile is 100% complete (all 3 requirements)
+      const isEmailVerified = currentUser?.emailVerified === true;
+      const hasPortfolio = (currentUser?.profile?.portfolio?.length ?? 0) > 0;
+      const isIdVerified =
+        currentUser?.verification?.status === VerificationStatus.APPROVED;
+
+      const profileCompletion = [
+        isEmailVerified,
+        hasPortfolio,
+        isIdVerified,
+      ].filter(Boolean).length;
+
+      if (input.isPublic && profileCompletion < 3) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message:
+            "You must complete your profile to 100% before posting to the Freelancer Page. Please verify your email, add a portfolio item, and get your ID verified.",
         });
       }
 

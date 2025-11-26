@@ -398,6 +398,14 @@ export const orderRouter = router({
         },
       });
 
+      // Award 30 coins to the seller for completing a sale
+      await prisma.user.update({
+        where: { id: order.sellerId },
+        data: {
+          coins: { increment: 30 },
+        },
+      });
+
       // Notify admin about the delivery confirmation
       const adminUsers = await prisma.user.findMany({
         where: { role: "ADMIN" },
@@ -419,7 +427,7 @@ export const orderRouter = router({
         });
       }
 
-      // Notify the seller about the delivery confirmation
+      // Notify the seller about the delivery confirmation and coin reward
       const seller = await prisma.user.findUnique({
         where: { id: order.sellerId },
         select: { id: true },
@@ -430,11 +438,12 @@ export const orderRouter = router({
           data: {
             userId: seller.id,
             type: "SYSTEM",
-            title: "Delivery Confirmed by Buyer",
-            body: `Buyer ${userId} confirmed delivery for your order ${input.orderId}. Status updated to COMPLETED.`,
+            title: "Delivery Confirmed by Buyer - 30 Coins Earned!",
+            body: `Buyer ${userId} confirmed delivery for your order ${input.orderId}. Status updated to COMPLETED. You've earned 30 coins!`,
             payload: {
               orderId: input.orderId,
               buyerId: userId,
+              coinsEarned: 30,
             },
           },
         });
@@ -473,7 +482,7 @@ export const orderRouter = router({
       return updatedOrder;
     }),
 
-  getOrdersForAdmin: protectedProcedure.query(async ({ ctx }) => {
+  getOrdersForAdmin: protectedProcedure.query(async () => {
     // Temporarily disable admin check for development
     // const { userId } = ctx.session;
     // const user = await prisma.user.findUnique({

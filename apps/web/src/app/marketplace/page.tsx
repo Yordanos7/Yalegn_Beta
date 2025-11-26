@@ -2,32 +2,26 @@
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import Sidebar from "@/components/sidebar";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge"; // Import Badge component
-import Link from "next/link"; // Import Link for navigation
+import Link from "next/link";
 import {
-  Search,
-  ShoppingCart,
-  User,
-  ChevronDown,
   Star,
-  MessageSquare,
-  Plus,
-  X, // For closing the modal
+  Package,
+  TrendingUp,
+  Sparkles,
+  Clock,
+  MapPin,
 } from "lucide-react";
-import { trpc } from "@/utils/trpc"; // Import trpc
+import { trpc } from "@/utils/trpc";
 import React, { useEffect, useState } from "react";
 import { MarketPlaceFilters } from "@/components/MarketPlaceFilters";
-import type { RouterOutputs } from "@my-better-t-app/api/routers/types"; // Use type-only import
-import { useSidebar } from "@/hooks/use-sidebar"; // Import the custom hook
-import { renderStars } from "@/lib/utils"; // Import renderStars helper
-import { useSession } from "@/hooks/use-session"; // Import useSession hook
-
+import { useSidebar } from "@/hooks/use-sidebar";
+import { renderStars } from "@/lib/utils";
+import { useSession } from "@/hooks/use-session";
 import { CategoryEnum } from "@my-better-t-app/db/prisma/generated/enums";
+import Image from "next/image";
 
 interface MarketplaceListing {
   id: string;
@@ -55,79 +49,112 @@ interface MarketplaceListing {
 }
 
 const ListingCard = ({ listing }: { listing: MarketplaceListing }) => {
-  const isVideo = (url: string) => {
-    const videoExtensions = [".mp4", ".webm", ".ogg"];
-    return videoExtensions.some((ext) => url.toLowerCase().endsWith(ext));
-  };
-
-  const isImage = (url: string) => {
-    const imageExtensions = [
-      ".jpg",
-      ".jpeg",
-      ".png",
-      ".gif",
-      ".bmp",
-      ".webp",
-      ".svg",
-    ];
-    return imageExtensions.some((ext) => url.toLowerCase().endsWith(ext));
-  };
-
-  console.log("ListingCard - Listing Data:", listing);
-
-  const mediaUrl = listing.videos?.[0] || listing.images?.[0];
-  const placeholderUrl = "https://via.placeholder.com/150";
-  console.log("ListingCard - Media URL:", mediaUrl);
-  console.log("ListingCard - Listing Images:", listing.images);
-  console.log("ListingCard - Listing Videos:", listing.videos);
-
-  console.log("this is media url mediaUrl:", mediaUrl);
+  const mediaUrl = listing.images?.[0] || listing.videos?.[0];
+  const isVideo = mediaUrl?.match(/\.(mp4|webm|ogg)$/i);
 
   return (
-    <Link href={`/marketplace/${listing.id}`} passHref legacyBehavior>
-      <Card className="relative group w-full h-80 bg-cover bg-center rounded-lg overflow-hidden cursor-pointer transition-transform duration-300 ease-in-out transform hover:scale-105">
-        {mediaUrl ? (
-          isImage(mediaUrl) ? (
-            <div
-              className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
-              style={{ backgroundImage: `url(${mediaUrl})` }}
-            />
-          ) : isVideo(mediaUrl) ? (
-            <video
-              src={mediaUrl}
-              className="absolute inset-0 w-full h-full object-cover z-0"
-              autoPlay
-              loop
-              muted
-              playsInline
-            />
+    <Link href={`/marketplace/${listing.id}`}>
+      <Card className="group overflow-hidden border border-border hover:border-yellow-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-yellow-500/10 bg-card">
+        {/* Image/Video Section */}
+        <div className="relative h-56 overflow-hidden bg-muted">
+          {mediaUrl ? (
+            isVideo ? (
+              <video
+                src={mediaUrl}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                autoPlay
+                loop
+                muted
+                playsInline
+              />
+            ) : (
+              <Image
+                src={mediaUrl}
+                alt={listing.title}
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            )
           ) : (
-            // Fallback for unknown media types, or if mediaUrl is not an image or video
-            <div
-              className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
-              style={{ backgroundImage: `url(${placeholderUrl})` }}
-            />
-          )
-        ) : (
-          <div
-            className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
-            style={{ backgroundImage: `url(${placeholderUrl})` }}
-          />
-        )}
-        <div className="absolute inset-0 bg-opacity-100 group-hover:bg-opacity-50 transition-all duration-300 z-10" />
-        <div className="absolute bottom-0 left-0 p-4 text-white w-full z-20">
-          <h3 className="text-lg font-bold truncate">{listing.title}</h3>
-          <div className="flex items-center mt-1">
-            {renderStars({ rating: listing.rating, starClassName: "h-4 w-4" })}
-            <span className="text-xs ml-1">
-              ({listing.rating?.toFixed(1) || "0.0"}) (
-              {listing.reviewCount || 0} reviews)
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+              <Package className="h-16 w-16 text-muted-foreground/30" />
+            </div>
+          )}
+
+          {/* Overlay gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          {/* Category Badge */}
+          {listing.category && (
+            <Badge className="absolute top-3 left-3 bg-yellow-500 text-black hover:bg-yellow-600">
+              {listing.category}
+            </Badge>
+          )}
+
+          {/* New Badge */}
+          {new Date(listing.createdAt).getTime() >
+            Date.now() - 7 * 24 * 60 * 60 * 1000 && (
+            <Badge className="absolute top-3 right-3 bg-green-500 text-white hover:bg-green-600 flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              New
+            </Badge>
+          )}
+        </div>
+
+        {/* Content Section */}
+        <CardContent className="p-4 space-y-3">
+          {/* Provider Info */}
+          <div className="flex items-center gap-2">
+            <Avatar className="h-6 w-6 border border-border">
+              <AvatarImage src={listing.provider.image || undefined} />
+              <AvatarFallback className="text-xs bg-muted">
+                {listing.provider.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-xs text-muted-foreground truncate">
+              {listing.provider.name}
+            </span>
+            {listing.provider.accountType === "ORGANIZATION" && (
+              <Badge variant="outline" className="text-xs px-1 py-0">
+                Org
+              </Badge>
+            )}
+          </div>
+
+          {/* Title */}
+          <h3 className="font-semibold text-base line-clamp-2 group-hover:text-yellow-500 transition-colors">
+            {listing.title}
+          </h3>
+
+          {/* Rating */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center">
+              <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+              <span className="text-sm font-medium ml-1">
+                {listing.rating?.toFixed(1) || "0.0"}
+              </span>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              ({listing.reviewCount || 0})
             </span>
           </div>
-          <p className="text-lg font-semibold mt-2">
-            {listing.currency} {listing.price.toFixed(2)}
-          </p>
-        </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2 border-t border-border">
+            <div>
+              <p className="text-xs text-muted-foreground">Starting at</p>
+              <p className="text-xl font-bold text-yellow-600">
+                {listing.currency} {listing.price.toLocaleString()}
+              </p>
+            </div>
+            {listing.deliveryDays && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                {listing.deliveryDays}d
+              </div>
+            )}
+          </div>
+        </CardContent>
       </Card>
     </Link>
   );
@@ -153,14 +180,21 @@ export default function MarketplacePage() {
 
   if (isPending) {
     return (
-      <div className="flex min-h-screen bg-[#202020] text-white">
+      <div className="flex min-h-screen bg-background">
         <Sidebar
           currentPage="marketplace"
-          isSidebarOpen={true} // Default to open during loading
-          toggleSidebar={() => {}} // No-op during loading
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
         />
-        <main className="flex-1 p-8 bg-[#202020] flex flex-col items-center justify-center">
-          <p className="text-gray-400">Loading listings...</p>
+        <main
+          className={`flex-1 p-8 flex items-center justify-center transition-all duration-300 ${
+            isSidebarOpen ? "md:ml-[200px]" : "md:ml-[60px]"
+          }`}
+        >
+          <div className="text-center space-y-4">
+            <Package className="h-16 w-16 mx-auto text-muted-foreground animate-pulse" />
+            <p className="text-muted-foreground">Loading marketplace...</p>
+          </div>
         </main>
       </div>
     );
@@ -168,29 +202,33 @@ export default function MarketplacePage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen bg-[#202020] text-white">
+      <div className="flex min-h-screen bg-background">
         <Sidebar
           currentPage="marketplace"
-          isSidebarOpen={true} // Default to open during error
-          toggleSidebar={() => {}} // No-op during error
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
         />
-        <main className="flex-1 p-8 bg-[#411a1a] flex flex-col items-center justify-center">
-          <h1 className="text-2xl font-bold text-red-500">Error</h1>
-          <p className="text-gray-400">
-            Failed to load listings: {error.message}
-          </p>
+        <main
+          className={`flex-1 p-8 flex items-center justify-center transition-all duration-300 ${
+            isSidebarOpen ? "md:ml-[200px]" : "md:ml-[60px]"
+          }`}
+        >
+          <Card className="p-8 max-w-md">
+            <div className="text-center space-y-4">
+              <div className="h-16 w-16 mx-auto rounded-full bg-red-500/10 flex items-center justify-center">
+                <Package className="h-8 w-8 text-red-500" />
+              </div>
+              <h2 className="text-xl font-bold">Failed to Load</h2>
+              <p className="text-muted-foreground">{error.message}</p>
+            </div>
+          </Card>
         </main>
       </div>
     );
   }
 
-  const listings = listingsData?.listings || [];
-  // Use the custom hook
-
-  console.log("Marketplace Listings:", listings); // Log the listings to the console
-
   return (
-    <div className="flex min-h-screen bg-[#202020] text-white">
+    <div className="flex min-h-screen bg-background">
       <Sidebar
         currentPage="marketplace"
         isSidebarOpen={isSidebarOpen}
@@ -199,55 +237,110 @@ export default function MarketplacePage() {
 
       {/* Main Content */}
       <main
-        className={`flex-1 p-4 md:p-8 bg-[#202020] flex flex-col transition-all duration-300 ease-in-out ${
-          isSidebarOpen ? "ml-0" : "ml-0"
+        className={`flex-1 p-4 md:p-8 transition-all duration-300 ${
+          isSidebarOpen ? "md:ml-[200px]" : "md:ml-[60px]"
         }`}
       >
-        {/* Top Header */}
-        <header className="flex items-center justify-between mb-6">
-          <div className="flex items-center">
-            <img
-              src="/assets/logo.png"
-              alt="Yalegn Marketplace"
-              className="h-8 mr-2"
-            />
-            <span className="text-xl font-bold text-gray-200">
-              Yalegn Marketplace
-            </span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md px-4 py-2">
-              Products
-            </Button>
-            <Link href="/profile" passHref>
-              <Avatar className="h-8 w-8 cursor-pointer">
-                <AvatarImage
-                  src={session?.user?.image || "https://github.com/shadcn.png"}
-                  alt={session?.user?.name || "User"}
-                />
-                <AvatarFallback>
-                  {session?.user?.name?.charAt(0) || "U"}
+        {/* Hero Header */}
+        <div className="mb-8 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
+                Marketplace
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Discover amazing products and services from talented creators
+              </p>
+            </div>
+            <Link href="/profile">
+              <Avatar className="h-10 w-10 cursor-pointer border-2 border-yellow-500 hover:border-yellow-600 transition-colors">
+                <AvatarImage src={session?.user?.image || undefined} />
+                <AvatarFallback className="bg-yellow-500 text-black">
+                  {session?.user?.name?.charAt(0).toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
             </Link>
           </div>
-        </header>
+        </div>
+
+        {/* Stats Bar */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card className="p-4 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-yellow-500/20">
+                <Package className="h-5 w-5 text-yellow-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{filteredListings.length}</p>
+                <p className="text-xs text-muted-foreground">Active Listings</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/20">
+                <TrendingUp className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">
+                  {
+                    filteredListings.filter(
+                      (l) =>
+                        new Date(l.createdAt).getTime() >
+                        Date.now() - 7 * 24 * 60 * 60 * 1000
+                    ).length
+                  }
+                </p>
+                <p className="text-xs text-muted-foreground">New This Week</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/20">
+                <Star className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">
+                  {(
+                    filteredListings.reduce(
+                      (sum, l) => sum + (l.rating || 0),
+                      0
+                    ) / filteredListings.length || 0
+                  ).toFixed(1)}
+                </p>
+                <p className="text-xs text-muted-foreground">Avg Rating</p>
+              </div>
+            </div>
+          </Card>
+        </div>
 
         {/* Search and Filter Bar */}
-        <MarketPlaceFilters
-          listings={listingsData?.listings || []}
-          onFilteredListingsChange={setFilteredListings}
-        />
+        <div className="mb-8">
+          <MarketPlaceFilters
+            listings={listingsData?.listings || []}
+            onFilteredListingsChange={setFilteredListings}
+          />
+        </div>
 
-        {/* Content area for product grid and featured freelancers */}
-        <div className="flex flex-col md:flex-row flex-1 md:space-x-8 space-y-8 md:space-y-0">
-          {/* Product Grid */}
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Product Grid */}
+        {filteredListings.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredListings.map((listing: MarketplaceListing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>
-        </div>
+        ) : (
+          <Card className="p-12">
+            <div className="text-center space-y-4">
+              <Package className="h-16 w-16 mx-auto text-muted-foreground" />
+              <h3 className="text-xl font-semibold">No listings found</h3>
+              <p className="text-muted-foreground">
+                Try adjusting your filters or search terms
+              </p>
+            </div>
+          </Card>
+        )}
       </main>
     </div>
   );

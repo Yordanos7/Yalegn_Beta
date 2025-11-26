@@ -315,23 +315,19 @@ export default function UserProfilePage() {
 
   const calculateProfileCompletion = () => {
     let completedFields = 0;
-    let totalFields = 9; // Name, Email, Bio, Headline, Skills, Portfolio, Location, Verification, Email Verified
+    let totalFields = 3; // Only: Email Verified, Portfolio, Faida ID Verified
 
-    if (userProfile.name) completedFields++;
-    if (userProfile.email) completedFields++;
-    if (userProfile.emailVerified) completedFields++; // New field for email verification
-    if (userProfile.bio) completedFields++;
-    if (userProfile.profile?.headline) completedFields++;
-    if (
-      (userProfile.profile as ProfileWithSkillsAndPortfolio)?.skills?.length > 0
-    )
-      completedFields++;
+    // Email Verified (required)
+    if (userProfile.emailVerified) completedFields++;
+
+    // Portfolio (at least one item with link)
     if (
       (userProfile.profile as ProfileWithSkillsAndPortfolio)?.portfolio
         ?.length > 0
     )
       completedFields++;
-    if (userProfile.location) completedFields++;
+
+    // Faida ID Verified (approved)
     if (userProfile.verification?.status === VerificationStatus.APPROVED)
       completedFields++;
 
@@ -399,7 +395,8 @@ export default function UserProfilePage() {
               </div>
               <div className="flex items-center space-x-4">
                 {isOwnProfile &&
-                  session?.user?.accountType === "INDIVIDUAL" && (
+                  session?.user?.accountType === "INDIVIDUAL" &&
+                  profileCompletion === 100 && (
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="freelancer-public-status"
@@ -425,6 +422,16 @@ export default function UserProfilePage() {
                       )}
                     </div>
                   )}
+                {isOwnProfile &&
+                  session?.user?.accountType === "INDIVIDUAL" &&
+                  profileCompletion < 100 && (
+                    <div className="flex items-center space-x-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                      <Loader className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                      <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                        Complete your profile to 100% to post on Freelancer Page
+                      </p>
+                    </div>
+                  )}
                 <div className="relative w-24 h-24">
                   <svg className="w-full h-full" viewBox="0 0 100 100">
                     <circle
@@ -437,7 +444,11 @@ export default function UserProfilePage() {
                       cy="50"
                     />
                     <circle
-                      className="text-primary"
+                      className={
+                        profileCompletion === 100
+                          ? "text-green-500"
+                          : "text-primary"
+                      }
                       strokeWidth="10"
                       strokeDasharray={2 * Math.PI * 40}
                       strokeDashoffset={
@@ -456,21 +467,16 @@ export default function UserProfilePage() {
                       y="50"
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      className="text-xl font-bold fill-foreground"
+                      className={`text-xl font-bold ${
+                        profileCompletion === 100
+                          ? "fill-green-500"
+                          : "fill-foreground"
+                      }`}
                     >
                       {profileCompletion}%
                     </text>
                   </svg>
                 </div>
-                <Card className="p-4 bg-muted rounded-lg flex items-center space-x-2">
-                  <User className="h-5 w-5 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    Complete your profile to attract more opportunities
-                  </p>
-                </Card>
-                <Button variant="ghost" size="icon">
-                  <XCircle className="h-5 w-5 text-muted-foreground" />
-                </Button>
               </div>
             </div>
 
@@ -610,10 +616,6 @@ export default function UserProfilePage() {
                   Faida ID Verified
                 </div>
                 <div className="flex items-center">
-                  <XCircle className="h-5 w-5 mr-2 text-red-500" /> Phone
-                  Verified
-                </div>
-                <div className="flex items-center">
                   {userProfile.emailVerified ? (
                     <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
                   ) : (
@@ -622,8 +624,13 @@ export default function UserProfilePage() {
                   Email Verified
                 </div>
                 <div className="flex items-center">
-                  <XCircle className="h-5 w-5 mr-2 text-red-500" /> Portfolio
-                  Verified
+                  {(userProfile.profile as ProfileWithSkillsAndPortfolio)
+                    ?.portfolio?.length > 0 ? (
+                    <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+                  ) : (
+                    <XCircle className="h-5 w-5 mr-2 text-red-500" />
+                  )}{" "}
+                  Portfolio Added
                 </div>
               </div>
 
@@ -677,10 +684,6 @@ export default function UserProfilePage() {
                   </div>
                 </div>
               )}
-
-              <Button variant="outline" className="mt-4 font-semibold w-full">
-                Unlock all badges to build client trust
-              </Button>
             </CardContent>
           </Card>
 
