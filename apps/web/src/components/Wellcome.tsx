@@ -10,9 +10,6 @@ export const Wellcome = () => {
   return (
     <div className="flex flex-col items-center justify-center p-4  bg-background">
       <div className="w-full p-4 rounded-xl bg-background md:p-32">
-        <div className="flex justify-center mb-6">
-          <Sparkles size={48} className="text-primary" />
-        </div>
         <h1 className="text-4xl md:text-5xl font-bold mb-4 md:mb-6 text-center text-primary font-playfair ">
           Welcome to Yalegn!
         </h1>
