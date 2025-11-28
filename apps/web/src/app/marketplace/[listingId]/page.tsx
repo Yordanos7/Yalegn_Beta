@@ -331,14 +331,19 @@ export default function ListingDetailPage() {
   console.log("  listing.images.some(isVideo):", listing.images.some(isVideo));
 
   return (
-    <main className=" mx-auto px-4 py-8 md:py-12 bg-background text-foreground">
-      <Button variant="outline" onClick={() => router.back()} className="mb-6">
-        &larr; Back to Marketplace
+    <main className="container mx-auto px-4 py-6 md:py-12 bg-background text-foreground max-w-7xl">
+      <Button
+        variant="ghost"
+        onClick={() => router.back()}
+        className="mb-6 hover:bg-muted"
+      >
+        <ChevronLeft className="h-4 w-4 mr-2" />
+        Back to Marketplace
       </Button>
 
       {isProvider && (
-        <Card className="p-6 bg-card rounded-lg shadow-sm mb-8">
-          <CardTitle className="text-xl font-semibold mb-4 flex items-center">
+        <Card className="p-4 md:p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20 rounded-lg shadow-sm mb-8">
+          <CardTitle className="text-lg md:text-xl font-semibold mb-4 flex items-center">
             <CheckCircle className="h-5 w-5 text-green-500 mr-2" /> Orders for
             Your Listing
           </CardTitle>
@@ -553,11 +558,11 @@ export default function ListingDetailPage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         {/* Left Column: Main Media Display and Thumbnails */}
-        <div className="md:col-span-1 lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           {/* Main Media Display with Navigation */}
-          <Card className="p-4 bg-card rounded-lg shadow-sm relative">
+          <Card className="p-3 md:p-4 bg-card rounded-lg border border-border hover:border-yellow-500/30 transition-all shadow-sm relative overflow-hidden">
             {listing.images && listing.images.length > 0 ? (
               <div className="relative w-full h-[300px] sm:h-[400px] md:h-[500px] bg-muted rounded-md overflow-hidden">
                 {listing.images[currentMediaIndex] &&
@@ -704,22 +709,30 @@ export default function ListingDetailPage() {
           </Card>
 
           {/* Description */}
-          <Card className="p-6 bg-card rounded-lg shadow-sm">
-            <CardTitle className="text-xl font-semibold mb-4">
+          <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm">
+            <CardTitle className="text-lg md:text-xl font-semibold mb-3 md:mb-4 flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-yellow-500"></div>
               Description
             </CardTitle>
-            <CardContent className="p-0 text-muted-foreground whitespace-pre-line">
+            <CardContent className="p-0 text-sm md:text-base text-muted-foreground whitespace-pre-line leading-relaxed">
               <p>{listing.description}</p>
             </CardContent>
           </Card>
 
           {/* Tags */}
-          <Card className="p-6 bg-card rounded-lg shadow-sm">
-            <CardTitle className="text-xl font-semibold mb-4">Tags</CardTitle>
+          <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm">
+            <CardTitle className="text-lg md:text-xl font-semibold mb-3 md:mb-4 flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-yellow-500"></div>
+              Tags
+            </CardTitle>
             <CardContent className="p-0">
               <div className="flex flex-wrap gap-2">
                 {listing.tags.map((tag, index) => (
-                  <Badge key={index} variant="secondary">
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className="hover:bg-yellow-500/20 transition-colors"
+                  >
                     {tag}
                   </Badge>
                 ))}
@@ -729,173 +742,191 @@ export default function ListingDetailPage() {
         </div>
 
         {/* Right Column: Product Info and Actions */}
-        <div className="md:col-span-1 lg:col-span-1 space-y-6">
+        <div className="lg:col-span-1 space-y-6">
           {/* Listing Summary */}
-          <Card className="p-6 bg-card rounded-lg shadow-sm">
-            <CardTitle className="text-2xl font-bold mb-2">
+          <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm sticky top-4">
+            <CardTitle className="text-xl md:text-2xl font-bold mb-3 line-clamp-2">
               {listing.title}
             </CardTitle>
-            <div className="flex items-center mb-4">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-5 w-5 ${
-                    i < Math.floor(listing.rating || 0)
-                      ? "text-yellow-500 fill-yellow-500"
-                      : "text-muted-foreground"
-                  }`}
-                />
-              ))}
-              <span className="text-sm text-muted-foreground ml-2">
-                ({listing.rating?.toFixed(1) || "N/A"}) (
+            <div className="flex items-center mb-4 flex-wrap gap-2">
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`h-4 w-4 ${
+                      i < Math.floor(listing.rating || 0)
+                        ? "text-yellow-500 fill-yellow-500"
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-xs md:text-sm text-muted-foreground">
+                {listing.rating?.toFixed(1) || "N/A"} (
                 {listing.reviewCount || 0} reviews)
               </span>
             </div>
 
             {/* Price and Discount Section */}
-            <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4">
-              <p className="text-sm font-semibold">Welcome deal • SuperDeals</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-primary">
+            <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 p-3 md:p-4 rounded-lg mb-4">
+              <p className="text-xs md:text-sm font-semibold text-yellow-600 mb-2">
+                Special Offer
+              </p>
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <p className="text-2xl md:text-3xl font-bold text-yellow-600">
                   {listing.currency} {listing.price.toFixed(2)}
                 </p>
-                {/* Assuming a discount for demonstration */}
-                <p className="text-sm text-muted-foreground line-through">
+                <p className="text-xs md:text-sm text-muted-foreground line-through">
                   {listing.currency} {(listing.price * 1.5).toFixed(2)}
                 </p>
-                <p className="text-xs text-red-500">Only 64 left</p>
               </div>
             </div>
 
             {/* Shipping Info */}
-            <div className="mb-4 text-sm text-muted-foreground">
-              <p>
-                <span className="font-semibold text-foreground">Ship to:</span>{" "}
-                Ethiopia
+            <div className="mb-4 text-xs md:text-sm space-y-2 p-3 bg-muted/50 rounded-lg">
+              <p className="flex justify-between">
+                <span className="text-muted-foreground">Ship to:</span>
+                <span className="font-medium">Ethiopia</span>
               </p>
-              <p>
-                <span className="font-semibold text-foreground">
-                  Free shipping over
-                </span>{" "}
-                {listing.currency} 1,675.25
+              <p className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Free shipping over:
+                </span>
+                <span className="font-medium">{listing.currency} 1,675</span>
               </p>
-              <p>
-                <span className="font-semibold text-foreground">Delivery:</span>{" "}
-                Nov 03 - 16
-              </p>
+              {listing.deliveryDays && (
+                <p className="flex justify-between">
+                  <span className="text-muted-foreground">Delivery:</span>
+                  <span className="font-medium">
+                    {listing.deliveryDays} days
+                  </span>
+                </p>
+              )}
             </div>
 
             {/* Quantity Selector */}
-            <div className="flex items-center gap-2 mb-4">
-              <span className="font-semibold text-foreground">Quantity:</span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              >
-                -
-              </Button>
-              <span className="px-3">{quantity}</span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setQuantity(quantity + 1)}
-              >
-                +
-              </Button>
+            <div className="flex items-center justify-between gap-3 mb-4 p-3 bg-muted/50 rounded-lg">
+              <span className="font-semibold text-foreground text-sm">
+                Quantity:
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 rounded-full"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                >
+                  -
+                </Button>
+                <span className="px-4 font-semibold">{quantity}</span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 rounded-full"
+                  onClick={() => setQuantity(quantity + 1)}
+                >
+                  +
+                </Button>
+              </div>
             </div>
 
-            <Button
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold rounded-md px-6 py-2 flex items-center mb-2"
-              // Removed direct navigation to review prompt from here
-            >
-              Buy Now
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full flex items-center mb-2"
-              onClick={handleAddToCart}
-            >
-              <Plus className="mr-2" /> Add to Cart
-            </Button>
-            <SendMessageButton
-              recipientId={listing.provider.id}
-              recipientName={listing.provider.name}
-              recipientImage={listing.provider.image}
-              variant="outline"
-              size="default"
-              showIcon={true}
-              buttonText="Contact Seller"
-              className="w-full"
-            />
+            <div className="space-y-2">
+              <Button className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-semibold rounded-lg px-6 py-3 shadow-lg hover:shadow-xl transition-all">
+                Buy Now
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2 border-yellow-500/50 hover:bg-yellow-500/10"
+                onClick={handleAddToCart}
+              >
+                <Plus className="h-4 w-4" /> Add to Cart
+              </Button>
+              <SendMessageButton
+                recipientId={listing.provider.id}
+                recipientName={listing.provider.name}
+                recipientImage={listing.provider.image}
+                variant="outline"
+                size="default"
+                showIcon={true}
+                buttonText="Contact Seller"
+                className="w-full"
+              />
+            </div>
           </Card>
 
           {/* Customer Reviews Summary */}
-          <Card className="p-6 bg-card rounded-lg shadow-sm">
-            <CardTitle className="text-xl font-semibold mb-4">
+          <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+            <CardTitle className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
+              <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
               Customer Reviews
             </CardTitle>
             {isReviewsPending ? (
-              <p className="text-muted-foreground">Loading reviews...</p>
+              <p className="text-sm text-muted-foreground">
+                Loading reviews...
+              </p>
             ) : reviewsError ? (
-              <p className="text-red-500">
+              <p className="text-sm text-red-500">
                 Error loading reviews: {reviewsError.message}
               </p>
             ) : reviews.length > 0 ? (
               <>
-                <div className="flex items-center mb-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-5 w-5 ${
-                        i < Math.floor(listing.rating || 0)
-                          ? "text-yellow-500 fill-yellow-500"
-                          : "text-muted-foreground"
-                      }`}
-                    />
-                  ))}
-                  <span className="text-lg font-bold ml-2">
+                <div className="flex items-center mb-3 flex-wrap gap-2">
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-4 w-4 ${
+                          i < Math.floor(listing.rating || 0)
+                            ? "text-yellow-500 fill-yellow-500"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-base md:text-lg font-bold">
                     {listing.rating?.toFixed(1) || "N/A"}
                   </span>
-                  <span className="text-sm text-muted-foreground ml-2">
+                  <span className="text-xs md:text-sm text-muted-foreground">
                     ({listing.reviewCount || 0} reviews)
                   </span>
                 </div>
-                <div className="space-y-4 mt-4">
+                <div className="space-y-4 mt-4 max-h-[400px] overflow-y-auto pr-2">
                   {reviews.map((review) => (
                     <div
                       key={review.id}
-                      className="border-t border-border pt-4"
+                      className="border-t border-border pt-4 first:border-t-0 first:pt-0"
                     >
-                      <div className="flex items-center gap-3 mb-2">
-                        <Avatar className="h-8 w-8">
+                      <div className="flex items-start gap-3 mb-2">
+                        <Avatar className="h-8 w-8 flex-shrink-0">
                           <AvatarImage
                             src={review.by.image || "/placeholder-avatar.jpg"}
                             alt={review.by.name}
                           />
-                          <AvatarFallback>{review.by.name[0]}</AvatarFallback>
+                          <AvatarFallback className="text-xs">
+                            {review.by.name[0]}
+                          </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="font-semibold text-foreground">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-foreground truncate">
                             {review.by.name}
                           </p>
-                          <div className="flex items-center text-xs text-muted-foreground">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-3 w-3 ${
-                                  i < review.rating
-                                    ? "text-yellow-500 fill-yellow-500"
-                                    : "text-muted-foreground"
-                                }`}
-                              />
-                            ))}
-                            <span className="ml-1">
-                              {review.rating.toFixed(1)}
-                            </span>
-                            <span className="ml-2">
+                          <div className="flex items-center flex-wrap gap-2 text-xs text-muted-foreground mt-1">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-3 w-3 ${
+                                    i < review.rating
+                                      ? "text-yellow-500 fill-yellow-500"
+                                      : "text-muted-foreground"
+                                  }`}
+                                />
+                              ))}
+                              <span className="ml-1">
+                                {review.rating.toFixed(1)}
+                              </span>
+                            </div>
+                            <span>
                               {formatDistanceToNow(new Date(review.createdAt), {
                                 addSuffix: true,
                               })}
@@ -904,7 +935,7 @@ export default function ListingDetailPage() {
                         </div>
                       </div>
                       {review.comment && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs md:text-sm text-muted-foreground break-words">
                           {review.comment}
                         </p>
                       )}
@@ -913,92 +944,118 @@ export default function ListingDetailPage() {
                 </div>
               </>
             ) : (
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground text-center py-4">
                 No reviews yet. Be the first to review!
               </p>
             )}
           </Card>
 
           {/* Seller Information */}
-          <Card className="p-6 bg-card rounded-lg shadow-sm">
-            <CardTitle className="text-xl font-semibold mb-4">
+          <Card className="p-4 md:p-6 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 rounded-lg shadow-sm">
+            <CardTitle className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarImage
+                  src={listing.provider.image || "/placeholder-avatar.jpg"}
+                  alt={listing.provider.name}
+                />
+                <AvatarFallback className="text-xs">
+                  {listing.provider.name[0]}
+                </AvatarFallback>
+              </Avatar>
               Sold by
             </CardTitle>
-            <div className="flex items-center gap-4 mb-4">
-              <Avatar className="h-12 w-12">
+            <div className="flex items-center gap-3 md:gap-4">
+              <Avatar className="h-12 w-12 md:h-14 md:w-14 border-2 border-blue-500/30">
                 <AvatarImage
                   src={listing.provider.image || "/placeholder-avatar.jpg"}
                   alt={listing.provider.name}
                 />
                 <AvatarFallback>{listing.provider.name[0]}</AvatarFallback>
               </Avatar>
-              <div>
-                <h3 className="text-lg font-semibold">
+              <div className="flex-1">
+                <h3 className="text-base md:text-lg font-semibold">
                   {listing.provider.name}
                 </h3>
-                <Button variant="link" className="p-0 h-auto text-sm">
-                  View Store
-                </Button>
+                {listing.provider.accountType && (
+                  <Badge variant="outline" className="text-xs mt-1">
+                    {listing.provider.accountType}
+                  </Badge>
+                )}
+                {listing.provider.location && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                    <MapPin className="h-3 w-3" />
+                    {listing.provider.location}
+                  </p>
+                )}
               </div>
             </div>
           </Card>
 
           {/* Additional Details (simplified) */}
-          <Card className="p-6 bg-card rounded-lg shadow-sm">
-            <CardTitle className="text-xl font-semibold mb-4">
+          <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm">
+            <CardTitle className="text-lg md:text-xl font-semibold mb-4">
               Service Guarantees
             </CardTitle>
-            <CardContent className="p-0 space-y-2 text-muted-foreground">
-              <p>
-                <span className="font-semibold text-foreground">
-                  Return & Refund Policy
-                </span>
-              </p>
-              <p>
-                <span className="font-semibold text-foreground">
-                  Security & Privacy
-                </span>
-              </p>
+            <CardContent className="p-0 space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-foreground">
+                    Return & Refund Policy
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    30-day money-back guarantee
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-foreground">
+                    Security & Privacy
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Your data is protected
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
-
-          {/* Message Seller Button */}
-          <Button
-            variant="outline"
-            className="w-full flex items-center justify-center gap-2"
-          >
-            <MessageSquare size={16} /> Message Seller
-          </Button>
         </div>
       </div>
 
       {/* Related Items Section */}
       {isRelatedListingsPending ? (
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-6">Related items</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="mt-8 md:mt-12">
+          <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
+            Related items
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
             {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-48 w-full" />
+              <Skeleton key={i} className="h-48 w-full rounded-lg" />
             ))}
           </div>
         </div>
       ) : relatedListingsError ? (
-        <div className="mt-12 text-red-500">
+        <div className="mt-8 md:mt-12 text-red-500 text-center p-4">
           Error loading related listings: {relatedListingsError.message}
         </div>
       ) : relatedListingsData && relatedListingsData.length > 0 ? (
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-6">Related items</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="mt-8 md:mt-12">
+          <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
+            Related items
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
             {relatedListingsData.map((item: RelatedListing) => (
               <Link key={item.id} href={`/marketplace/${item.id}`}>
-                <Card className="p-4 flex flex-col items-center text-center cursor-pointer hover:shadow-lg transition-shadow">
-                  <div className="relative w-full h-32 bg-muted rounded-md mb-2 overflow-hidden">
+                <Card className="group overflow-hidden border border-border hover:border-yellow-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-yellow-500/10 bg-card">
+                  <div className="relative w-full h-32 md:h-40 bg-muted overflow-hidden">
                     <Image
                       src={item.images[0] || `/placeholder-image.jpg`}
                       alt={item.title}
                       layout="fill"
                       objectFit="cover"
+                      className="group-hover:scale-110 transition-transform duration-500"
                       onError={(e) =>
                         console.error(
                           "Related item image error:",
@@ -1007,25 +1064,30 @@ export default function ListingDetailPage() {
                       }
                     />
                   </div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {item.title}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.currency} {item.price.toFixed(2)}
-                  </p>
-                  <Button variant="ghost" size="sm" className="mt-2">
-                    View
-                  </Button>
+                  <div className="p-3 space-y-2">
+                    <p className="text-xs md:text-sm font-semibold text-foreground line-clamp-2 group-hover:text-yellow-500 transition-colors">
+                      {item.title}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm md:text-base font-bold text-yellow-600">
+                        {item.currency} {item.price.toFixed(2)}
+                      </p>
+                      {item.rating && (
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                          <span className="text-xs">
+                            {item.rating.toFixed(1)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </Card>
               </Link>
             ))}
           </div>
         </div>
-      ) : (
-        <div className="mt-12 text-muted-foreground">
-          No related items found.
-        </div>
-      )}
+      ) : null}
     </main>
   );
 }
