@@ -34,54 +34,24 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 import { useState } from "react";
+import { trpc } from "@/utils/trpc";
 
 const AdminFinancePage = () => {
   const router = useRouter();
   const [timeRange, setTimeRange] = useState("30d");
 
-  // Mock data - replace with actual tRPC calls
-  const financialStats = {
-    totalRevenue: 125000,
-    totalCommissions: 6250,
-    pendingPayouts: 15000,
-    completedPayouts: 110000,
-    revenueChange: "+15%",
-    commissionsChange: "+12%",
-    payoutsChange: "+8%",
-  };
+  // Fetch real financial data
+  const { data: financialStats, isLoading: statsLoading } =
+    trpc.admin.getFinancialStats.useQuery({ timeRange });
+  const { data: transactionsData, isLoading: transactionsLoading } =
+    trpc.admin.getRecentTransactions.useQuery({
+      page: 1,
+      limit: 10,
+    });
+  const { data: paymentMethodStats, isLoading: paymentStatsLoading } =
+    trpc.admin.getPaymentMethodStats.useQuery();
 
-  const transactions = [
-    {
-      id: "1",
-      type: "commission",
-      amount: 125.5,
-      currency: "ETB",
-      description: "Commission from order #12345",
-      status: "completed",
-      date: new Date().toISOString(),
-      user: "John Doe",
-    },
-    {
-      id: "2",
-      type: "payout",
-      amount: -2500.0,
-      currency: "ETB",
-      description: "Payout to seller",
-      status: "pending",
-      date: new Date().toISOString(),
-      user: "Jane Smith",
-    },
-    {
-      id: "3",
-      type: "refund",
-      amount: -500.0,
-      currency: "ETB",
-      description: "Refund for cancelled order",
-      status: "completed",
-      date: new Date().toISOString(),
-      user: "Mike Johnson",
-    },
-  ];
+  const transactions = transactionsData?.transactions || [];
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -160,12 +130,16 @@ const AdminFinancePage = () => {
                   Total Revenue
                 </p>
                 <p className="text-2xl font-bold">
-                  ETB {financialStats.totalRevenue.toLocaleString()}
+                  {statsLoading
+                    ? "Loading..."
+                    : `ETB ${(
+                        financialStats?.totalRevenue || 0
+                      ).toLocaleString()}`}
                 </p>
                 <div className="flex items-center gap-1 mt-1">
                   <TrendingUp className="h-4 w-4 text-green-500" />
                   <p className="text-xs text-green-600">
-                    {financialStats.revenueChange} vs last period
+                    {financialStats?.revenueChange || "+0%"} vs last period
                   </p>
                 </div>
               </div>
@@ -184,12 +158,16 @@ const AdminFinancePage = () => {
                   Platform Commissions
                 </p>
                 <p className="text-2xl font-bold">
-                  ETB {financialStats.totalCommissions.toLocaleString()}
+                  {statsLoading
+                    ? "Loading..."
+                    : `ETB ${(
+                        financialStats?.totalCommissions || 0
+                      ).toLocaleString()}`}
                 </p>
                 <div className="flex items-center gap-1 mt-1">
                   <TrendingUp className="h-4 w-4 text-blue-500" />
                   <p className="text-xs text-blue-600">
-                    {financialStats.commissionsChange} vs last period
+                    {financialStats?.commissionsChange || "+0%"} vs last period
                   </p>
                 </div>
               </div>
@@ -208,7 +186,11 @@ const AdminFinancePage = () => {
                   Pending Payouts
                 </p>
                 <p className="text-2xl font-bold">
-                  ETB {financialStats.pendingPayouts.toLocaleString()}
+                  {statsLoading
+                    ? "Loading..."
+                    : `ETB ${(
+                        financialStats?.pendingPayouts || 0
+                      ).toLocaleString()}`}
                 </p>
                 <div className="flex items-center gap-1 mt-1">
                   <Calendar className="h-4 w-4 text-orange-500" />
@@ -230,12 +212,16 @@ const AdminFinancePage = () => {
                   Completed Payouts
                 </p>
                 <p className="text-2xl font-bold">
-                  ETB {financialStats.completedPayouts.toLocaleString()}
+                  {statsLoading
+                    ? "Loading..."
+                    : `ETB ${(
+                        financialStats?.completedPayouts || 0
+                      ).toLocaleString()}`}
                 </p>
                 <div className="flex items-center gap-1 mt-1">
                   <TrendingUp className="h-4 w-4 text-purple-500" />
                   <p className="text-xs text-purple-600">
-                    {financialStats.payoutsChange} vs last period
+                    {financialStats?.payoutsChange || "+0%"} vs last period
                   </p>
                 </div>
               </div>

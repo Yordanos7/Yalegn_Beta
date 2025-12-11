@@ -38,7 +38,7 @@ export default function AdminPaymentsPage() {
   } = trpc.order.getOrdersForAdmin.useQuery({
     page: 1,
     limit: 50,
-    status: "PENDING_PAYMENT,PAYMENT_RECEIVED,DELIVERED", // Filter for payment-related statuses
+    // Get all orders and filter on the frontend for payment-related statuses
   });
 
   const updateOrderStatusMutation =
@@ -74,6 +74,17 @@ export default function AdminPaymentsPage() {
     }
   };
 
+  // Filter orders for payment-related statuses
+  const paymentRelatedOrders =
+    orders?.orders.filter((order: any) =>
+      [
+        OrderStatus.PENDING_PAYMENT,
+        OrderStatus.PAYMENT_RECEIVED,
+        OrderStatus.DELIVERED,
+        OrderStatus.DELIVERY_PENDING,
+      ].includes(order.orderStatus)
+    ) || [];
+
   return (
     <div className="container mx-auto p-8">
       <Card className="mb-8">
@@ -89,7 +100,9 @@ export default function AdminPaymentsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Pending Orders for Review</CardTitle>
+          <CardTitle className="text-2xl">
+            Payment-Related Orders ({paymentRelatedOrders.length})
+          </CardTitle>
           <CardDescription>
             Orders requiring admin action for payment approval or delivery
             confirmation.
@@ -100,7 +113,7 @@ export default function AdminPaymentsPage() {
             <p>Loading orders...</p>
           ) : error ? (
             <p className="text-red-500">Error: {error.message}</p>
-          ) : orders && orders.length > 0 ? (
+          ) : paymentRelatedOrders.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -116,7 +129,7 @@ export default function AdminPaymentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.map((order) => (
+                {paymentRelatedOrders.map((order: any) => (
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">{order.id}</TableCell>
                     <TableCell>
@@ -276,7 +289,7 @@ export default function AdminPaymentsPage() {
               </TableBody>
             </Table>
           ) : (
-            <p>No pending orders for review.</p>
+            <p>No payment-related orders found.</p>
           )}
         </CardContent>
       </Card>

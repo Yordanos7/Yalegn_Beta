@@ -306,4 +306,227 @@ export const adminRouter = router({
         },
       };
     }),
+
+  // Get financial statistics
+  getFinancialStats: protectedProcedure
+    .input(z.object({ timeRange: z.string() }))
+    .query(async ({ ctx: { user, prisma }, input }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      const { timeRange } = input;
+      let startDate = new Date();
+
+      switch (timeRange) {
+        case "7d":
+          startDate.setDate(startDate.getDate() - 7);
+          break;
+        case "30d":
+          startDate.setDate(startDate.getDate() - 30);
+          break;
+        case "90d":
+          startDate.setDate(startDate.getDate() - 90);
+          break;
+        case "1y":
+          startDate.setFullYear(startDate.getFullYear() - 1);
+          break;
+        default:
+          startDate.setDate(startDate.getDate() - 30);
+      }
+
+      // Calculate total revenue from completed orders
+      const totalRevenueResult = await prisma.order.aggregate({
+        _sum: { totalPrice: true },
+        where: {
+          orderStatus: OrderStatus.COMPLETED,
+          createdAt: { gte: startDate },
+        },
+      });
+
+      // Calculate platform commissions (assuming 5% commission rate)
+      const totalRevenue = totalRevenueResult._sum.totalPrice || 0;
+      const commissionRate = 0.05; // 5%
+      const totalCommissions = totalRevenue * commissionRate;
+
+      // Calculate pending payouts (orders that are delivered but not completed)
+      const pendingPayoutsResult = await prisma.order.aggregate({
+        _sum: { totalPrice: true },
+        where: {
+          orderStatus: OrderStatus.DELIVERED,
+          createdAt: { gte: startDate },
+        },
+      });
+
+      const pendingPayouts =
+        (pendingPayoutsResult._sum.totalPrice || 0) * (1 - commissionRate);
+
+      // Calculate completed payouts
+      const completedPayouts = totalRevenue * (1 - commissionRate);
+
+      // Get previous period data for comparison
+      const previousStartDate = new Date(startDate);
+      switch (timeRange) {
+        case "7d":
+          previousStartDate.setDate(previousStartDate.getDate() - 7);
+          break;
+        case "30d":
+          previousStartDate.setDate(previousStartDate.getDate() - 30);
+          break;
+        case "90d":
+          previousStartDate.setDate(previousStartDate.getDate() - 90);
+          break;
+        case "1y":
+          previousStartDate.setFullYear(previousStartDate.getFullYear() - 1);
+          break;
+      }
+
+      const previousRevenueResult = await prisma.order.aggregate({
+        _sum: { totalPrice: true },
+        where: {
+          orderStatus: OrderStatus.COMPLETED,
+          createdAt: { gte: previousStartDate, lt: startDate },
+        },
+      });
+
+      const previousRevenue = previousRevenueResult._sum.totalPrice || 0;
+      const revenueChange =
+        previousRevenue > 0
+          ? `${(
+              ((totalRevenue - previousRevenue) / previousRevenue) *
+              100
+            ).toFixed(1)}%`
+          : "+0%";
+
+      return {
+        totalRevenue,
+        totalCommissions,
+        pendingPayouts,
+        completedPayouts,
+        revenueChange,
+        commissionsChange: revenueChange, // Same calculation for now
+        payoutsChange: revenueChange, // Same calculation for now
+      };
+    }),
+
+  // Get recent transactions
+  getRecentTransactions: protectedProcedure
+    .input(
+      z.object({
+        page: z.number().default(1),
+        limit: z.number().default(20),
+      })
+    )
+    .query(async ({ ctx: { user, prisma }, input }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      const { page, limit } = input;
+      const skip = (page - 1) * limit;
+
+      // Get recent orders as transactions
+      const orders = await prisma.order.findMany({
+        take: limit,
+        skip,
+        orderBy: { createdAt: "desc" },
+        include: {
+          buyer: { select: { name: true } },
+          seller: { select: { name: true } },
+          listing: { select: { title: true } },
+        },
+        where: {
+          orderStatus: {
+            in: [
+              OrderStatus.COMPLETED,
+              OrderStatus.DELIVERED,
+              OrderStatus.CANCELLED,
+            ],
+          },
+        },
+      });
+
+      // Transform orders into transaction format
+      const transactions = orders.flatMap((order) => {
+        const baseTransaction = {
+          id: order.id,
+          orderId: order.id,
+          date: order.createdAt.toISOString(),
+          listing: order.listing.title,
+          buyer: order.buyer.name,
+          seller: order.seller.name,
+          currency: order.currency,
+        };
+
+        const transactions = [];
+
+        if (order.orderStatus === OrderStatus.COMPLETED) {
+          // Commission transaction
+          transactions.push({
+            ...baseTransaction,
+            type: "commission" as const,
+            amount: order.totalPrice * 0.05, // 5% commission
+            description: `Commission from order ${order.id}`,
+            status: "completed" as const,
+          });
+
+          // Payout transaction
+          transactions.push({
+            ...baseTransaction,
+            id: `${order.id}-payout`,
+            type: "payout" as const,
+            amount: -(order.totalPrice * 0.95), // 95% to seller
+            description: `Payout to seller for order ${order.id}`,
+            status: "completed" as const,
+          });
+        } else if (order.orderStatus === OrderStatus.CANCELLED) {
+          // Refund transaction
+          transactions.push({
+            ...baseTransaction,
+            type: "refund" as const,
+            amount: -order.totalPrice,
+            description: `Refund for cancelled order ${order.id}`,
+            status: "completed" as const,
+          });
+        }
+
+        return transactions;
+      });
+
+      return {
+        transactions: transactions.slice(0, limit),
+        total: transactions.length,
+      };
+    }),
+
+  // Get payment method statistics
+  getPaymentMethodStats: protectedProcedure.query(
+    async ({ ctx: { user, prisma } }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      // Get total completed orders
+      const totalOrders = await prisma.order.count({
+        where: { orderStatus: OrderStatus.COMPLETED },
+      });
+
+      // For now, return mock percentages since we don't have payment method tracking
+      // You can implement actual payment method tracking later
+      return {
+        bankTransfer: { percentage: 75, count: Math.floor(totalOrders * 0.75) },
+        mobileMoney: { percentage: 20, count: Math.floor(totalOrders * 0.2) },
+        wallet: { percentage: 5, count: Math.floor(totalOrders * 0.05) },
+      };
+    }
+  ),
 });
