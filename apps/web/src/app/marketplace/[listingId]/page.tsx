@@ -331,7 +331,7 @@ export default function ListingDetailPage() {
   console.log("  listing.images.some(isVideo):", listing.images.some(isVideo));
 
   return (
-    <main className="container mx-auto px-4 py-6 md:py-12 bg-background text-foreground max-w-7xl min-h-screen">
+    <main className="container mx-auto px-4 pt-20 pb-6 md:pt-24 md:pb-12 bg-background text-foreground max-w-7xl min-h-screen">
       <Button
         variant="ghost"
         onClick={() => router.back()}
@@ -558,9 +558,9 @@ export default function ListingDetailPage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 relative">
         {/* Left Column: Main Media Display and Thumbnails */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 listing-main-content">
           {/* Main Media Display with Navigation */}
           <Card className="p-3 md:p-4 bg-card rounded-lg border border-border hover:border-yellow-500/30 transition-all shadow-sm relative overflow-hidden">
             {listing.images && listing.images.length > 0 ? (
@@ -742,290 +742,293 @@ export default function ListingDetailPage() {
         </div>
 
         {/* Right Column: Product Info and Actions */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Listing Summary */}
-          <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm sticky top-4 z-20">
-            <CardTitle className="text-xl md:text-2xl font-bold mb-3 line-clamp-2">
-              {listing.title}
-            </CardTitle>
-            <div className="flex items-center mb-4 flex-wrap gap-2">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-4 w-4 ${
-                      i < Math.floor(listing.rating || 0)
-                        ? "text-yellow-500 fill-yellow-500"
-                        : "text-muted-foreground"
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="text-xs md:text-sm text-muted-foreground">
-                {listing.rating?.toFixed(1) || "N/A"} (
-                {listing.reviewCount || 0} reviews)
-              </span>
-            </div>
-
-            {/* Price and Discount Section */}
-            <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 p-3 md:p-4 rounded-lg mb-4">
-              <p className="text-xs md:text-sm font-semibold text-yellow-600 mb-2">
-                Special Offer
-              </p>
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <p className="text-2xl md:text-3xl font-bold text-yellow-600">
-                  {listing.currency} {listing.price.toFixed(2)}
-                </p>
-                <p className="text-xs md:text-sm text-muted-foreground line-through">
-                  {listing.currency} {(listing.price * 1.5).toFixed(2)}
-                </p>
-              </div>
-            </div>
-
-            {/* Shipping Info */}
-            <div className="mb-4 text-xs md:text-sm space-y-2 p-3 bg-muted/50 rounded-lg">
-              <p className="flex justify-between">
-                <span className="text-muted-foreground">Ship to:</span>g
-                <span className="font-medium">Ethiopia</span>
-              </p>
-              <p className="flex justify-between">
-                <span className="text-muted-foreground">
-                  Free shipping over:
-                </span>
-                <span className="font-medium">{listing.currency} 1,675</span>
-              </p>
-              {listing.deliveryDays && (
-                <p className="flex justify-between">
-                  <span className="text-muted-foreground">Delivery:</span>
-                  <span className="font-medium">
-                    {listing.deliveryDays} days
-                  </span>
-                </p>
-              )}
-            </div>
-
-            {/* Quantity Selector */}
-            <div className="flex items-center justify-between gap-3 mb-4 p-3 bg-muted/50 rounded-lg">
-              <span className="font-semibold text-foreground text-sm">
-                Quantity:
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                >
-                  -
-                </Button>
-                <span className="px-4 font-semibold">{quantity}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => setQuantity(quantity + 1)}
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Button className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-semibold rounded-lg px-6 py-3 shadow-lg hover:shadow-xl transition-all">
-                Buy Now
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full flex items-center justify-center gap-2 border-yellow-500/50 hover:bg-yellow-500/10"
-                onClick={handleAddToCart}
-              >
-                <Plus className="h-4 w-4" /> Add to Cart
-              </Button>
-              <SendMessageButton
-                recipientId={listing.provider.id}
-                recipientName={listing.provider.name}
-                recipientImage={listing.provider.image}
-                variant="outline"
-                size="default"
-                showIcon={true}
-                buttonText="Contact Seller"
-                className="w-full"
-              />
-            </div>
-          </Card>
-
-          {/* Customer Reviews Summary */}
-          <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm relative z-10">
-            <CardTitle className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
-              <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-              Customer Reviews
-            </CardTitle>
-            {isReviewsPending ? (
-              <p className="text-sm text-muted-foreground">
-                Loading reviews...
-              </p>
-            ) : reviewsError ? (
-              <p className="text-sm text-red-500">
-                Error loading reviews: {reviewsError.message}
-              </p>
-            ) : reviews.length > 0 ? (
-              <>
-                <div className="flex items-center mb-4 flex-wrap gap-2">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 ${
-                          i < Math.floor(listing.rating || 0)
-                            ? "text-yellow-500 fill-yellow-500"
-                            : "text-muted-foreground"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-base md:text-lg font-bold">
-                    {listing.rating?.toFixed(1) || "N/A"}
-                  </span>
-                  <span className="text-xs md:text-sm text-muted-foreground">
-                    ({listing.reviewCount || 0} reviews)
-                  </span>
-                </div>
-
-                {/* Scrollable Reviews Container */}
-                <div className="space-y-4 max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
-                  {reviews.map((review) => (
-                    <div
-                      key={review.id}
-                      className="border border-border rounded-lg p-3 bg-muted/30 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-start gap-3 mb-3">
-                        <Avatar className="h-10 w-10 flex-shrink-0 border border-border">
-                          <AvatarImage
-                            src={review.by.image || "/placeholder-avatar.jpg"}
-                            alt={review.by.name}
-                          />
-                          <AvatarFallback className="text-sm bg-yellow-500/20">
-                            {review.by.name[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="font-semibold text-sm text-foreground">
-                              {review.by.name}
-                            </p>
-                            <div className="flex items-center gap-1">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-3 w-3 ${
-                                    i < review.rating
-                                      ? "text-yellow-500 fill-yellow-500"
-                                      : "text-muted-foreground"
-                                  }`}
-                                />
-                              ))}
-                              <span className="ml-1 text-xs font-medium">
-                                {review.rating.toFixed(1)}
-                              </span>
-                            </div>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-2">
-                            {formatDistanceToNow(new Date(review.createdAt), {
-                              addSuffix: true,
-                            })}
-                          </p>
-                          {review.comment && (
-                            <p className="text-sm text-foreground leading-relaxed break-words">
-                              {review.comment}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+        <div className="lg:col-span-1 listing-sidebar">
+          {/* Sticky Container */}
+          <div className="listing-sticky-container space-y-6">
+            {/* Listing Summary */}
+            <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm">
+              <CardTitle className="text-xl md:text-2xl font-bold mb-3 line-clamp-2">
+                {listing.title}
+              </CardTitle>
+              <div className="flex items-center mb-4 flex-wrap gap-2">
+                <div className="flex items-center">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${
+                        i < Math.floor(listing.rating || 0)
+                          ? "text-yellow-500 fill-yellow-500"
+                          : "text-muted-foreground"
+                      }`}
+                    />
                   ))}
                 </div>
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <Star className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  No reviews yet. Be the first to review!
+                <span className="text-xs md:text-sm text-muted-foreground">
+                  {listing.rating?.toFixed(1) || "N/A"} (
+                  {listing.reviewCount || 0} reviews)
+                </span>
+              </div>
+
+              {/* Price and Discount Section */}
+              <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 p-3 md:p-4 rounded-lg mb-4">
+                <p className="text-xs md:text-sm font-semibold text-yellow-600 mb-2">
+                  Special Offer
                 </p>
-              </div>
-            )}
-          </Card>
-
-          {/* Seller Information */}
-          <Card className="p-4 md:p-6 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 rounded-lg shadow-sm">
-            <CardTitle className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
-              <Avatar className="h-6 w-6">
-                <AvatarImage
-                  src={listing.provider.image || "/placeholder-avatar.jpg"}
-                  alt={listing.provider.name}
-                />
-                <AvatarFallback className="text-xs">
-                  {listing.provider.name[0]}
-                </AvatarFallback>
-              </Avatar>
-              Sold by
-            </CardTitle>
-            <div className="flex items-center gap-3 md:gap-4">
-              <Avatar className="h-12 w-12 md:h-14 md:w-14 border-2 border-blue-500/30">
-                <AvatarImage
-                  src={listing.provider.image || "/placeholder-avatar.jpg"}
-                  alt={listing.provider.name}
-                />
-                <AvatarFallback>{listing.provider.name[0]}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h3 className="text-base md:text-lg font-semibold">
-                  {listing.provider.name}
-                </h3>
-                {listing.provider.accountType && (
-                  <Badge variant="outline" className="text-xs mt-1">
-                    {listing.provider.accountType}
-                  </Badge>
-                )}
-                {listing.provider.location && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                    <MapPin className="h-3 w-3" />
-                    {listing.provider.location}
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <p className="text-2xl md:text-3xl font-bold text-yellow-600">
+                    {listing.currency} {listing.price.toFixed(2)}
                   </p>
-                )}
-              </div>
-            </div>
-          </Card>
-
-          {/* Additional Details (simplified) */}
-          <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm">
-            <CardTitle className="text-lg md:text-xl font-semibold mb-4">
-              Service Guarantees
-            </CardTitle>
-            <CardContent className="p-0 space-y-3 text-sm">
-              <div className="flex items-start gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-foreground">
-                    Return & Refund Policy
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    30-day money-back guarantee
+                  <p className="text-xs md:text-sm text-muted-foreground line-through">
+                    {listing.currency} {(listing.price * 1.5).toFixed(2)}
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-foreground">
-                    Security & Privacy
+
+              {/* Shipping Info */}
+              <div className="mb-4 text-xs md:text-sm space-y-2 p-3 bg-muted/50 rounded-lg">
+                <p className="flex justify-between">
+                  <span className="text-muted-foreground">Ship to:</span>g
+                  <span className="font-medium">Ethiopia</span>
+                </p>
+                <p className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    Free shipping over:
+                  </span>
+                  <span className="font-medium">{listing.currency} 1,675</span>
+                </p>
+                {listing.deliveryDays && (
+                  <p className="flex justify-between">
+                    <span className="text-muted-foreground">Delivery:</span>
+                    <span className="font-medium">
+                      {listing.deliveryDays} days
+                    </span>
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    Your data is protected
-                  </p>
+                )}
+              </div>
+
+              {/* Quantity Selector */}
+              <div className="flex items-center justify-between gap-3 mb-4 p-3 bg-muted/50 rounded-lg">
+                <span className="font-semibold text-foreground text-sm">
+                  Quantity:
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  >
+                    -
+                  </Button>
+                  <span className="px-4 font-semibold">{quantity}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => setQuantity(quantity + 1)}
+                  >
+                    +
+                  </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+
+              <div className="space-y-2">
+                <Button className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-semibold rounded-lg px-6 py-3 shadow-lg hover:shadow-xl transition-all">
+                  Buy Now
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2 border-yellow-500/50 hover:bg-yellow-500/10"
+                  onClick={handleAddToCart}
+                >
+                  <Plus className="h-4 w-4" /> Add to Cart
+                </Button>
+                <SendMessageButton
+                  recipientId={listing.provider.id}
+                  recipientName={listing.provider.name}
+                  recipientImage={listing.provider.image}
+                  variant="outline"
+                  size="default"
+                  showIcon={true}
+                  buttonText="Contact Seller"
+                  className="w-full"
+                />
+              </div>
+            </Card>
+
+            {/* Customer Reviews Summary */}
+            <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm relative">
+              <CardTitle className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
+                <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                Customer Reviews
+              </CardTitle>
+              {isReviewsPending ? (
+                <p className="text-sm text-muted-foreground">
+                  Loading reviews...
+                </p>
+              ) : reviewsError ? (
+                <p className="text-sm text-red-500">
+                  Error loading reviews: {reviewsError.message}
+                </p>
+              ) : reviews.length > 0 ? (
+                <>
+                  <div className="flex items-center mb-4 flex-wrap gap-2">
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < Math.floor(listing.rating || 0)
+                              ? "text-yellow-500 fill-yellow-500"
+                              : "text-muted-foreground"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-base md:text-lg font-bold">
+                      {listing.rating?.toFixed(1) || "N/A"}
+                    </span>
+                    <span className="text-xs md:text-sm text-muted-foreground">
+                      ({listing.reviewCount || 0} reviews)
+                    </span>
+                  </div>
+
+                  {/* Scrollable Reviews Container */}
+                  <div className="space-y-4 pr-2">
+                    {reviews.map((review) => (
+                      <div
+                        key={review.id}
+                        className="border border-border rounded-lg p-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          <Avatar className="h-10 w-10 flex-shrink-0 border border-border">
+                            <AvatarImage
+                              src={review.by.image || "/placeholder-avatar.jpg"}
+                              alt={review.by.name}
+                            />
+                            <AvatarFallback className="text-sm bg-yellow-500/20">
+                              {review.by.name[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="font-semibold text-sm text-foreground">
+                                {review.by.name}
+                              </p>
+                              <div className="flex items-center gap-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-3 w-3 ${
+                                      i < review.rating
+                                        ? "text-yellow-500 fill-yellow-500"
+                                        : "text-muted-foreground"
+                                    }`}
+                                  />
+                                ))}
+                                <span className="ml-1 text-xs font-medium">
+                                  {review.rating.toFixed(1)}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              {formatDistanceToNow(new Date(review.createdAt), {
+                                addSuffix: true,
+                              })}
+                            </p>
+                            {review.comment && (
+                              <p className="text-sm text-foreground leading-relaxed break-words">
+                                {review.comment}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <Star className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    No reviews yet. Be the first to review!
+                  </p>
+                </div>
+              )}
+            </Card>
+
+            {/* Seller Information */}
+            <Card className="p-4 md:p-6 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 rounded-lg shadow-sm">
+              <CardTitle className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
+                <Avatar className="h-6 w-6">
+                  <AvatarImage
+                    src={listing.provider.image || "/placeholder-avatar.jpg"}
+                    alt={listing.provider.name}
+                  />
+                  <AvatarFallback className="text-xs">
+                    {listing.provider.name[0]}
+                  </AvatarFallback>
+                </Avatar>
+                Sold by
+              </CardTitle>
+              <div className="flex items-center gap-3 md:gap-4">
+                <Avatar className="h-12 w-12 md:h-14 md:w-14 border-2 border-blue-500/30">
+                  <AvatarImage
+                    src={listing.provider.image || "/placeholder-avatar.jpg"}
+                    alt={listing.provider.name}
+                  />
+                  <AvatarFallback>{listing.provider.name[0]}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h3 className="text-base md:text-lg font-semibold">
+                    {listing.provider.name}
+                  </h3>
+                  {listing.provider.accountType && (
+                    <Badge variant="outline" className="text-xs mt-1">
+                      {listing.provider.accountType}
+                    </Badge>
+                  )}
+                  {listing.provider.location && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      <MapPin className="h-3 w-3" />
+                      {listing.provider.location}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </Card>
+
+            {/* Additional Details (simplified) */}
+            <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm">
+              <CardTitle className="text-lg md:text-xl font-semibold mb-4">
+                Service Guarantees
+              </CardTitle>
+              <CardContent className="p-0 space-y-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-foreground">
+                      Return & Refund Policy
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      30-day money-back guarantee
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-foreground">
+                      Security & Privacy
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Your data is protected
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 

@@ -1193,3 +1193,172 @@ export const userRouter = router({
       }
     }),
 });
+  // Admin procedures for user management
+  getAllUsers: protectedProcedure
+    .input(z.object({
+      page: z.number().default(1),
+      limit: z.number().default(20),
+      search: z.string().optional(),
+      role: z.string().optional(),
+      status: z.string().optional(),
+    }))
+    .query(async ({ ctx: { user, prisma }, input }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      // TODO: Add admin role check
+      // const adminUser = await prisma.user.findUnique({
+      //   where: { id: user.id },
+      //   select: { role: true },
+      // });
+      // if (adminUser?.role !== Role.ADMIN) {
+      //   throw new TRPCError({
+      //     code: "FORBIDDEN",
+      //     message: "Admin access required",
+      //   });
+      // }
+
+      const { page, limit, search, role, status } = input;
+      const skip = (page - 1) * limit;
+
+      const whereClause: any = {};
+
+      if (search) {
+        whereClause.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
+      if (role && role !== "all") {
+        whereClause.role = role as Role;
+      }
+
+      if (status) {
+        switch (status) {
+          case "active":
+            whereClause.isActive = true;
+            break;
+          case "inactive":
+            whereClause.isActive = false;
+            break;
+          case "verified":
+            whereClause.isVerified = true;
+            break;
+        }
+      }
+
+      const [users, total, activeCount, inactiveCount, verifiedCount] = await Promise.all([
+        prisma.user.findMany({
+          where: whereClause,
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            image: true,
+            role: true,
+            accountType: true,
+            isActive: true,
+            isVerified: true,
+            location: true,
+            createdAt: true,
+          },
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.user.count({ where: whereClause }),
+        prisma.user.count({ where: { ...whereClause, isActive: true } }),
+        prisma.user.count({ where: { ...whereClause, isActive: false } }),
+        prisma.user.count({ where: { ...whereClause, isVerified: true } }),
+      ]);
+
+      return {
+        users,
+        total,
+        stats: {
+          total,
+          active: activeCount,
+          inactive: inactiveCount,
+          verified: verifiedCount,
+        },
+      };
+    }),
+
+  updateUserStatus: protectedProcedure
+    .input(z.object({
+      userId: z.string(),
+      isActive: z.boolean(),
+    }))
+    .mutation(async ({ ctx: { user, prisma }, input }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      // TODO: Add admin role check
+
+      const { userId, isActive } = input;
+
+      try {
+        const updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: { isActive },
+        });
+
+        return {
+          message: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
+          user: updatedUser,
+        };
+      } catch (error) {
+        console.error("Error updating user status:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update user status",
+        });
+      }
+    }),
+
+  updateUserRole: protectedProcedure
+    .input(z.object({
+      userId: z.string(),
+      role: z.nativeEnum(Role),
+    }))
+    .mutation(async ({ ctx: { user, prisma }, input }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      // TODO: Add admin role check
+
+      const { userId, role } = input;
+
+      try {
+        const updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: { role },
+        });
+
+        return {
+          message: "User role updated successfully",
+          user: updatedUser,
+        };
+      } catch (error) {
+        console.error("Error updating user role:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update user role",
+        });
+      }
+    }),

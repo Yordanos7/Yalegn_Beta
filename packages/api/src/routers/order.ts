@@ -482,56 +482,130 @@ export const orderRouter = router({
       return updatedOrder;
     }),
 
-  getOrdersForAdmin: protectedProcedure.query(async () => {
-    // Temporarily disable admin check for development
-    // const { userId } = ctx.session;
-    // const user = await prisma.user.findUnique({
-    //   where: { id: userId },
-    //   select: { role: true },
-    // });
-    // if (user?.role !== "ADMIN") {
-    //   throw new Error("Unauthorized: Only admins can view all orders.");
-    // }
+  // Enhanced admin order management
+  getOrdersForAdmin: protectedProcedure
+    .input(z.object({
+      page: z.number().default(1),
+      limit: z.number().default(20),
+      search: z.string().optional(),
+      status: z.string().optional(),
+    }))
+    .query(async ({ ctx: { user, prisma }, input }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
 
-    const orders = await prisma.order.findMany({
-      include: {
-        listing: {
-          select: {
-            id: true,
-            title: true,
-            images: true,
-            price: true,
-            currency: true,
-          },
-        },
-        buyer: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-        seller: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+      // TODO: Add admin role check
 
-    const ordersWithTypedPaymentDetails = orders.map((order) => ({
-      ...order,
-      paymentDetails: order.paymentDetails as {
-        accountNumber: string;
-        accountOwner: string;
-        selectedBank: string;
-        paymentSenderLink: string;
-      },
-    }));
+      const { page, limit, search, status } = input;
+      const skip = (page - 1) * limit;
 
-    return ordersWithTypedPaymentDetails;
-  }),
-});
+      const whereClause: any = {};
+
+      if (search) {
+        whereClause.OR = [
+          { id: { contains: search, mode: 'insensitive' } },
+          { buyer: { name: { contains: search, mode: 'insensitive' } } },
+          { seller: { name: { contains: search, mode: 'insensitive' } } },
+          { listing: { title: { contains: search, mode: 'insensitive' } } },
+        ];
+      }
+
+      if (status && status !== "all") {
+        whereClause.orderStatus = status as OrderStatus;
+      }
+
+      const [orders, total] = await Promise.all([
+        prisma.order.findMany({
+          where: whereClause,
+          include: {
+            listing: {
+              select: {
+                id: true,
+                title: true,
+                images: true,
+                price: true,
+                currency: true,
+              },
+            },
+            buyer: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+            seller: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+          skip,
+          take: limit,
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.order.count({ where: whereClause }),
+      ]);
+
+      const ordersWithTypedPaymentDetails = orders.map((order) => ({
+        ...order,
+        paymentDetails: order.paymentDetails as {
+          accountNumber: string;
+          accountOwner: string;
+          selectedBank: string;
+          paymentSenderLink: string;
+        },
+      }));
+
+      return {
+        orders: ordersWithTypedPaymentDetails,
+        total,
+      };
+    }),
+
+  updateOrderStatusByAdmin: protectedProcedure
+    .input(z.object({
+      orderId: z.string(),
+      status: z.nativeEnum(OrderStatus),
+    }))
+    .mutation(async ({ ctx: { user, prisma }, input }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      // TODO: Add admin role check
+
+      const { orderId, status } = input;
+
+      try {
+        const updatedOrder = await prisma.order.update({
+          where: { id: orderId },
+          data: { orderStatus: status },
+          include: {
+            listing: { select: { title: true } },
+            buyer: { select: { name: true } },
+            seller: { select: { name: true } },
+          },
+        });
+
+        return {
+          message: `Order status updated to ${status}`,
+          order: updatedOrder,
+        };
+      } catch (error) {
+        console.error("Error updating order status:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update order status",
+        });
+      }
+    }),

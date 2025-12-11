@@ -12,6 +12,7 @@ import { analyticsRouter } from "./analytics";
 import { alphaVantageRouter } from "./alpha-vantage";
 import { walletRouter } from "./wallet"; // Import wallet router
 import { coinsRouter } from "./coins"; // Import coins router
+import { adminRouter } from "./admin"; // Import admin router
 
 export const appRouter = router({
   user: userRouter,
@@ -27,5 +28,6 @@ export const appRouter = router({
   alphaVantage: alphaVantageRouter,
   wallet: walletRouter, // Add wallet router
   coins: coinsRouter, // Add coins router
+  admin: adminRouter, // Add admin router
 });
 export type AppRouter = typeof appRouter;
