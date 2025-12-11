@@ -35,7 +35,11 @@ export default function AdminPaymentsPage() {
     isPending,
     error,
     refetch,
-  } = trpc.order.getOrdersForAdmin.useQuery(); // Assuming a new tRPC procedure for admin
+  } = trpc.order.getOrdersForAdmin.useQuery({
+    page: 1,
+    limit: 50,
+    status: "PENDING_PAYMENT,PAYMENT_RECEIVED,DELIVERED", // Filter for payment-related statuses
+  });
 
   const updateOrderStatusMutation =
     trpc.order.updateOrderStatusByAdmin.useMutation();

@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   BarChart3,
   TrendingUp,
@@ -27,6 +28,7 @@ import { trpc } from "@/utils/trpc";
 import { useState } from "react";
 
 const AdminAnalyticsPage = () => {
+  const router = useRouter();
   const [timeRange, setTimeRange] = useState("30d");
 
   const { data: analytics } = trpc.admin.getAnalytics.useQuery({ timeRange });
@@ -71,12 +73,14 @@ const AdminAnalyticsPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/admin" as="/admin">
-            <Button variant="ghost" size="sm">
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Back to Admin
-            </Button>
-          </Link>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/admin")}
+          >
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Back to Admin
+          </Button>
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
               Analytics & Reports

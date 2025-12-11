@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
+import { TRPCError } from "@trpc/server";
 import prisma from "@my-better-t-app/db";
 import { OrderStatus } from "@my-better-t-app/db/prisma/generated/enums"; // Import OrderStatus enum
 
@@ -452,44 +453,16 @@ export const orderRouter = router({
       return updatedOrder;
     }),
 
-  updateOrderStatusByAdmin: protectedProcedure
-    .input(
-      z.object({
-        orderId: z.string(),
-        status: z.nativeEnum(OrderStatus),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { userId } = ctx.session;
-
-      // Check if the user is an admin (assuming role is available in session or can be fetched)
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { role: true },
-      });
-
-      if (user?.role !== "ADMIN") {
-        throw new Error("Unauthorized: Only admins can update order status.");
-      }
-
-      const updatedOrder = await prisma.order.update({
-        where: { id: input.orderId },
-        data: {
-          orderStatus: input.status,
-        },
-      });
-
-      return updatedOrder;
-    }),
-
   // Enhanced admin order management
   getOrdersForAdmin: protectedProcedure
-    .input(z.object({
-      page: z.number().default(1),
-      limit: z.number().default(20),
-      search: z.string().optional(),
-      status: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        page: z.number().default(1),
+        limit: z.number().default(20),
+        search: z.string().optional(),
+        status: z.string().optional(),
+      })
+    )
     .query(async ({ ctx: { user, prisma }, input }) => {
       if (!user?.id) {
         throw new TRPCError({
@@ -507,10 +480,10 @@ export const orderRouter = router({
 
       if (search) {
         whereClause.OR = [
-          { id: { contains: search, mode: 'insensitive' } },
-          { buyer: { name: { contains: search, mode: 'insensitive' } } },
-          { seller: { name: { contains: search, mode: 'insensitive' } } },
-          { listing: { title: { contains: search, mode: 'insensitive' } } },
+          { id: { contains: search, mode: "insensitive" } },
+          { buyer: { name: { contains: search, mode: "insensitive" } } },
+          { seller: { name: { contains: search, mode: "insensitive" } } },
+          { listing: { title: { contains: search, mode: "insensitive" } } },
         ];
       }
 
@@ -570,10 +543,12 @@ export const orderRouter = router({
     }),
 
   updateOrderStatusByAdmin: protectedProcedure
-    .input(z.object({
-      orderId: z.string(),
-      status: z.nativeEnum(OrderStatus),
-    }))
+    .input(
+      z.object({
+        orderId: z.string(),
+        status: z.nativeEnum(OrderStatus),
+      })
+    )
     .mutation(async ({ ctx: { user, prisma }, input }) => {
       if (!user?.id) {
         throw new TRPCError({
@@ -609,3 +584,4 @@ export const orderRouter = router({
         });
       }
     }),
+});

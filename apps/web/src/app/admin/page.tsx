@@ -248,7 +248,7 @@ const AdminDashboard = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {quickActions.map((action, index) => (
-                <Link key={index} href={action.href as any}>
+                <Link key={index} href={action.href}>
                   <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer relative overflow-hidden">
                     <div
                       className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-5 group-hover:opacity-10 transition-opacity`}
@@ -369,7 +369,7 @@ const AdminDashboard = () => {
                           </p>
                         </div>
                       </div>
-                      <Link href={task.href as any}>
+                      <Link href={task.href}>
                         <Button variant="outline" size="sm">
                           <Eye className="h-4 w-4 mr-2" />
                           View

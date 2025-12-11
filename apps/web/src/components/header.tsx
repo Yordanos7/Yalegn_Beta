@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Menu,
-  ShoppingCart,
   Home,
   MessageSquare,
   Wallet,
@@ -13,10 +12,12 @@ import {
   Settings,
   HelpCircle,
   LogOut,
-} from "lucide-react"; // Added ShoppingCart icon and sidebar icons
+  ShoppingCart,
+} from "lucide-react"; // Added sidebar icons
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import UserMenu from "./user-menu";
+import CartBadge from "./CartBadge";
 import logo from "@/../assets/logo.png";
 import LogoutConfirmationDialog from "./ui/logout-confirmation-dialog";
 import { useRouter } from "next/navigation";
@@ -30,6 +31,7 @@ const desktopNavItems = [
 const mobileNavItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/marketplace", icon: Briefcase, label: "Marketplace" },
+  { href: "/cart", icon: ShoppingCart, label: "Cart" },
   { href: "/messages", icon: MessageSquare, label: "Messages" },
   { href: "/wallet", icon: Wallet, label: "Wallet" },
   { href: "/my-listings", icon: List, label: "My Listings" },
@@ -75,11 +77,7 @@ const Header = () => {
 
           {/* User Menu, Cart, or CTA Buttons */}
           <div className="hidden md:flex items-center gap-4">
-            <Link href="/cart" as="/cart">
-              <Button variant="ghost" size="icon">
-                <ShoppingCart className="h-5 w-5" />
-              </Button>
-            </Link>
+            <CartBadge />
             {session?.user ? (
               <UserMenu />
             ) : (
@@ -121,6 +119,9 @@ const Header = () => {
                     {item.label}
                   </button>
                 );
+              }
+              if (item.href === "/cart") {
+                return <CartBadge key={item.href} showLabel={true} />;
               }
               return (
                 <Link

@@ -1016,7 +1016,7 @@ export const userRouter = router({
       }
     }),
 
-  updateUserStatus: protectedProcedure
+  updateUserOnlineStatus: protectedProcedure
     .input(
       z.object({
         isOnline: z.boolean().optional(),
@@ -1192,16 +1192,18 @@ export const userRouter = router({
         });
       }
     }),
-});
+
   // Admin procedures for user management
   getAllUsers: protectedProcedure
-    .input(z.object({
-      page: z.number().default(1),
-      limit: z.number().default(20),
-      search: z.string().optional(),
-      role: z.string().optional(),
-      status: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        page: z.number().default(1),
+        limit: z.number().default(20),
+        search: z.string().optional(),
+        role: z.string().optional(),
+        status: z.string().optional(),
+      })
+    )
     .query(async ({ ctx: { user, prisma }, input }) => {
       if (!user?.id) {
         throw new TRPCError({
@@ -1229,9 +1231,9 @@ export const userRouter = router({
 
       if (search) {
         whereClause.OR = [
-          { name: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
-          { phone: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search, mode: "insensitive" } },
+          { email: { contains: search, mode: "insensitive" } },
+          { phone: { contains: search, mode: "insensitive" } },
         ];
       }
 
@@ -1253,31 +1255,32 @@ export const userRouter = router({
         }
       }
 
-      const [users, total, activeCount, inactiveCount, verifiedCount] = await Promise.all([
-        prisma.user.findMany({
-          where: whereClause,
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            image: true,
-            role: true,
-            accountType: true,
-            isActive: true,
-            isVerified: true,
-            location: true,
-            createdAt: true,
-          },
-          skip,
-          take: limit,
-          orderBy: { createdAt: 'desc' },
-        }),
-        prisma.user.count({ where: whereClause }),
-        prisma.user.count({ where: { ...whereClause, isActive: true } }),
-        prisma.user.count({ where: { ...whereClause, isActive: false } }),
-        prisma.user.count({ where: { ...whereClause, isVerified: true } }),
-      ]);
+      const [users, total, activeCount, inactiveCount, verifiedCount] =
+        await Promise.all([
+          prisma.user.findMany({
+            where: whereClause,
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              image: true,
+              role: true,
+              accountType: true,
+              isActive: true,
+              isVerified: true,
+              location: true,
+              createdAt: true,
+            },
+            skip,
+            take: limit,
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.user.count({ where: whereClause }),
+          prisma.user.count({ where: { ...whereClause, isActive: true } }),
+          prisma.user.count({ where: { ...whereClause, isActive: false } }),
+          prisma.user.count({ where: { ...whereClause, isVerified: true } }),
+        ]);
 
       return {
         users,
@@ -1292,10 +1295,12 @@ export const userRouter = router({
     }),
 
   updateUserStatus: protectedProcedure
-    .input(z.object({
-      userId: z.string(),
-      isActive: z.boolean(),
-    }))
+    .input(
+      z.object({
+        userId: z.string(),
+        isActive: z.boolean(),
+      })
+    )
     .mutation(async ({ ctx: { user, prisma }, input }) => {
       if (!user?.id) {
         throw new TRPCError({
@@ -1315,7 +1320,9 @@ export const userRouter = router({
         });
 
         return {
-          message: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
+          message: `User ${
+            isActive ? "activated" : "deactivated"
+          } successfully`,
           user: updatedUser,
         };
       } catch (error) {
@@ -1328,10 +1335,12 @@ export const userRouter = router({
     }),
 
   updateUserRole: protectedProcedure
-    .input(z.object({
-      userId: z.string(),
-      role: z.nativeEnum(Role),
-    }))
+    .input(
+      z.object({
+        userId: z.string(),
+        role: z.nativeEnum(Role),
+      })
+    )
     .mutation(async ({ ctx: { user, prisma }, input }) => {
       if (!user?.id) {
         throw new TRPCError({
@@ -1362,3 +1371,4 @@ export const userRouter = router({
         });
       }
     }),
+});
