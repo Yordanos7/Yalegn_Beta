@@ -331,7 +331,7 @@ export default function ListingDetailPage() {
   console.log("  listing.images.some(isVideo):", listing.images.some(isVideo));
 
   return (
-    <main className="container mx-auto px-4 py-6 md:py-12 bg-background text-foreground max-w-7xl">
+    <main className="container mx-auto px-4 py-6 md:py-12 bg-background text-foreground max-w-7xl min-h-screen">
       <Button
         variant="ghost"
         onClick={() => router.back()}
@@ -744,7 +744,7 @@ export default function ListingDetailPage() {
         {/* Right Column: Product Info and Actions */}
         <div className="lg:col-span-1 space-y-6">
           {/* Listing Summary */}
-          <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm sticky top-4">
+          <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm sticky top-4 z-20">
             <CardTitle className="text-xl md:text-2xl font-bold mb-3 line-clamp-2">
               {listing.title}
             </CardTitle>
@@ -855,7 +855,7 @@ export default function ListingDetailPage() {
           </Card>
 
           {/* Customer Reviews Summary */}
-          <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+          <Card className="p-4 md:p-6 bg-card rounded-lg border border-border shadow-sm relative z-10">
             <CardTitle className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
               <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
               Customer Reviews
@@ -870,7 +870,7 @@ export default function ListingDetailPage() {
               </p>
             ) : reviews.length > 0 ? (
               <>
-                <div className="flex items-center mb-3 flex-wrap gap-2">
+                <div className="flex items-center mb-4 flex-wrap gap-2">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
                       <Star
@@ -890,28 +890,30 @@ export default function ListingDetailPage() {
                     ({listing.reviewCount || 0} reviews)
                   </span>
                 </div>
-                <div className="space-y-4 mt-4 max-h-[400px] overflow-y-auto pr-2">
+
+                {/* Scrollable Reviews Container */}
+                <div className="space-y-4 max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
                   {reviews.map((review) => (
                     <div
                       key={review.id}
-                      className="border-t border-border pt-4 first:border-t-0 first:pt-0"
+                      className="border border-border rounded-lg p-3 bg-muted/30 hover:bg-muted/50 transition-colors"
                     >
-                      <div className="flex items-start gap-3 mb-2">
-                        <Avatar className="h-8 w-8 flex-shrink-0">
+                      <div className="flex items-start gap-3 mb-3">
+                        <Avatar className="h-10 w-10 flex-shrink-0 border border-border">
                           <AvatarImage
                             src={review.by.image || "/placeholder-avatar.jpg"}
                             alt={review.by.name}
                           />
-                          <AvatarFallback className="text-xs">
+                          <AvatarFallback className="text-sm bg-yellow-500/20">
                             {review.by.name[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-foreground truncate">
-                            {review.by.name}
-                          </p>
-                          <div className="flex items-center flex-wrap gap-2 text-xs text-muted-foreground mt-1">
-                            <div className="flex items-center">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-semibold text-sm text-foreground">
+                              {review.by.name}
+                            </p>
+                            <div className="flex items-center gap-1">
                               {[...Array(5)].map((_, i) => (
                                 <Star
                                   key={i}
@@ -922,31 +924,34 @@ export default function ListingDetailPage() {
                                   }`}
                                 />
                               ))}
-                              <span className="ml-1">
+                              <span className="ml-1 text-xs font-medium">
                                 {review.rating.toFixed(1)}
                               </span>
                             </div>
-                            <span>
-                              {formatDistanceToNow(new Date(review.createdAt), {
-                                addSuffix: true,
-                              })}
-                            </span>
                           </div>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {formatDistanceToNow(new Date(review.createdAt), {
+                              addSuffix: true,
+                            })}
+                          </p>
+                          {review.comment && (
+                            <p className="text-sm text-foreground leading-relaxed break-words">
+                              {review.comment}
+                            </p>
+                          )}
                         </div>
                       </div>
-                      {review.comment && (
-                        <p className="text-xs md:text-sm text-muted-foreground break-words">
-                          {review.comment}
-                        </p>
-                      )}
                     </div>
                   ))}
                 </div>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No reviews yet. Be the first to review!
-              </p>
+              <div className="text-center py-8">
+                <Star className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  No reviews yet. Be the first to review!
+                </p>
+              </div>
             )}
           </Card>
 

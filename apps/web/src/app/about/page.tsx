@@ -7,11 +7,8 @@ import {
   Users,
   Briefcase,
   Shield,
-  Zap,
-  Globe,
   Heart,
   TrendingUp,
-  CheckCircle,
   ArrowRight,
   Star,
   MessageSquare,
@@ -57,48 +54,6 @@ const HowItWorksPage = () => {
     },
   ];
 
-  const problems = [
-    {
-      icon: Globe,
-      title: "Limited Global Access",
-      description:
-        "Ethiopian freelancers struggle to access international platforms due to payment barriers and geographic restrictions.",
-    },
-    {
-      icon: Shield,
-      title: "Trust & Security Issues",
-      description:
-        "Lack of secure payment systems and verification processes creates uncertainty for both clients and freelancers.",
-    },
-    {
-      icon: TrendingUp,
-      title: "Economic Opportunities",
-      description:
-        "Limited platforms that understand the Ethiopian market and support local currency transactions.",
-    },
-  ];
-
-  const solutions = [
-    {
-      icon: Heart,
-      title: "Built for Ethiopia",
-      description:
-        "Designed specifically for the Ethiopian community with local currency support and cultural understanding.",
-    },
-    {
-      icon: Zap,
-      title: "Fast & Reliable",
-      description:
-        "Quick project matching, instant messaging, and efficient payment processing tailored for local needs.",
-    },
-    {
-      icon: CheckCircle,
-      title: "Verified Community",
-      description:
-        "Comprehensive verification system ensures trust and quality in every transaction.",
-    },
-  ];
-
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar
@@ -139,178 +94,101 @@ const HowItWorksPage = () => {
           </div>
         </section>
 
-        {/* Problems We Solve */}
-        <section className="py-16 px-4 md:px-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Problems We Solve
-              </h2>
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Understanding the unique challenges faced by Ethiopian
-                freelancers and businesses
-              </p>
-            </div>
+        {/* About Yalegn - Clean Typography Section */}
+        <section className="py-20 px-4 md:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="space-y-12">
+              {/* Main Description */}
+              <div className="text-center space-y-6">
+                <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
+                  About <span className="text-yellow-500">Yalegn</span>
+                </h2>
+                <div className="w-24 h-1 bg-yellow-500 mx-auto rounded-full"></div>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {problems.map((problem, index) => (
-                <Card
-                  key={index}
-                  className="p-6 border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 transition-colors"
-                >
-                  <CardContent className="p-0 space-y-4">
-                    <div className="p-3 rounded-lg bg-red-500/20 w-fit">
-                      <problem.icon className="h-6 w-6 text-red-500" />
-                    </div>
-                    <h3 className="text-xl font-semibold">{problem.title}</h3>
-                    <p className="text-muted-foreground">
-                      {problem.description}
+              {/* Story Content */}
+              <div className="prose prose-lg max-w-none text-center space-y-8">
+                <p className="text-xl md:text-2xl leading-relaxed text-foreground font-light">
+                  Yalegn is a revolutionary freelancing platform designed
+                  specifically for the Ethiopian community, bridging the gap
+                  between local talent and global opportunities.
+                </p>
+
+                <div className="grid md:grid-cols-2 gap-12 text-left mt-16">
+                  <div className="space-y-6">
+                    <h3 className="text-2xl font-semibold text-yellow-500 mb-4">
+                      Our Mission
+                    </h3>
+                    <p className="text-lg leading-relaxed text-muted-foreground">
+                      To empower Ethiopian freelancers by providing them with a
+                      secure, culturally-aware platform that understands their
+                      unique needs and challenges. We believe in creating
+                      economic opportunities that keep talent connected to their
+                      roots while reaching global markets.
                     </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
+                  </div>
 
-        {/* How It Works Steps */}
-        <section className="py-16 px-4 md:px-8 bg-muted/30">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                How Yalegn Works
-              </h2>
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Simple steps to connect, collaborate, and succeed
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {steps.map((step, index) => (
-                <div key={index} className="relative">
-                  <Card className="p-6 h-full hover:shadow-lg transition-shadow">
-                    <CardContent className="p-0 space-y-4">
-                      <div
-                        className={`p-3 rounded-lg bg-gradient-to-br ${step.color} bg-opacity-20 w-fit`}
-                      >
-                        <step.icon className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            Step {index + 1}
-                          </Badge>
-                        </div>
-                        <h3 className="text-xl font-semibold">{step.title}</h3>
-                        <p className="text-muted-foreground">
-                          {step.description}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  {index < steps.length - 1 && (
-                    <div className="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2">
-                      <ArrowRight className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                  )}
+                  <div className="space-y-6">
+                    <h3 className="text-2xl font-semibold text-yellow-500 mb-4">
+                      Our Vision
+                    </h3>
+                    <p className="text-lg leading-relaxed text-muted-foreground">
+                      To become the leading platform where Ethiopian talent
+                      thrives, fostering a community where freelancers can build
+                      sustainable careers while contributing to the growth of
+                      Ethiopia's digital economy and maintaining strong cultural
+                      connections.
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        {/* Our Solutions */}
-        <section className="py-16 px-4 md:px-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Our Solutions
-              </h2>
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                How Yalegn addresses the unique needs of the Ethiopian community
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {solutions.map((solution, index) => (
-                <Card
-                  key={index}
-                  className="p-6 border border-green-500/20 bg-green-500/5 hover:bg-green-500/10 transition-colors"
-                >
-                  <CardContent className="p-0 space-y-4">
-                    <div className="p-3 rounded-lg bg-green-500/20 w-fit">
-                      <solution.icon className="h-6 w-6 text-green-500" />
+                <div className="mt-16 p-8 bg-muted/50 rounded-2xl">
+                  <h3 className="text-2xl font-semibold mb-6 text-center">
+                    Why Yalegn Matters
+                  </h3>
+                  <div className="grid md:grid-cols-3 gap-8 text-center">
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto">
+                        <Heart className="h-6 w-6 text-yellow-500" />
+                      </div>
+                      <h4 className="font-semibold">Built with Love</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Created by Ethiopians, for Ethiopians, with deep
+                        understanding of our culture and needs.
+                      </p>
                     </div>
-                    <h3 className="text-xl font-semibold">{solution.title}</h3>
-                    <p className="text-muted-foreground">
-                      {solution.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        {/* Impact Stats */}
-        <section className="py-16 px-4 md:px-8 bg-gradient-to-br from-yellow-500/10 to-orange-500/10">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Making a Real Impact
-              </h2>
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Building bridges between Ethiopian talent and global
-                opportunities
-              </p>
-            </div>
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto">
+                        <Shield className="h-6 w-6 text-yellow-500" />
+                      </div>
+                      <h4 className="font-semibold">Trust & Security</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Comprehensive verification and secure payment systems
+                        designed for the Ethiopian market.
+                      </p>
+                    </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              <Card className="p-6 text-center bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
-                <CardContent className="p-0 space-y-2">
-                  <div className="p-3 rounded-lg bg-blue-500/20 w-fit mx-auto">
-                    <Users className="h-6 w-6 text-blue-500" />
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto">
+                        <TrendingUp className="h-6 w-6 text-yellow-500" />
+                      </div>
+                      <h4 className="font-semibold">Economic Growth</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Supporting Ethiopia's digital transformation and
+                        creating sustainable income opportunities.
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-3xl font-bold">1000+</p>
-                  <p className="text-sm text-muted-foreground">Active Users</p>
-                </CardContent>
-              </Card>
+                </div>
 
-              <Card className="p-6 text-center bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
-                <CardContent className="p-0 space-y-2">
-                  <div className="p-3 rounded-lg bg-green-500/20 w-fit mx-auto">
-                    <Briefcase className="h-6 w-6 text-green-500" />
-                  </div>
-                  <p className="text-3xl font-bold">500+</p>
-                  <p className="text-sm text-muted-foreground">
-                    Projects Completed
+                <div className="mt-16 text-center">
+                  <p className="text-xl italic text-muted-foreground">
+                    "Connecting Ethiopian talent with the world, one project at
+                    a time."
                   </p>
-                </CardContent>
-              </Card>
-
-              <Card className="p-6 text-center bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/20">
-                <CardContent className="p-0 space-y-2">
-                  <div className="p-3 rounded-lg bg-yellow-500/20 w-fit mx-auto">
-                    <Star className="h-6 w-6 text-yellow-500" />
-                  </div>
-                  <p className="text-3xl font-bold">4.8</p>
-                  <p className="text-sm text-muted-foreground">
-                    Average Rating
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="p-6 text-center bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
-                <CardContent className="p-0 space-y-2">
-                  <div className="p-3 rounded-lg bg-purple-500/20 w-fit mx-auto">
-                    <Globe className="h-6 w-6 text-purple-500" />
-                  </div>
-                  <p className="text-3xl font-bold">15+</p>
-                  <p className="text-sm text-muted-foreground">
-                    Countries Served
-                  </p>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           </div>
         </section>
