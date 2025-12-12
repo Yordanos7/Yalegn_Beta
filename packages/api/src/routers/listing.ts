@@ -44,6 +44,39 @@ export const listingRouter = router({
             .replace(/^-*|-*$/g, "")}-${Date.now()}`,
         },
       });
+
+      // Award coins if listing is published immediately
+      if (input.isPublished === true) {
+        try {
+          // Award 5 coins and record the transaction
+          await prisma.$transaction([
+            prisma.user.update({
+              where: { id: userId },
+              data: {
+                coins: { increment: 5 },
+              },
+            }),
+            prisma.coinPurchase.create({
+              data: {
+                userId: userId,
+                coins: 5,
+                amount: 0, // Free reward
+                currency: "ETB",
+                provider: "system",
+                meta: {
+                  type: "listing_bonus",
+                  listingId: listing.id,
+                  description: "Reward for posting a product",
+                },
+              },
+            }),
+          ]);
+        } catch (error) {
+          // Don't fail the listing creation if coin award fails
+          console.error("Failed to award listing coins:", error);
+        }
+      }
+
       return listing;
     }),
 
@@ -250,6 +283,52 @@ export const listingRouter = router({
           }),
         },
       });
+
+      // Award coins if listing is being published for the first time
+      if (restData.isPublished === true && !existingListing.isPublished) {
+        try {
+          // Check if user already got coins for this listing
+          const existingReward = await prisma.coinPurchase.findFirst({
+            where: {
+              userId: userId,
+              meta: {
+                path: ["listingId"],
+                equals: id,
+              },
+            },
+          });
+
+          if (!existingReward) {
+            // Award 5 coins and record the transaction
+            await prisma.$transaction([
+              prisma.user.update({
+                where: { id: userId },
+                data: {
+                  coins: { increment: 5 },
+                },
+              }),
+              prisma.coinPurchase.create({
+                data: {
+                  userId: userId,
+                  coins: 5,
+                  amount: 0, // Free reward
+                  currency: "ETB",
+                  provider: "system",
+                  meta: {
+                    type: "listing_bonus",
+                    listingId: id,
+                    description: "Reward for posting a product",
+                  },
+                },
+              }),
+            ]);
+          }
+        } catch (error) {
+          // Don't fail the listing update if coin award fails
+          console.error("Failed to award listing coins:", error);
+        }
+      }
+
       return updatedListing;
     }),
 

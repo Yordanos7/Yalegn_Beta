@@ -21,6 +21,7 @@ import CartBadge from "./CartBadge";
 import logo from "@/../assets/logo.png";
 import LogoutConfirmationDialog from "./ui/logout-confirmation-dialog";
 import { useRouter } from "next/navigation";
+import { useCoinTracker } from "@/hooks/use-coin-tracker";
 
 const desktopNavItems = [
   { href: "/dashboard", label: "Dashboard" },
@@ -47,6 +48,9 @@ const Header = () => {
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const { data: session } = authClient.useSession();
   const router = useRouter();
+
+  // Track coin changes and show rewards
+  useCoinTracker();
 
   const handleLogout = async () => {
     await authClient.signOut();

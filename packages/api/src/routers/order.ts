@@ -399,13 +399,48 @@ export const orderRouter = router({
         },
       });
 
-      // Award 30 coins to the seller for completing a sale
-      await prisma.user.update({
-        where: { id: order.sellerId },
-        data: {
-          coins: { increment: 30 },
-        },
-      });
+      // Award 25 coins to the seller for completing a sale
+      try {
+        // Check if seller already got coins for this sale
+        const existingReward = await prisma.coinPurchase.findFirst({
+          where: {
+            userId: order.sellerId,
+            meta: {
+              path: ["orderId"],
+              equals: input.orderId,
+            },
+          },
+        });
+
+        if (!existingReward) {
+          // Award 25 coins and record the transaction
+          await prisma.$transaction([
+            prisma.user.update({
+              where: { id: order.sellerId },
+              data: {
+                coins: { increment: 25 },
+              },
+            }),
+            prisma.coinPurchase.create({
+              data: {
+                userId: order.sellerId,
+                coins: 25,
+                amount: 0, // Free reward
+                currency: "ETB",
+                provider: "system",
+                meta: {
+                  type: "sale_bonus",
+                  orderId: input.orderId,
+                  description: "Reward for completing a sale",
+                },
+              },
+            }),
+          ]);
+        }
+      } catch (error) {
+        // Don't fail the order completion if coin award fails
+        console.error("Failed to award sale coins:", error);
+      }
 
       // Notify admin about the delivery confirmation
       const adminUsers = await prisma.user.findMany({
@@ -439,12 +474,12 @@ export const orderRouter = router({
           data: {
             userId: seller.id,
             type: "SYSTEM",
-            title: "Delivery Confirmed by Buyer - 30 Coins Earned!",
-            body: `Buyer ${userId} confirmed delivery for your order ${input.orderId}. Status updated to COMPLETED. You've earned 30 coins!`,
+            title: "Delivery Confirmed by Buyer - 25 Coins Earned!",
+            body: `Buyer ${userId} confirmed delivery for your order ${input.orderId}. Status updated to COMPLETED. You've earned 25 coins!`,
             payload: {
               orderId: input.orderId,
               buyerId: userId,
-              coinsEarned: 30,
+              coinsEarned: 25,
             },
           },
         });

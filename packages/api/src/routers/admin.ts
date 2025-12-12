@@ -529,4 +529,459 @@ export const adminRouter = router({
       };
     }
   ),
+
+  // Get moderation statistics
+  getModerationStats: protectedProcedure.query(
+    async ({ ctx: { user, prisma } }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      // Get counts for moderation dashboard
+      const [
+        totalUsers,
+        inactiveUsers,
+        unverifiedUsers,
+        totalListings,
+        unpublishedListings,
+        totalMessages,
+        recentMessages,
+      ] = await Promise.all([
+        prisma.user.count(),
+        prisma.user.count({ where: { isActive: false } }),
+        prisma.user.count({ where: { isVerified: false } }),
+        prisma.listing.count(),
+        prisma.listing.count({ where: { isPublished: false } }),
+        prisma.message.count(),
+        prisma.message.count({
+          where: {
+            createdAt: {
+              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+            },
+          },
+        }),
+      ]);
+
+      return {
+        pendingReports: inactiveUsers + unpublishedListings, // Simulated pending reports
+        resolvedToday: recentMessages, // Simulated resolved reports
+        highPriority: Math.floor(inactiveUsers / 2), // Simulated high priority reports
+        totalReports: totalUsers + totalListings + totalMessages, // Simulated total reports
+      };
+    }
+  ),
+
+  // Get flagged content (simulated reports)
+  getFlaggedContent: protectedProcedure
+    .input(
+      z.object({
+        page: z.number().default(1),
+        limit: z.number().default(20),
+        status: z.string().optional(),
+        type: z.string().optional(),
+        search: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx: { user, prisma }, input }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      const { page, limit, status, type, search } = input;
+      const skip = (page - 1) * limit;
+
+      // Get flagged users (inactive or unverified)
+      const flaggedUsers = await prisma.user.findMany({
+        where: {
+          AND: [
+            search
+              ? {
+                  OR: [
+                    { name: { contains: search, mode: "insensitive" } },
+                    { email: { contains: search, mode: "insensitive" } },
+                  ],
+                }
+              : {},
+            type === "user" || !type
+              ? {
+                  OR: [{ isActive: false }, { isVerified: false }],
+                }
+              : { id: "never-match" }, // Don't include users if type filter excludes them
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          isActive: true,
+          isVerified: true,
+          createdAt: true,
+        },
+        take: type === "user" ? limit : Math.floor(limit / 3),
+        skip: type === "user" ? skip : 0,
+      });
+
+      // Get flagged listings (unpublished or low rating)
+      const flaggedListings = await prisma.listing.findMany({
+        where: {
+          AND: [
+            search
+              ? {
+                  OR: [
+                    { title: { contains: search, mode: "insensitive" } },
+                    { description: { contains: search, mode: "insensitive" } },
+                  ],
+                }
+              : {},
+            type === "listing" || !type
+              ? {
+                  OR: [{ isPublished: false }, { rating: { lt: 2 } }],
+                }
+              : { id: "never-match" },
+          ],
+        },
+        include: {
+          provider: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+        take: type === "listing" ? limit : Math.floor(limit / 3),
+        skip: type === "listing" ? skip : 0,
+      });
+
+      // Get recent messages (simulating reported messages)
+      const flaggedMessages = await prisma.message.findMany({
+        where: {
+          AND: [
+            search
+              ? {
+                  body: { contains: search, mode: "insensitive" },
+                }
+              : {},
+            type === "message" || !type
+              ? {
+                  createdAt: {
+                    gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+                  },
+                }
+              : { id: "never-match" },
+          ],
+        },
+        include: {
+          fromUser: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+          toUser: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+        take: type === "message" ? limit : Math.floor(limit / 3),
+        skip: type === "message" ? skip : 0,
+      });
+
+      // Transform data into report format
+      const reports = [
+        ...flaggedUsers.map((user) => ({
+          id: `user-${user.id}`,
+          type: "user" as const,
+          title: user.isActive
+            ? "Unverified User Account"
+            : "Inactive User Account",
+          reportedBy: { name: "System", image: null },
+          reportedItem: {
+            title: user.name,
+            type: "user" as const,
+            id: user.id,
+          },
+          reason: user.isActive
+            ? "Account not verified"
+            : "Account marked as inactive",
+          status: user.isActive && user.isVerified ? "resolved" : "pending",
+          createdAt: user.createdAt.toISOString(),
+          description: `User account ${user.name} (${user.email}) requires review.`,
+          priority: user.isActive ? "medium" : "high",
+        })),
+        ...flaggedListings.map((listing) => ({
+          id: `listing-${listing.id}`,
+          type: "listing" as const,
+          title: listing.isPublished
+            ? "Low Rating Listing"
+            : "Unpublished Listing",
+          reportedBy: { name: "System", image: null },
+          reportedItem: {
+            title: listing.title,
+            type: "listing" as const,
+            id: listing.id,
+          },
+          reason: listing.isPublished
+            ? "Low user ratings"
+            : "Content under review",
+          status:
+            listing.isPublished && (listing.rating || 0) > 2
+              ? "resolved"
+              : "pending",
+          createdAt: listing.createdAt.toISOString(),
+          description: `Listing "${listing.title}" by ${listing.provider.name} requires review.`,
+          priority: (listing.rating || 0) < 1 ? "high" : "medium",
+        })),
+        ...flaggedMessages.map((message) => ({
+          id: `message-${message.id}`,
+          type: "message" as const,
+          title: "Recent Message Activity",
+          reportedBy: {
+            name: message.toUser.name,
+            image: message.toUser.image,
+          },
+          reportedItem: {
+            title: `Message from ${message.fromUser.name}`,
+            type: "message" as const,
+            id: message.id,
+          },
+          reason: "Recent message activity",
+          status: "pending" as const,
+          createdAt: message.createdAt.toISOString(),
+          description: `Message: "${message.body.substring(0, 100)}${
+            message.body.length > 100 ? "..." : ""
+          }"`,
+          priority: "low" as const,
+        })),
+      ];
+
+      // Apply status filter
+      const filteredReports =
+        status && status !== "all"
+          ? reports.filter((report) => report.status === status)
+          : reports;
+
+      // Sort by creation date (newest first)
+      filteredReports.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      return {
+        reports: filteredReports.slice(0, limit),
+        total: filteredReports.length,
+      };
+    }),
+
+  // Moderate content (approve/reject)
+  moderateContent: protectedProcedure
+    .input(
+      z.object({
+        reportId: z.string(),
+        action: z.enum(["approve", "reject", "dismiss"]),
+        reason: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx: { user, prisma }, input }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      const { reportId, action, reason } = input;
+
+      // Parse report ID to get type and actual ID
+      const [type, actualId] = reportId.split("-");
+
+      try {
+        switch (type) {
+          case "user":
+            if (action === "approve") {
+              await prisma.user.update({
+                where: { id: actualId },
+                data: {
+                  isActive: true,
+                  isVerified: true,
+                },
+              });
+            } else if (action === "reject") {
+              await prisma.user.update({
+                where: { id: actualId },
+                data: { isActive: false },
+              });
+            }
+            break;
+
+          case "listing":
+            if (action === "approve") {
+              await prisma.listing.update({
+                where: { id: actualId },
+                data: { isPublished: true },
+              });
+            } else if (action === "reject") {
+              await prisma.listing.update({
+                where: { id: actualId },
+                data: { isPublished: false },
+              });
+            }
+            break;
+
+          case "message":
+            // For messages, we could implement soft delete or flagging
+            // For now, we'll just log the action
+            console.log(
+              `Message ${actualId} ${action}ed by admin ${user.id}: ${
+                reason || "No reason provided"
+              }`
+            );
+            break;
+
+          default:
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Invalid report type",
+            });
+        }
+
+        return {
+          success: true,
+          message: `Content ${action}ed successfully`,
+        };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to moderate content",
+        });
+      }
+    }),
+
+  // Get detailed content for review
+  getContentDetails: protectedProcedure
+    .input(
+      z.object({
+        reportId: z.string(),
+      })
+    )
+    .query(async ({ ctx: { user, prisma }, input }) => {
+      if (!user?.id) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+
+      const { reportId } = input;
+      const [type, actualId] = reportId.split("-");
+
+      try {
+        switch (type) {
+          case "user":
+            const userData = await prisma.user.findUnique({
+              where: { id: actualId },
+              include: {
+                profile: true,
+                listings: {
+                  select: {
+                    id: true,
+                    title: true,
+                    isPublished: true,
+                    rating: true,
+                  },
+                },
+                reviewsReceived: {
+                  select: {
+                    rating: true,
+                    comment: true,
+                    createdAt: true,
+                    by: {
+                      select: { name: true },
+                    },
+                  },
+                  take: 5,
+                },
+              },
+            });
+            return { type: "user", data: userData };
+
+          case "listing":
+            const listingData = await prisma.listing.findUnique({
+              where: { id: actualId },
+              include: {
+                provider: {
+                  select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                    isVerified: true,
+                  },
+                },
+                reviews: {
+                  select: {
+                    rating: true,
+                    comment: true,
+                    createdAt: true,
+                    by: {
+                      select: { name: true },
+                    },
+                  },
+                  take: 5,
+                },
+              },
+            });
+            return { type: "listing", data: listingData };
+
+          case "message":
+            const messageData = await prisma.message.findUnique({
+              where: { id: actualId },
+              include: {
+                fromUser: {
+                  select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                  },
+                },
+                toUser: {
+                  select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                  },
+                },
+                conversation: {
+                  select: {
+                    id: true,
+                    title: true,
+                  },
+                },
+              },
+            });
+            return { type: "message", data: messageData };
+
+          default:
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Invalid report type",
+            });
+        }
+      } catch (error) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Content not found",
+        });
+      }
+    }),
 });

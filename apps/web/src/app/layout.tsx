@@ -5,6 +5,7 @@ import Providers from "@/components/providers";
 import Header from "@/components/header";
 import { Toaster } from "@/components/ui/sonner"; // Import Toaster
 import { CartProvider } from "@/context/CartContext";
+import { CoinRewardsProvider } from "@/context/CoinRewardsContext";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const playfair = Playfair_Display({
@@ -31,11 +32,13 @@ export default function RootLayout({
       <body className={inter.className}>
         <Providers>
           <CartProvider>
-            <div className="grid grid-rows-[auto_1fr] h-svh">
-              <Header />
-              <main className="pt-[112px] bg-background">{children}</main>
-            </div>
-            <Toaster /> {/* Add Toaster component here */}
+            <CoinRewardsProvider>
+              <div className="grid grid-rows-[auto_1fr] h-svh">
+                <Header />
+                <main className="pt-[112px] bg-background">{children}</main>
+              </div>
+              <Toaster /> {/* Add Toaster component here */}
+            </CoinRewardsProvider>
           </CartProvider>
         </Providers>
       </body>

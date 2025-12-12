@@ -17,6 +17,36 @@ export const auth = betterAuth({
       // For now, we'll just log and return the user object
       return user;
     },
+    afterSignUp: async (user: { id: string; email: string; name: string }) => {
+      console.log("afterSignUp callback triggered:", user);
+      // Award 30 coins for registration
+      try {
+        await prisma.$transaction([
+          prisma.user.update({
+            where: { id: user.id },
+            data: {
+              coins: { increment: 30 },
+            },
+          }),
+          prisma.coinPurchase.create({
+            data: {
+              userId: user.id,
+              coins: 30,
+              amount: 0, // Free reward
+              currency: "ETB",
+              provider: "system",
+              meta: {
+                type: "registration_bonus",
+                description: "Welcome bonus for joining the platform",
+              },
+            },
+          }),
+        ]);
+        console.log("✅ Registration bonus awarded to user:", user.id);
+      } catch (error) {
+        console.error("❌ Failed to award registration bonus:", error);
+      }
+    },
   },
   emailVerification: {
     sendOnSignUp: false, // Don't send automatically on signup

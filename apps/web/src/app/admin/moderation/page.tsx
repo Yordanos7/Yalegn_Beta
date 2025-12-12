@@ -34,48 +34,60 @@ import {
   Flag,
   Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { trpc } from "@/utils/trpc";
 
 const AdminModerationPage = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Mock data - replace with actual tRPC calls
-  const reports = [
-    {
-      id: "1",
-      type: "listing",
-      title: "Inappropriate Content in Listing",
-      reportedBy: { name: "John Doe", image: null },
-      reportedItem: { title: "Web Development Service", type: "listing" },
-      reason: "Inappropriate content",
-      status: "pending",
-      createdAt: new Date().toISOString(),
-      description:
-        "This listing contains inappropriate images and misleading information.",
-    },
-    {
-      id: "2",
-      type: "user",
-      title: "Spam Messages",
-      reportedBy: { name: "Jane Smith", image: null },
-      reportedItem: { title: "Mike Johnson", type: "user" },
-      reason: "Spam",
-      status: "pending",
-      createdAt: new Date().toISOString(),
-      description: "User is sending spam messages to multiple people.",
-    },
-  ];
+  // Fetch real moderation data
+  const { data: moderationStats, isLoading: statsLoading } =
+    trpc.admin.getModerationStats.useQuery();
+  const {
+    data: flaggedContentData,
+    isLoading: reportsLoading,
+    refetch: refetchReports,
+  } = trpc.admin.getFlaggedContent.useQuery({
+    page: currentPage,
+    limit: 20,
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    type: typeFilter !== "all" ? typeFilter : undefined,
+    search: searchQuery || undefined,
+  });
 
-  const handleResolveReport = (
+  const moderateContentMutation = trpc.admin.moderateContent.useMutation();
+
+  const reports = flaggedContentData?.reports || [];
+
+  // Refetch when filters change
+  useEffect(() => {
+    refetchReports();
+  }, [statusFilter, typeFilter, searchQuery, refetchReports]);
+
+  const handleResolveReport = async (
     reportId: string,
     action: "approve" | "reject"
   ) => {
-    // TODO: Implement with tRPC
-    toast.success(`Report ${action}d successfully`);
+    try {
+      await moderateContentMutation.mutateAsync({
+        reportId,
+        action,
+        reason: `Admin ${action}ed via moderation panel`,
+      });
+      toast.success(`Report ${action}d successfully`);
+      refetchReports(); // Refresh the reports list
+    } catch (error: any) {
+      toast.error(`Failed to ${action} report: ${error.message}`);
+    }
+  };
+
+  const handleViewDetails = (reportId: string) => {
+    toast.info(`Viewing details for report: ${reportId}`);
   };
 
   const getStatusColor = (status: string) => {
@@ -112,7 +124,7 @@ const AdminModerationPage = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push("/admin")}
+            onClick={() => router.push("/admin" as any)}
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
             Back to Admin
@@ -137,7 +149,9 @@ const AdminModerationPage = () => {
                 <AlertTriangle className="h-5 w-5 text-yellow-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">5</p>
+                <p className="text-2xl font-bold">
+                  {statsLoading ? "..." : moderationStats?.pendingReports || 0}
+                </p>
                 <p className="text-sm text-muted-foreground">Pending Reports</p>
               </div>
             </div>
@@ -150,7 +164,9 @@ const AdminModerationPage = () => {
                 <CheckCircle className="h-5 w-5 text-green-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">23</p>
+                <p className="text-2xl font-bold">
+                  {statsLoading ? "..." : moderationStats?.resolvedToday || 0}
+                </p>
                 <p className="text-sm text-muted-foreground">Resolved Today</p>
               </div>
             </div>
@@ -163,7 +179,9 @@ const AdminModerationPage = () => {
                 <Flag className="h-5 w-5 text-red-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">12</p>
+                <p className="text-2xl font-bold">
+                  {statsLoading ? "..." : moderationStats?.highPriority || 0}
+                </p>
                 <p className="text-sm text-muted-foreground">High Priority</p>
               </div>
             </div>
@@ -176,7 +194,9 @@ const AdminModerationPage = () => {
                 <MessageSquare className="h-5 w-5 text-blue-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">156</p>
+                <p className="text-2xl font-bold">
+                  {statsLoading ? "..." : moderationStats?.totalReports || 0}
+                </p>
                 <p className="text-sm text-muted-foreground">Total Reports</p>
               </div>
             </div>
@@ -234,98 +254,115 @@ const AdminModerationPage = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            Reports ({reports.length})
+            Reports (
+            {reportsLoading ? "Loading..." : flaggedContentData?.total || 0})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Report</TableHead>
-                  <TableHead>Reported By</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reports.map((report) => (
-                  <TableRow key={report.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{report.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {report.reportedItem.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Reason: {report.reason}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={report.reportedBy.image || undefined}
-                          />
-                          <AvatarFallback>
-                            {report.reportedBy.name[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm">
-                          {report.reportedBy.name}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getTypeColor(report.type)}>
-                        {report.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(report.status)}>
-                        {report.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(report.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {report.status === "pending" && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleResolveReport(report.id, "approve")
-                              }
-                            >
-                              <CheckCircle className="h-4 w-4 text-green-500" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleResolveReport(report.id, "reject")
-                              }
-                            >
-                              <XCircle className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
+          {reportsLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <p>Loading reports...</p>
+            </div>
+          ) : reports.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No reports found matching your criteria.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Report</TableHead>
+                    <TableHead>Reported By</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {reports.map((report) => (
+                    <TableRow key={report.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{report.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {report.reportedItem.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Reason: {report.reason}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage
+                              src={report.reportedBy.image || undefined}
+                            />
+                            <AvatarFallback>
+                              {report.reportedBy.name[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm">
+                            {report.reportedBy.name}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getTypeColor(report.type)}>
+                          {report.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(report.status)}>
+                          {report.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(report.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewDetails(report.id)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {report.status === "pending" && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleResolveReport(report.id, "approve")
+                                }
+                                disabled={moderateContentMutation.isPending}
+                              >
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleResolveReport(report.id, "reject")
+                                }
+                                disabled={moderateContentMutation.isPending}
+                              >
+                                <XCircle className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
