@@ -32,6 +32,7 @@ import {
   Calendar,
   ArrowUpRight,
   ArrowDownRight,
+  RefreshCw,
 } from "lucide-react";
 import { useState } from "react";
 import { trpc } from "@/utils/trpc";
@@ -50,6 +51,10 @@ const AdminFinancePage = () => {
     });
   const { data: paymentMethodStats, isLoading: paymentStatsLoading } =
     trpc.admin.getPaymentMethodStats.useQuery();
+
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
   const transactions = transactionsData?.transactions || [];
 
@@ -87,7 +92,7 @@ const AdminFinancePage = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push("/admin")}
+            onClick={() => router.push("/admin" as any)}
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
             Back to Admin
@@ -113,9 +118,49 @@ const AdminFinancePage = () => {
               <SelectItem value="1y">Last year</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline">
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (transactionsData?.transactions) {
+                const csvContent = [
+                  [
+                    "Type",
+                    "Description",
+                    "User",
+                    "Amount",
+                    "Currency",
+                    "Status",
+                    "Date",
+                  ].join(","),
+                  ...transactionsData.transactions.map((t) =>
+                    [
+                      t.type,
+                      `"${t.description}"`,
+                      t.type === "payout" ? t.seller : t.buyer,
+                      t.amount,
+                      t.currency,
+                      t.status,
+                      new Date(t.date).toLocaleDateString(),
+                    ].join(",")
+                  ),
+                ].join("\n");
+
+                const blob = new Blob([csvContent], { type: "text/csv" });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `financial-report-${timeRange}.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+              }
+            }}
+          >
             <Download className="h-4 w-4 mr-2" />
             Export
+          </Button>
+          <Button variant="outline" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
           </Button>
         </div>
       </div>
@@ -243,15 +288,50 @@ const AdminFinancePage = () => {
         </CardHeader>
         <CardContent>
           <div className="h-64 flex items-center justify-center bg-muted/30 rounded-lg">
-            <div className="text-center">
-              <TrendingUp className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-              <p className="text-muted-foreground">
-                Revenue chart will be displayed here
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Integration with charting library needed
-              </p>
-            </div>
+            {statsLoading ? (
+              <div className="text-center">
+                <RefreshCw className="h-8 w-8 mx-auto mb-3 text-muted-foreground animate-spin" />
+                <p className="text-muted-foreground">Loading revenue data...</p>
+              </div>
+            ) : (
+              <div className="text-center">
+                <div className="mb-4">
+                  <div className="text-3xl font-bold text-green-600">
+                    ETB {(financialStats?.totalRevenue || 0).toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Total Revenue ({timeRange})
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-lg font-semibold text-blue-600">
+                      ETB{" "}
+                      {(financialStats?.totalCommissions || 0).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Commissions
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold text-orange-600">
+                      ETB{" "}
+                      {(financialStats?.pendingPayouts || 0).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Pending</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold text-purple-600">
+                      ETB{" "}
+                      {(financialStats?.completedPayouts || 0).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Completed
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -265,59 +345,74 @@ const AdminFinancePage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getTransactionIcon(transaction.type)}
-                        <span className="capitalize">{transaction.type}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm">{transaction.description}</p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="font-medium">{transaction.user}</p>
-                    </TableCell>
-                    <TableCell>
-                      <p
-                        className={`font-semibold ${
-                          transaction.amount > 0
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {transaction.amount > 0 ? "+" : ""}
-                        {transaction.currency}{" "}
-                        {Math.abs(transaction.amount).toFixed(2)}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(transaction.status)}>
-                        {transaction.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(transaction.date).toLocaleDateString()}
-                    </TableCell>
+          {transactionsLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <p>Loading transactions...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getTransactionIcon(transaction.type)}
+                          <span className="capitalize">{transaction.type}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm">{transaction.description}</p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="font-medium">
+                          {transaction.type === "payout"
+                            ? transaction.seller
+                            : transaction.buyer}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <p
+                          className={`font-semibold ${
+                            transaction.amount > 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {transaction.amount > 0 ? "+" : ""}
+                          {transaction.currency}{" "}
+                          {Math.abs(transaction.amount).toFixed(2)}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(transaction.status)}>
+                          {transaction.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(transaction.date).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {transactions.length === 0 && !transactionsLoading && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No transactions found for the selected period.
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -331,19 +426,43 @@ const AdminFinancePage = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
                 <span className="text-sm font-medium">Gross Revenue</span>
-                <span className="font-semibold">ETB 125,000</span>
+                <span className="font-semibold">
+                  {statsLoading
+                    ? "Loading..."
+                    : `ETB ${(
+                        financialStats?.totalRevenue || 0
+                      ).toLocaleString()}`}
+                </span>
               </div>
               <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
                 <span className="text-sm font-medium">Platform Fees (5%)</span>
-                <span className="font-semibold text-green-600">ETB 6,250</span>
+                <span className="font-semibold text-green-600">
+                  {statsLoading
+                    ? "Loading..."
+                    : `ETB ${(
+                        financialStats?.totalCommissions || 0
+                      ).toLocaleString()}`}
+                </span>
               </div>
               <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
                 <span className="text-sm font-medium">Seller Payouts</span>
-                <span className="font-semibold text-red-600">ETB 118,750</span>
+                <span className="font-semibold text-red-600">
+                  {statsLoading
+                    ? "Loading..."
+                    : `ETB ${(
+                        financialStats?.completedPayouts || 0
+                      ).toLocaleString()}`}
+                </span>
               </div>
               <div className="flex justify-between items-center p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                 <span className="text-sm font-medium">Net Profit</span>
-                <span className="font-bold text-yellow-600">ETB 6,250</span>
+                <span className="font-bold text-yellow-600">
+                  {statsLoading
+                    ? "Loading..."
+                    : `ETB ${(
+                        financialStats?.totalCommissions || 0
+                      ).toLocaleString()}`}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -360,21 +479,33 @@ const AdminFinancePage = () => {
                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                   <span className="text-sm font-medium">Bank Transfer</span>
                 </div>
-                <span className="font-semibold">75%</span>
+                <span className="font-semibold">
+                  {paymentStatsLoading
+                    ? "Loading..."
+                    : `${paymentMethodStats?.bankTransfer.percentage || 0}%`}
+                </span>
               </div>
               <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
                   <span className="text-sm font-medium">Mobile Money</span>
                 </div>
-                <span className="font-semibold">20%</span>
+                <span className="font-semibold">
+                  {paymentStatsLoading
+                    ? "Loading..."
+                    : `${paymentMethodStats?.mobileMoney.percentage || 0}%`}
+                </span>
               </div>
               <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-purple-500"></div>
                   <span className="text-sm font-medium">Wallet</span>
                 </div>
-                <span className="font-semibold">5%</span>
+                <span className="font-semibold">
+                  {paymentStatsLoading
+                    ? "Loading..."
+                    : `${paymentMethodStats?.wallet.percentage || 0}%`}
+                </span>
               </div>
             </div>
           </CardContent>
