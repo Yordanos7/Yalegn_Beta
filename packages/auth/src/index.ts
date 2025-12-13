@@ -10,7 +10,7 @@ export const auth = betterAuth({
   trustedOrigins: [process.env.CORS_ORIGIN || ""],
   emailAndPassword: {
     enabled: true,
-    // requireEmailVerification: true, // Enable email verification
+    requireEmailVerification: true, // Enable email verification
     onSignUp: async (user: { email: any; password: any; name: any }) => {
       console.log("onSignUp callback triggered:", user);
       // This is where you can add custom logic before the user is created
@@ -19,7 +19,20 @@ export const auth = betterAuth({
     },
     afterSignUp: async (user: { id: string; email: string; name: string }) => {
       console.log("afterSignUp callback triggered:", user);
-      // Award 30 coins for registration
+      // Note: Registration bonus will be awarded after email verification
+      console.log("✅ User registered, awaiting email verification:", user.id);
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true, // Send automatically on signup
+    autoSignInAfterVerification: true, // Automatically sign in after verification
+    onEmailVerified: async (user: {
+      id: string;
+      email: string;
+      name: string;
+    }) => {
+      console.log("onEmailVerified callback triggered:", user);
+      // Award 30 coins for email verification
       try {
         await prisma.$transaction([
           prisma.user.update({
@@ -36,20 +49,17 @@ export const auth = betterAuth({
               currency: "ETB",
               provider: "system",
               meta: {
-                type: "registration_bonus",
-                description: "Welcome bonus for joining the platform",
+                type: "email_verification_bonus",
+                description: "Welcome bonus for verifying your email",
               },
             },
           }),
         ]);
-        console.log("✅ Registration bonus awarded to user:", user.id);
+        console.log("✅ Email verification bonus awarded to user:", user.id);
       } catch (error) {
-        console.error("❌ Failed to award registration bonus:", error);
+        console.error("❌ Failed to award email verification bonus:", error);
       }
     },
-  },
-  emailVerification: {
-    sendOnSignUp: false, // Don't send automatically on signup
     sendVerificationEmail: async ({ user, url }) => {
       // Use Resend for email sending (works in dev and production)
       const resend = new Resend(process.env.RESEND_API_KEY);
@@ -69,7 +79,7 @@ export const auth = betterAuth({
                   user.name || "there"
                 },</p>
                 <p style="font-size: 16px; color: #374151; margin-bottom: 30px;">
-                  Thank you for signing up! Please verify your email address to complete your registration and unlock all features.
+                  Thank you for signing up! Please verify your email address to complete your registration and unlock all features. You'll also receive 30 welcome coins after verification!
                 </p>
                 <div style="text-align: center; margin: 40px 0;">
                   <a href="${url}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">

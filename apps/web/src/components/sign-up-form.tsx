@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { useRouter } from "next/navigation"; // Import useRouter from next/navigation for Next.js 13+ but i use next js 15 ( "next": "15.5.4",)
+import { useState } from "react";
 
 export default function SignUpForm({
   onSwitchToSignIn,
@@ -15,6 +16,9 @@ export default function SignUpForm({
 }) {
   const router = useRouter(); // for navigation
   const { isPending, refetch } = authClient.useSession(); // Destructure refetch here
+  const [showEmailSent, setShowEmailSent] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const form = useForm({
     defaultValues: {
@@ -31,9 +35,13 @@ export default function SignUpForm({
         },
         {
           onSuccess: () => {
-            refetch(); // Call refetch from the hook
-            router.push("/onboarding");
-            toast.success("Sign up successful");
+            setUserEmail(value.email);
+            setShowEmailSent(true);
+            toast.success(
+              "Account created! Please check your email to verify your account."
+            );
+            // Don't redirect immediately, let user verify email first
+            // router.push("/onboarding");
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
@@ -50,8 +58,91 @@ export default function SignUpForm({
     },
   });
 
+  const resendVerificationEmail = async () => {
+    try {
+      setResendCooldown(60); // 60 second cooldown
+
+      await authClient.sendVerificationEmail({
+        email: userEmail,
+      });
+
+      toast.success("Verification email sent! Check your inbox.");
+
+      // Start countdown
+      const interval = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (error: any) {
+      console.error("Resend verification error:", error);
+      toast.error(error.message || "Failed to resend verification email");
+      setResendCooldown(0);
+    }
+  };
+
   if (isPending) {
     return <Loader />;
+  }
+
+  if (showEmailSent) {
+    return (
+      <div className="w-full p-8 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 transform transition-all duration-300">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+            Check Your Email
+          </h1>
+          <p className="text-gray-600 mb-4">
+            We've sent a verification link to:
+          </p>
+          <p className="text-indigo-600 font-semibold mb-6">{userEmail}</p>
+          <p className="text-sm text-gray-500 mb-6">
+            Click the link in the email to verify your account and complete your
+            registration.
+          </p>
+
+          <div className="space-y-3">
+            <Button
+              onClick={resendVerificationEmail}
+              disabled={resendCooldown > 0}
+              variant="outline"
+              className="w-full"
+            >
+              {resendCooldown > 0
+                ? `Resend in ${resendCooldown}s`
+                : "Resend Verification Email"}
+            </Button>
+
+            <Button
+              variant="link"
+              onClick={() => setShowEmailSent(false)}
+              className="w-full text-indigo-500 hover:text-indigo-700"
+            >
+              Back to Sign Up
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -787,7 +787,7 @@ export default function ListingDetailPage() {
               {/* Shipping Info */}
               <div className="mb-4 text-xs md:text-sm space-y-2 p-3 bg-muted/50 rounded-lg">
                 <p className="flex justify-between">
-                  <span className="text-muted-foreground">Ship to:</span>g
+                  <span className="text-muted-foreground">Ship to:</span>
                   <span className="font-medium">Ethiopia</span>
                 </p>
                 <p className="flex justify-between">
