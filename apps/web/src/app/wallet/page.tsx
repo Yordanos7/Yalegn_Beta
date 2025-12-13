@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { CoinTestButton } from "@/components/CoinTestButton";
 
 export default function WalletPage() {
   const { isSidebarOpen, toggleSidebar } = useSidebar();
@@ -182,6 +183,14 @@ export default function WalletPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Coin Test Buttons (Development Only) */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Test Coin Rewards</h2>
+            <CoinTestButton />
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">

@@ -27,37 +27,53 @@ const defaultSections = [
   {
     title: "Product",
     links: [
-      { name: "Overview", href: "#" },
-      { name: "Pricing", href: "#" },
-      { name: "Marketplace", href: "#" },
-      { name: "Features", href: "#" },
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Marketplace", href: "/marketplace" },
+      { name: "Freelancers", href: "/freelancers" },
+      { name: "How It Works", href: "/about" },
     ],
   },
   {
-    title: "Company",
+    title: "Account",
     links: [
-      { name: "About", href: "#" },
-      { name: "Team", href: "#" },
-      { name: "Blog", href: "#" },
-      { name: "Careers", href: "#" },
+      { name: "Profile", href: "/profile" },
+      { name: "Wallet", href: "/wallet" },
+      { name: "Messages", href: "/messages" },
+      { name: "Applications", href: "/applications" },
     ],
   },
   {
-    title: "Resources",
+    title: "Support",
     links: [
-      { name: "Help", href: "#" },
-      { name: "Sales", href: "#" },
-      { name: "Advertise", href: "#" },
-      { name: "Privacy", href: "#" },
+      { name: "About Us", href: "/about" },
+      { name: "Contact", href: "/messages" },
+      { name: "Help Center", href: "/about" },
+      { name: "Community", href: "/freelancers" },
     ],
   },
 ];
 
 const defaultSocialLinks = [
-  { icon: <FaInstagram className="size-5" />, href: "#", label: "Instagram" },
-  { icon: <FaFacebook className="size-5" />, href: "#", label: "Facebook" },
-  { icon: <FaTwitter className="size-5" />, href: "#", label: "Twitter" },
-  { icon: <FaLinkedin className="size-5" />, href: "#", label: "LinkedIn" },
+  {
+    icon: <FaInstagram className="size-5" />,
+    href: "https://instagram.com/yalegn",
+    label: "Instagram",
+  },
+  {
+    icon: <FaFacebook className="size-5" />,
+    href: "https://facebook.com/yalegn",
+    label: "Facebook",
+  },
+  {
+    icon: <FaTwitter className="size-5" />,
+    href: "https://twitter.com/yalegn",
+    label: "Twitter",
+  },
+  {
+    icon: <FaLinkedin className="size-5" />,
+    href: "https://linkedin.com/company/yalegn",
+    label: "LinkedIn",
+  },
 ];
 
 const defaultLegalLinks = [

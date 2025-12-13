@@ -306,9 +306,9 @@ export default function Dashboard() {
             <div className="flex flex-wrap items-center justify-center sm:justify-end space-x-2 sm:space-x-4">
               <NotificationBell />
               <CoinDisplay />
-              <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg px-4 py-2 mt-2 sm:mt-0">
+              {/* <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg px-4 py-2 mt-2 sm:mt-0">
                 Create New Listing
-              </Button>
+              </Button> */}
             </div>
           </header>
 

@@ -53,8 +53,8 @@ export default function SignInForm({
   }
 
   return (
-    <div className="w-full max-w-md p-8 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl transform transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-      <h1 className="mb-8 text-center text-4xl font-serif font-bold text-gray-800">
+    <div className="w-full p-8 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 transform transition-all duration-300 hover:shadow-[0_0_30px_rgba(99,102,241,0.15)] hover:scale-[1.02]">
+      <h1 className="mb-8 text-center text-4xl font-serif font-bold text-gray-800 animate-fade-in">
         Welcome to Yalegn
       </h1>
       <p className="mb-6 text-center text-gray-600 font-sans hover:text-gold-600">
