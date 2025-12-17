@@ -95,6 +95,123 @@ export const userRouter = router({
       return userData;
     }),
 
+  verifyEmail: publicProcedure
+    .input(
+      z.object({
+        token: z.string(),
+        email: z.string().email(),
+      })
+    )
+    .mutation(async ({ ctx: { prisma }, input }) => {
+      try {
+        // Find user by email and token
+        const user = await prisma.user.findFirst({
+          where: {
+            email: input.email,
+            emailVerificationToken: input.token,
+            emailVerificationExpires: {
+              gte: new Date(), // Token must not be expired
+            },
+          },
+        });
+
+        if (!user) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid or expired verification token",
+          });
+        }
+
+        // Check if already verified
+        if (user.emailVerified) {
+          return {
+            message: "Email already verified",
+            alreadyVerified: true,
+          };
+        }
+
+        // Update user: verify email, clear token, add coins
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            emailVerified: true,
+            emailVerificationToken: null,
+            emailVerificationExpires: null,
+            coins: {
+              increment: 30, // Award 30 welcome coins
+            },
+          },
+        });
+
+        return {
+          message: "Email verified successfully! You've earned 30 coins.",
+          alreadyVerified: false,
+        };
+      } catch (error: any) {
+        console.error("Error verifying email:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error.message || "Failed to verify email",
+        });
+      }
+    }),
+
+  sendVerificationEmail: protectedProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx: { prisma, user }, input }) => {
+      if (!user?.id || user.id !== input.userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authorized",
+        });
+      }
+
+      try {
+        const userData = await prisma.user.findUnique({
+          where: { id: input.userId },
+          select: { email: true, emailVerified: true, name: true },
+        });
+
+        if (!userData?.email) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "No email address found",
+          });
+        }
+
+        if (userData.emailVerified) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Email already verified",
+          });
+        }
+
+        // Generate verification token (valid for 24 hours)
+        const token = crypto.randomBytes(32).toString("hex");
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+        // Save token to database
+        await prisma.user.update({
+          where: { id: input.userId },
+          data: {
+            emailVerificationToken: token,
+            emailVerificationExpires: expiresAt,
+          },
+        });
+
+        return {
+          message: "Verification token generated",
+          token,
+        };
+      } catch (error: any) {
+        console.error("Error generating verification token:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error.message || "Failed to generate verification token",
+        });
+      }
+    }),
+
   uploadProfileImage: protectedProcedure
     .input(z.object({ imageData: z.string() })) // Accept base64 image data
     .mutation(async ({ ctx: { user, prisma, req, res }, input }) => {
@@ -1077,17 +1194,46 @@ export const userRouter = router({
         );
 
         if (!response.ok) {
-          const error = await response.text();
-          console.error("Better-auth verification error:", error);
-          throw new Error("Failed to send verification email");
+          const errorText = await response.text();
+          console.error("Better-auth verification error:", errorText);
+          
+          // Parse error and provide user-friendly message
+          let userMessage = "Failed to send verification email.";
+          
+          try {
+            const errorData = JSON.parse(errorText);
+            if (errorData.message?.includes("validation_error") || 
+                errorData.message?.includes("only send testing emails")) {
+              const testEmail = process.env.RESEND_ACCOUNT_EMAIL || "admin@example.com";
+              userMessage = `⚠️ Email verification is currently in test mode. Only ${testEmail} can receive verification emails. Please contact support for assistance.`;
+            }
+          } catch (e) {
+            // If error parsing fails, use default message
+            if (errorText.includes("validation_error") || errorText.includes("only send testing emails")) {
+              const testEmail = process.env.RESEND_ACCOUNT_EMAIL || "yordanosyohans7@gmail.com";
+              userMessage = `Email verification is currently available only for ${testEmail} in test mode.`;
+            }
+          }
+          
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: userMessage,
+          });
         }
 
-        return { message: "Verification email sent successfully!" };
-      } catch (error) {
+        return { message: "Verification email sent successfully! Please check your inbox." };
+      } catch (error: any) {
         console.error("Error sending verification email:", error);
+        
+        // If it's already a TRPCError, re-throw it
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        
+        // Otherwise, wrap it in a generic error
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send verification email.",
+          message: error.message || "Failed to send verification email. Please try again later.",
         });
       }
     }

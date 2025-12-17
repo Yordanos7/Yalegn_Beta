@@ -130,23 +130,30 @@ export default function UserProfilePage() {
   // Email verification state
   const [isSendingVerification, setIsSendingVerification] = useState(false);
 
+  // Add tRPC mutation for sending verification email
+  const sendVerificationTokenMutation =
+    trpc.user.sendVerificationEmail.useMutation();
+
   const handleSendVerificationEmail = async () => {
-    if (!userProfile?.email || !userProfile?.name) {
+    if (!userProfile?.email || !userProfile?.name || !userId) {
       toast.error("User information not found");
       return;
     }
 
     setIsSendingVerification(true);
     try {
-      // Generate verification token
-      const token = btoa(`${userProfile.email}:${Date.now()}`);
+      // Generate token via backend
+      const result = await sendVerificationTokenMutation.mutateAsync({
+        userId: userId,
+      });
+
       const verificationLink = `${
         window.location.origin
-      }/verify-email?token=${token}&email=${encodeURIComponent(
+      }/verify-email?token=${result.token}&email=${encodeURIComponent(
         userProfile.email
       )}`;
 
-      // Use Web3Forms (100% free, no setup required)
+      // Send email via Web3Forms
       const success = await sendVerificationEmail({
         to: userProfile.email,
         name: userProfile.name,
@@ -158,9 +165,6 @@ export default function UserProfilePage() {
           description:
             "Check your inbox and click the verification link to get 30 welcome coins!",
         });
-
-        // Refetch user profile to update emailVerified status
-        refetchUserProfile();
       } else {
         throw new Error("Failed to send verification email");
       }

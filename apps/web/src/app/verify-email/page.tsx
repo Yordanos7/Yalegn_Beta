@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/loader";
+import { trpc } from "@/utils/trpc";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -20,37 +20,39 @@ export default function VerifyEmailPage() {
   const token = searchParams.get("token");
   const email = searchParams.get("email");
 
+  // Add tRPC mutation for verifying email
+  const verifyEmailMutation = trpc.user.verifyEmail.useMutation();
+
   useEffect(() => {
-    if (!token) {
+    if (!token || !email) {
       setVerificationStatus("error");
       setIsVerifying(false);
       return;
     }
 
     verifyEmail();
-  }, [token]);
+  }, [token, email]);
 
   const verifyEmail = async () => {
     try {
       setIsVerifying(true);
 
-      const response = await authClient.verifyEmail({
-        query: {
-          token: token!,
-        },
+      if (!token || !email) {
+        throw new Error("Missing verification token or email");
+      }
+
+      const result = await verifyEmailMutation.mutateAsync({
+        token: token,
+        email: email,
       });
 
-      if (response.data) {
-        setVerificationStatus("success");
-        toast.success("Email verified successfully!");
+      setVerificationStatus("success");
+      toast.success(result.message);
 
-        // Redirect to profile after 2 seconds to show verification success
-        setTimeout(() => {
-          router.push("/profile?verified=true");
-        }, 2000);
-      } else {
-        setVerificationStatus("error");
-      }
+      // Redirect to profile after 2 seconds
+      setTimeout(() => {
+        router.push("/profile?verified=true");
+      }, 2000);
     } catch (error: any) {
       console.error("Email verification error:", error);
 
