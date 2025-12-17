@@ -17,6 +17,9 @@ import { ProfileEditForm } from "@/components/profile-edit-form"; // Import Prof
 import { ProfileImageUpload } from "@/components/profile-image-upload"; // Import ProfileImageUpload
 import { PortfolioForm } from "@/components/portfolio-form"; // Import PortfolioForm
 import { Switch } from "@/components/ui/switch"; // Import Switch component
+import { authClient } from "@/lib/auth-client";
+import { sendVerificationEmail } from "@/lib/web3forms";
+import EmailJSTest from "@/components/EmailJSTest";
 import {
   Mail,
   Phone,
@@ -128,36 +131,42 @@ export default function UserProfilePage() {
   const [isSendingVerification, setIsSendingVerification] = useState(false);
 
   const handleSendVerificationEmail = async () => {
+    if (!userProfile?.email || !userProfile?.name) {
+      toast.error("User information not found");
+      return;
+    }
+
     setIsSendingVerification(true);
     try {
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000"
-        }/api/auth/send-verification-email`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // Important: include cookies for authentication
-          body: JSON.stringify({
-            email: userProfile?.email,
-            callbackURL: `${window.location.origin}/profile?verified=true`,
-          }),
-        }
-      );
+      // Generate verification token
+      const token = btoa(`${userProfile.email}:${Date.now()}`);
+      const verificationLink = `${
+        window.location.origin
+      }/verify-email?token=${token}&email=${encodeURIComponent(
+        userProfile.email
+      )}`;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Better-auth error:", errorText);
+      // Use Web3Forms (100% free, no setup required)
+      const success = await sendVerificationEmail({
+        to: userProfile.email,
+        name: userProfile.name,
+        verificationLink: verificationLink,
+      });
+
+      if (success) {
+        toast.success("Verification email sent! 📧", {
+          description:
+            "Check your inbox and click the verification link to get 30 welcome coins!",
+        });
+
+        // Refetch user profile to update emailVerified status
+        refetchUserProfile();
+      } else {
         throw new Error("Failed to send verification email");
       }
-
-      toast.success("Verification email sent! Please check your inbox.");
-      refetchUserProfile(); // Refetch user profile to update emailVerified status
     } catch (error: any) {
       console.error("Error sending verification email:", error);
-      toast.error("Failed to send verification email.", {
+      toast.error("Failed to send verification email", {
         description: error.message || "Please try again later.",
       });
     } finally {
@@ -684,6 +693,11 @@ export default function UserProfilePage() {
                   </div>
                 </div>
               )}
+
+              {/* EmailJS Test Component - Remove after testing */}
+              <div className="mt-4">
+                <EmailJSTest />
+              </div>
             </CardContent>
           </Card>
 

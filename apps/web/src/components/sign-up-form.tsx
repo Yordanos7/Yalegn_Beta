@@ -8,6 +8,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { useRouter } from "next/navigation"; // Import useRouter from next/navigation for Next.js 13+ but i use next js 15 ( "next": "15.5.4",)
 import { useState } from "react";
+import { sendVerificationEmail } from "@/lib/web3forms";
 
 export default function SignUpForm({
   onSwitchToSignIn,
@@ -18,7 +19,9 @@ export default function SignUpForm({
   const { isPending, refetch } = authClient.useSession(); // Destructure refetch here
   const [showEmailSent, setShowEmailSent] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [userName, setUserName] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [shouldSendEmail, setShouldSendEmail] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -27,27 +30,41 @@ export default function SignUpForm({
       name: "",
     },
     onSubmit: async ({ value }) => {
-      await authClient.signUp.email(
-        {
-          email: value.email,
-          password: value.password,
-          name: value.name,
-        },
-        {
-          onSuccess: () => {
-            setUserEmail(value.email);
-            setShowEmailSent(true);
-            toast.success(
-              "Account created! Please check your email to verify your account."
-            );
-            // Don't redirect immediately, let user verify email first
-            // router.push("/onboarding");
+      console.log("🚀 CLIENT DEBUG - Starting signup process");
+      console.log("📧 Email:", value.email);
+      console.log("👤 Name:", value.name);
+
+      try {
+        await authClient.signUp.email(
+          {
+            email: value.email,
+            password: value.password,
+            name: value.name,
           },
-          onError: (error) => {
-            toast.error(error.error.message || error.error.statusText);
-          },
-        }
-      );
+          {
+            onSuccess: (data) => {
+              console.log("✅ CLIENT DEBUG - Signup successful!");
+              console.log("📧 Response data:", data);
+              setUserEmail(value.email);
+              setUserName(value.name);
+              setShowEmailSent(true);
+              setShouldSendEmail(true); // Trigger EmailJS
+              toast.success("Account created successfully! 🎉");
+              console.log(
+                "🎯 CLIENT DEBUG - EmailJS will send verification email"
+              );
+            },
+            onError: (error) => {
+              console.error("❌ CLIENT DEBUG - Signup failed!");
+              console.error("❌ Error:", error);
+              toast.error(error.error.message || error.error.statusText);
+            },
+          }
+        );
+      } catch (error) {
+        console.error("❌ CLIENT DEBUG - Signup exception:", error);
+        toast.error("Signup failed. Please try again.");
+      }
     },
     validators: {
       onSubmit: z.object({
@@ -92,10 +109,36 @@ export default function SignUpForm({
   if (showEmailSent) {
     return (
       <div className="w-full p-8 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 transform transition-all duration-300">
+        {/* EmailJS Handler - sends email automatically */}
+        {/* Auto-send verification email using Web3Forms */}
+        {shouldSendEmail &&
+          (() => {
+            const token = btoa(`${userEmail}:${Date.now()}`);
+            const verificationLink = `${
+              window.location.origin
+            }/verify-email?token=${token}&email=${encodeURIComponent(
+              userEmail
+            )}`;
+
+            sendVerificationEmail({
+              to: userEmail,
+              name: userName,
+              verificationLink: verificationLink,
+            }).then((success) => {
+              if (success) {
+                console.log("✅ Verification email sent automatically");
+              } else {
+                console.error("❌ Failed to send verification email");
+              }
+              setShouldSendEmail(false);
+            });
+
+            return null;
+          })()}
         <div className="text-center">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
-              className="w-8 h-8 text-blue-600"
+              className="w-8 h-8 text-green-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -104,23 +147,36 @@ export default function SignUpForm({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                d="M5 13l4 4L19 7"
               />
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            Check Your Email
+            Account Created! 🎉
           </h1>
           <p className="text-gray-600 mb-4">
-            We've sent a verification link to:
+            Welcome to Yalegn! We've sent a verification email to:
           </p>
           <p className="text-indigo-600 font-semibold mb-6">{userEmail}</p>
-          <p className="text-sm text-gray-500 mb-6">
-            Click the link in the email to verify your account and complete your
-            registration.
-          </p>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-blue-800 mb-2">
+              <strong>You have two options:</strong>
+            </p>
+            <ul className="text-sm text-blue-700 text-left space-y-1">
+              <li>• ✅ Verify now and get 30 welcome coins</li>
+              <li>• ⏰ Skip for now and verify later from your profile</li>
+            </ul>
+          </div>
 
           <div className="space-y-3">
+            <Button
+              onClick={() => router.push("/onboarding")}
+              className="w-full bg-indigo-600 hover:bg-indigo-700"
+            >
+              Continue to Onboarding
+            </Button>
+
             <Button
               onClick={resendVerificationEmail}
               disabled={resendCooldown > 0}
@@ -135,7 +191,7 @@ export default function SignUpForm({
             <Button
               variant="link"
               onClick={() => setShowEmailSent(false)}
-              className="w-full text-indigo-500 hover:text-indigo-700"
+              className="w-full text-gray-500 hover:text-gray-700"
             >
               Back to Sign Up
             </Button>

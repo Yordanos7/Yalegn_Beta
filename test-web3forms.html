@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test Web3Forms</title>
+  </head>
+  <body>
+    <h2>Test Web3Forms Access Key</h2>
+    <form action="https://api.web3forms.com/submit" method="POST">
+      <input
+        type="hidden"
+        name="access_key"
+        value="7ba7823c-1e84-4f5b-bb05-1ce1d1f86667"
+      />
+      <input type="hidden" name="subject" value="Test Email" />
+      <input type="email" name="email" placeholder="Your Email" required />
+      <textarea name="message" placeholder="Your Message" required></textarea>
+      <button type="submit">Send Test Email</button>
+    </form>
+  </body>
+</html>

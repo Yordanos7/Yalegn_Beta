@@ -44,9 +44,9 @@ export default function VerifyEmailPage() {
         setVerificationStatus("success");
         toast.success("Email verified successfully!");
 
-        // Redirect to dashboard after 2 seconds
+        // Redirect to profile after 2 seconds to show verification success
         setTimeout(() => {
-          router.push("/dashboard");
+          router.push("/profile?verified=true");
         }, 2000);
       } else {
         setVerificationStatus("error");
@@ -138,14 +138,14 @@ export default function VerifyEmailPage() {
                 Email Verified!
               </h1>
               <p className="text-gray-600 mb-6">
-                Your email has been successfully verified. You'll be redirected
-                to your dashboard shortly.
+                Your email has been successfully verified! You've earned 30
+                welcome coins. You'll be redirected to your profile shortly.
               </p>
               <Button
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push("/profile?verified=true")}
                 className="w-full bg-green-600 hover:bg-green-700"
               >
-                Go to Dashboard
+                Go to Profile
               </Button>
             </>
           )}

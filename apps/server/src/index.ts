@@ -1,5 +1,11 @@
 // apps/server/src/index.ts
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+
+// Load environment variables in the correct order
+// .env.local takes priority over .env
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { createContext } from "@my-better-t-app/api/context";
 import { appRouter } from "@my-better-t-app/api/routers/index";
@@ -8,8 +14,8 @@ import express from "express";
 import { auth } from "@my-better-t-app/auth";
 import { toNodeHandler } from "better-auth/node";
 import multer from "multer";
-import path from "path";
 import fs from "fs";
+// Removed email router - using client-side Web3Forms instead
 import http from "http"; // Import http module
 import { Server } from "socket.io"; // Import Server from socket.io
 
@@ -102,6 +108,8 @@ app.use(express.urlencoded({ limit: "50mb", extended: true })); // Also increase
 // Better-auth handles all /api/auth/* routes including email verification
 app.use("/api/auth", toNodeHandler(auth));
 
+// Removed email routes - using client-side Web3Forms instead
+
 app.use(
   "/trpc",
   createExpressMiddleware({
@@ -120,6 +128,20 @@ server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
   console.log(`tRPC endpoint: http://localhost:${port}/trpc`);
   console.log(`Socket.io listening on port ${port}`);
+
+  // Debug environment variables
+  console.log("🔍 Environment Variables Check:");
+  console.log(
+    `  - RESEND_API_KEY: ${
+      process.env.RESEND_API_KEY
+        ? `Present (${process.env.RESEND_API_KEY.substring(0, 8)}...)`
+        : "❌ MISSING"
+    }`
+  );
+  console.log(
+    `  - RESEND_FROM_EMAIL: ${process.env.RESEND_FROM_EMAIL || "❌ MISSING"}`
+  );
+  console.log(`  - NODE_ENV: ${process.env.NODE_ENV || "undefined"}`);
 });
 
 // Socket.io connection handling
