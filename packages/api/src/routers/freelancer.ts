@@ -53,7 +53,10 @@ export const freelancerRouter = router({
 
       const whereClause: any = {
         role: Role.PROVIDER, // Only fetch users with the PROVIDER role
-        accountType: "INDIVIDUAL", // Only show individual freelancers
+        OR: [
+          { accountType: "INDIVIDUAL" },
+          { accountType: null }, // Allow null as default for individual
+        ],
         profile: {
           isPublicFreelancer: true, // Only show freelancers who have posted themselves publicly
         },

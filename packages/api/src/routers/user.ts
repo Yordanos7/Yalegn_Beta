@@ -444,15 +444,18 @@ export const userRouter = router({
       }
 
       try {
-        const profile = await prisma.profile.findUnique({
+        let profile = await prisma.profile.findUnique({
           where: { userId: input.userId },
           select: { id: true },
         });
 
         if (!profile) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "User profile not found.",
+          // Create profile if it doesn't exist
+          profile = await prisma.profile.create({
+            data: {
+              userId: input.userId,
+            },
+            select: { id: true },
           });
         }
 
@@ -460,8 +463,8 @@ export const userRouter = router({
           data: {
             profileId: profile.id,
             title: input.title,
-            description: input.description, // Added description
-            link: input.link,
+            description: input.description,
+            link: input.link || "", // Ensure link is not null if required by schema, though schema says String (not optional in model but optional in input)
           },
         });
 
@@ -967,7 +970,10 @@ export const userRouter = router({
         },
       });
 
-      if (currentUser?.accountType !== AccountType.INDIVIDUAL) {
+      if (
+        currentUser?.accountType &&
+        currentUser?.accountType !== AccountType.INDIVIDUAL
+      ) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message:

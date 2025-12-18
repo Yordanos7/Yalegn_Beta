@@ -38,7 +38,7 @@ export const auth = betterAuth({
     },
   },
   emailVerification: {
-    sendOnSignUp: false, // Don't send automatically - user clicks button
+    sendOnSignUp: true, // Send automatically on signup
     autoSignInAfterVerification: true,
     onEmailVerified: async (user: {
       id: string;

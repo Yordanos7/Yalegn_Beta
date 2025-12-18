@@ -8,7 +8,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { useRouter } from "next/navigation"; // Import useRouter from next/navigation for Next.js 13+ but i use next js 15 ( "next": "15.5.4",)
 import { useState } from "react";
-import { sendVerificationEmail } from "@/lib/web3forms";
+// import { sendVerificationEmail } from "@/lib/web3forms"; // Removed
 
 export default function SignUpForm({
   onSwitchToSignIn,
@@ -21,7 +21,7 @@ export default function SignUpForm({
   const [userEmail, setUserEmail] = useState("");
   const [userName, setUserName] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [shouldSendEmail, setShouldSendEmail] = useState(false);
+  // const [shouldSendEmail, setShouldSendEmail] = useState(false); // Removed
 
   const form = useForm({
     defaultValues: {
@@ -48,7 +48,7 @@ export default function SignUpForm({
               setUserEmail(value.email);
               setUserName(value.name);
               setShowEmailSent(true);
-              setShouldSendEmail(true); // Trigger EmailJS
+              // setShouldSendEmail(true); // Handled by server
               toast.success("Account created successfully! 🎉");
               console.log(
                 "🎯 CLIENT DEBUG - EmailJS will send verification email"
@@ -111,30 +111,7 @@ export default function SignUpForm({
       <div className="w-full p-8 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 transform transition-all duration-300">
         {/* EmailJS Handler - sends email automatically */}
         {/* Auto-send verification email using Web3Forms */}
-        {shouldSendEmail &&
-          (() => {
-            const token = btoa(`${userEmail}:${Date.now()}`);
-            const verificationLink = `${
-              window.location.origin
-            }/verify-email?token=${token}&email=${encodeURIComponent(
-              userEmail
-            )}`;
-
-            sendVerificationEmail({
-              to: userEmail,
-              name: userName,
-              verificationLink: verificationLink,
-            }).then((success) => {
-              if (success) {
-                console.log("✅ Verification email sent automatically");
-              } else {
-                console.error("❌ Failed to send verification email");
-              }
-              setShouldSendEmail(false);
-            });
-
-            return null;
-          })()}
+        {/* Auto-send handled by better-auth server-side */}
         <div className="text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg

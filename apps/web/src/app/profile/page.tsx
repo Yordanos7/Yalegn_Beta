@@ -19,7 +19,7 @@ import { PortfolioForm } from "@/components/portfolio-form"; // Import Portfolio
 import { Switch } from "@/components/ui/switch"; // Import Switch component
 import { authClient } from "@/lib/auth-client";
 import { sendVerificationEmail } from "@/lib/web3forms";
-import EmailJSTest from "@/components/EmailJSTest";
+// import EmailJSTest from "@/components/EmailJSTest"; // Removed
 import {
   Mail,
   Phone,
@@ -408,7 +408,8 @@ export default function UserProfilePage() {
               </div>
               <div className="flex items-center space-x-4">
                 {isOwnProfile &&
-                  session?.user?.accountType === "INDIVIDUAL" &&
+                  (!session?.user?.accountType ||
+                    session?.user?.accountType === "INDIVIDUAL") &&
                   profileCompletion === 100 && (
                     <div className="flex items-center space-x-2">
                       <Switch
@@ -698,10 +699,7 @@ export default function UserProfilePage() {
                 </div>
               )}
 
-              {/* EmailJS Test Component - Remove after testing */}
-              <div className="mt-4">
-                <EmailJSTest />
-              </div>
+              {/* EmailJS Test Component - Removed */}
             </CardContent>
           </Card>
 
