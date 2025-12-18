@@ -220,14 +220,15 @@ export default function CartPage() {
   const total = subtotal + serviceFee;
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
 
       {/* Main Content */}
-      <main className="container mx-auto p-8 grid grid-cols-3 gap-8">
-        {/* Left Column: Cart Items */}
-        <div className="col-span-2">
-          <h1 className="text-3xl font-bold mb-6">Your Cart & Orders</h1>
+      <main className="container mx-auto p-4 md:p-8 transition-all duration-300">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Cart Items */}
+          <div className="lg:col-span-2">
+            <h1 className="text-2xl md:text-3xl font-bold mb-6">Your Cart & Orders</h1>
 
           {/* Cart Items Section */}
           <section className="mb-8">
@@ -239,16 +240,25 @@ export default function CartPage() {
                 cartItems.map((item) => (
                   <Card
                     key={item.id}
-                    className="flex items-center p-4 shadow-sm"
+                    className="flex flex-col sm:flex-row items-start sm:items-center p-4 shadow-sm gap-4"
                   >
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="w-20 h-20 object-cover rounded-md mr-4"
-                    />
-                    <div className="flex-1">
-                      <h2 className="text-lg font-semibold">{item.name}</h2>
-                      <div className="flex items-center text-sm text-gray-600 mb-1">
+                    <div className="flex items-center w-full sm:w-auto">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-20 h-20 object-cover rounded-md mr-4"
+                      />
+                      <div className="flex-1 sm:hidden">
+                        <h2 className="text-lg font-semibold line-clamp-1">{item.name}</h2>
+                        <p className="text-lg font-bold text-primary">
+                          ETB {(item.price * item.quantity).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 w-full">
+                      <h2 className="hidden sm:block text-lg font-semibold">{item.name}</h2>
+                      <div className="flex items-center text-sm text-muted-foreground mb-1">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
@@ -268,40 +278,49 @@ export default function CartPage() {
                         <span className="ml-2">{item.provider}</span>
                       </div>
                       {item.type === "service" && item.isInstant && (
-                        <div className="flex items-center text-xs text-gray-500">
+                        <div className="flex items-center text-xs text-green-600 font-medium">
                           <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
                           Instant
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center space-x-2 mr-4">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => updateQuantity(item.id, -1)}
-                        disabled={item.quantity <= 1}
-                      >
-                        <Minus size={16} />
-                      </Button>
-                      <span>{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => updateQuantity(item.id, 1)}
-                      >
-                        <Plus size={16} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeItem(item.id)}
-                      >
-                        <Trash2 size={16} />
-                      </Button>
+
+                    <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => updateQuantity(item.id, -1)}
+                          disabled={item.quantity <= 1}
+                        >
+                          <Minus size={14} />
+                        </Button>
+                        <span className="w-8 text-center font-medium">{item.quantity}</span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => updateQuantity(item.id, 1)}
+                        >
+                          <Plus size={14} />
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <p className="hidden sm:block text-lg font-bold text-primary min-w-[100px] text-right">
+                          ETB {(item.price * item.quantity).toFixed(2)}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => removeItem(item.id)}
+                        >
+                          <Trash2 size={18} />
+                        </Button>
+                      </div>
                     </div>
-                    <p className="text-lg font-semibold">
-                      ETB {(item.price * item.quantity).toFixed(2)}
-                    </p>
                   </Card>
                 ))
               )}
@@ -322,18 +341,18 @@ export default function CartPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-between mt-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
               <div className="flex items-center space-x-2">
                 <Switch
                   id="save-for-later"
                   checked={saveForLater}
                   onCheckedChange={setSaveForLater}
                 />
-                <Label htmlFor="save-for-later">Save for later</Label>
+                <Label htmlFor="save-for-later" className="cursor-pointer">Save for later</Label>
               </div>
               <Button
                 variant="ghost"
-                className="text-gray-600 hover:text-gray-900"
+                className="text-muted-foreground hover:text-foreground w-full sm:w-auto"
               >
                 <ArrowLeft size={16} className="mr-2" />
                 Continue shopping
@@ -457,142 +476,150 @@ export default function CartPage() {
         </div>
 
         {/* Right Column: Order Summary */}
-        <Card className="col-span-1 p-6 shadow-sm h-fit">
-          <h2 className="text-xl font-bold mb-4">Order Summary</h2>
-          <div className="space-y-2 mb-4">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span>ETB {subtotal.toFixed(2)}</span>
+        <div className="lg:col-span-1 space-y-6">
+          <Card className="p-6 shadow-sm h-fit">
+            <h2 className="text-xl font-bold mb-4">Order Summary</h2>
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Subtotal</span>
+                <span>ETB {subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>Service Fee</span>
+                <span>ETB {serviceFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold border-t border-border pt-3 mt-3">
+                <span>Total</span>
+                <span className="text-primary">ETB {total.toFixed(2)}</span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span>Service Fee</span>
-              <span>ETB {serviceFee.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-2">
-              <span>Total</span>
-              <span>ETB {total.toFixed(2)}</span>
-            </div>
-          </div>
 
-          <Button className="w-full bg-[#E0B44B] hover:bg-[#D0A43B] text-white font-semibold rounded-md py-3">
-            Proceed to payment
-          </Button>
+            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-md py-6 text-lg shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]">
+              Proceed to payment
+            </Button>
 
-          {/* Payment Details Form */}
-          <div className="mt-8 p-4 border rounded-md shadow-sm">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <Banknote size={20} className="mr-2" /> Payment Details
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="account-number">Account Number</Label>
-                <Input
-                  id="account-number"
-                  type="text"
-                  placeholder="Enter account number"
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="account-owner">Account Owner</Label>
-                <Input
-                  id="account-owner"
-                  type="text"
-                  placeholder="Enter account owner name"
-                  value={accountOwner}
-                  onChange={(e) => setAccountOwner(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="bank-selection">Select Bank</Label>
-                <Select onValueChange={setSelectedBank} value={selectedBank}>
-                  <SelectTrigger id="bank-selection">
-                    <SelectValue placeholder="Select a bank" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CBE">
-                      Commercial Bank of Ethiopia (CBE)
-                    </SelectItem>
-                    <SelectItem value="Awash">Awash Bank</SelectItem>
-                    <SelectItem value="Abyssinia">Bank of Abyssinia</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="payment-sender-link">
-                  Payment Sender Link / Transaction ID
-                </Label>
-                <Input
-                  id="payment-sender-link"
-                  type="text"
-                  placeholder="Enter transaction ID or sender link"
-                  value={paymentSenderLink}
-                  onChange={(e) => setPaymentSenderLink(e.target.value)}
-                />
-              </div>
-              <Button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md py-3"
-                onClick={handleSendPaymentData}
-                disabled={
-                  !accountNumber ||
-                  !accountOwner ||
-                  !selectedBank ||
-                  !paymentSenderLink
-                }
-              >
-                Send Payment Data to Admin
-              </Button>
-              <p className="text-sm text-gray-600 mt-2">
-                <span className="font-semibold text-red-500">Important:</span>{" "}
-                Please keep a record of your payment documentation (e.g.,
-                receipt, screenshot) for your reference. This will be crucial if
-                you need to{" "}
-                <Link
-                  href={"/support" as any}
-                  className="text-blue-600 hover:underline"
-                >
-                  contact support
-                </Link>{" "}
-                regarding your payment or delivery.
-              </p>
-            </div>
-          </div>
-
-          {/* Payment Approval Status / Countdown */}
-          <div className="mt-8 p-4 border rounded-md shadow-sm text-center">
-            <h3 className="text-lg font-semibold mb-2">
-              Payment Approval Status
-            </h3>
-            {isSellerApproved ? (
-              <div className="text-lg font-bold text-green-600 mb-2">
-                Seller Approved!
-              </div>
-            ) : paymentApprovalTimeLeft !== null &&
-              paymentApprovalTimeLeft > 0 ? (
-              <>
-                <div className="text-2xl font-bold text-[#E0B44B] mb-2">
-                  {formatTime(paymentApprovalTimeLeft)}
+            {/* Payment Details Form */}
+            <div className="mt-8 pt-8 border-t border-border">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Banknote size={20} className="mr-2 text-primary" /> Payment Details
+              </h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="account-number">Account Number</Label>
+                  <Input
+                    id="account-number"
+                    type="text"
+                    placeholder="Enter account number"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    className="bg-muted/50"
+                  />
                 </div>
-                <Progress
-                  value={(paymentApprovalTimeLeft / (3 * 24 * 60 * 60)) * 100}
-                  className="w-full"
-                />
-              </>
-            ) : (
-              <p className="text-red-500 font-semibold">
-                Payment approval time expired. Please{" "}
-                <Link
-                  href={"/support" as any}
-                  className="text-blue-600 hover:underline"
+                <div className="space-y-2">
+                  <Label htmlFor="account-owner">Account Owner</Label>
+                  <Input
+                    id="account-owner"
+                    type="text"
+                    placeholder="Enter account owner name"
+                    value={accountOwner}
+                    onChange={(e) => setAccountOwner(e.target.value)}
+                    className="bg-muted/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bank-selection">Select Bank</Label>
+                  <Select onValueChange={setSelectedBank} value={selectedBank}>
+                    <SelectTrigger id="bank-selection" className="bg-muted/50">
+                      <SelectValue placeholder="Select a bank" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CBE">
+                        Commercial Bank of Ethiopia (CBE)
+                      </SelectItem>
+                      <SelectItem value="Awash">Awash Bank</SelectItem>
+                      <SelectItem value="Abyssinia">Bank of Abyssinia</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payment-sender-link">
+                    Payment Sender Link / Transaction ID
+                  </Label>
+                  <Input
+                    id="payment-sender-link"
+                    type="text"
+                    placeholder="Enter transaction ID or sender link"
+                    value={paymentSenderLink}
+                    onChange={(e) => setPaymentSenderLink(e.target.value)}
+                    className="bg-muted/50"
+                  />
+                </div>
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md py-4 mt-2"
+                  onClick={handleSendPaymentData}
+                  disabled={
+                    !accountNumber ||
+                    !accountOwner ||
+                    !selectedBank ||
+                    !paymentSenderLink
+                  }
                 >
-                  contact Yalegn Team support
-                </Link>
-                .
-              </p>
-            )}
-          </div>
-        </Card>
+                  Send Payment Data to Admin
+                </Button>
+                <div className="bg-orange-50 dark:bg-orange-950/20 p-3 rounded-md border border-orange-100 dark:border-orange-900/30">
+                  <p className="text-xs text-orange-800 dark:text-orange-200">
+                    <span className="font-bold">Important:</span>{" "}
+                    Please keep a record of your payment documentation (receipt, screenshot). This is crucial if you need to{" "}
+                    <Link
+                      href={"/support" as any}
+                      className="text-blue-600 hover:underline font-medium"
+                    >
+                      contact support
+                    </Link>.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Approval Status / Countdown */}
+            <div className="mt-6 p-4 bg-muted/30 rounded-lg border border-border text-center">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                Payment Approval Status
+              </h3>
+              {isSellerApproved ? (
+                <div className="flex items-center justify-center gap-2 text-green-600 font-bold">
+                  <CheckCircle size={20} />
+                  <span>Seller Approved!</span>
+                </div>
+              ) : paymentApprovalTimeLeft !== null &&
+                paymentApprovalTimeLeft > 0 ? (
+                <div className="space-y-3">
+                  <div className="text-2xl font-mono font-bold text-primary">
+                    {formatTime(paymentApprovalTimeLeft)}
+                  </div>
+                  <Progress
+                    value={(paymentApprovalTimeLeft / (3 * 24 * 60 * 60)) * 100}
+                    className="h-2"
+                  />
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Time remaining for approval</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-destructive font-semibold text-sm">
+                    Approval time expired
+                  </p>
+                  <Link
+                    href={"/support" as any}
+                    className="text-xs text-blue-600 hover:underline block"
+                  >
+                    Contact Yalegn Team support
+                  </Link>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+      </div>
       </main>
     </div>
   );

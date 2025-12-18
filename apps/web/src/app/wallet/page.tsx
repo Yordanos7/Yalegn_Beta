@@ -33,6 +33,9 @@ import {
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { CoinTestButton } from "@/components/CoinTestButton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { NotificationBell } from "@/components/NotificationBell";
+import { CoinDisplay } from "@/components/CoinDisplay";
 
 export default function WalletPage() {
   const { isSidebarOpen, toggleSidebar } = useSidebar();
@@ -103,84 +106,83 @@ export default function WalletPage() {
       />
 
       <main
-        className={`flex-1 p-4 md:p-8 transition-all duration-300 ${
+        className={`flex-1 p-4 md:p-8 bg-background flex flex-col transition-all duration-300 ${
           isSidebarOpen ? "md:ml-[200px]" : "md:ml-[60px]"
         }`}
       >
+        <div className="container mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Wallet</h1>
-          <p className="text-muted-foreground">
-            Manage your funds and transactions
-          </p>
-        </div>
+        <header className="flex flex-col sm:flex-row items-center justify-between mb-4 md:mb-8 bg-card p-4 rounded-lg">
+          <div className="flex items-center mb-4 sm:mb-0">
+            <Avatar className="h-10 w-10 mr-4">
+              <AvatarImage
+                src={userProfile?.image || "/placeholder-avatar.jpg"}
+                alt={userProfile?.name || "User"}
+              />
+              <AvatarFallback>
+                {userProfile?.name
+                  ? userProfile.name.charAt(0).toUpperCase()
+                  : "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="relative w-full sm:w-auto">
+              <h1 className="text-foreground">
+                {isSessionLoading ? (
+                  "Loading..."
+                ) : (
+                  <>
+                    Welcome to Your Wallet,{" "}
+                    <span className="text-primary">
+                      {userProfile?.name || "User"}
+                    </span>
+                    !
+                  </>
+                )}
+              </h1>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-center sm:justify-end space-x-2 sm:space-x-4">
+            <NotificationBell />
+            <CoinDisplay />
+          </div>
+        </header>
 
-        {/* Balance Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-4 md:mb-8">
           {/* Main Balance */}
-          <Card className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <Wallet className="h-4 w-4 mr-2" />
-                Wallet Balance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                ETB {wallet?.balance?.toLocaleString() || "0.00"}
-              </div>
-              <p className="text-xs mt-2 opacity-90">Available to withdraw</p>
-            </CardContent>
+          <Card className="bg-card p-6 rounded-lg flex flex-col items-center justify-center text-center">
+            <Wallet className="text-yellow-500 mb-2" size={32} />
+            <p className="text-2xl font-bold">
+              ETB {wallet?.balance?.toLocaleString() || "0.00"}
+            </p>
+            <p className="text-muted-foreground">Wallet Balance</p>
           </Card>
 
           {/* Coins Balance */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <Coins className="h-4 w-4 mr-2 text-yellow-500" />
-                Coins Balance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {userProfile?.coins?.toLocaleString() || "0"}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Use for platform features
-              </p>
-            </CardContent>
+          <Card className="bg-card p-6 rounded-lg flex flex-col items-center justify-center text-center">
+            <Coins className="text-yellow-500 mb-2" size={32} />
+            <p className="text-2xl font-bold">
+              {userProfile?.coins?.toLocaleString() || "0"}
+            </p>
+            <p className="text-muted-foreground">Coins Balance</p>
           </Card>
 
           {/* Total Earned */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <TrendingUp className="h-4 w-4 mr-2 text-green-500" />
-                Total Earned
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                ETB {stats.totalIn.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">All time</p>
-            </CardContent>
+          <Card className="bg-card p-6 rounded-lg flex flex-col items-center justify-center text-center">
+            <TrendingUp className="text-yellow-500 mb-2" size={32} />
+            <p className="text-2xl font-bold">
+              ETB {stats.totalIn.toLocaleString()}
+            </p>
+            <p className="text-muted-foreground">Total Earned</p>
           </Card>
 
           {/* This Month */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <DollarSign className="h-4 w-4 mr-2 text-blue-500" />
-                This Month
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                ETB {stats.thisMonth.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">Net earnings</p>
-            </CardContent>
+          <Card className="bg-card p-6 rounded-lg flex flex-col items-center justify-center text-center">
+            <DollarSign className="text-yellow-500 mb-2" size={32} />
+            <p className="text-2xl font-bold">
+              ETB {stats.thisMonth.toLocaleString()}
+            </p>
+            <p className="text-muted-foreground">This Month</p>
           </Card>
         </div>
 
@@ -193,22 +195,24 @@ export default function WalletPage() {
         )}
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           <Dialog open={isAddFundsOpen} onOpenChange={setIsAddFundsOpen}>
             <DialogTrigger asChild>
-              <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-                <CardContent className="flex items-center justify-center p-6">
-                  <Plus className="h-6 w-6 mr-3 text-green-500" />
+              <Card className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] border-none bg-card">
+                <CardContent className="flex items-center p-6">
+                  <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/20 mr-4">
+                    <Plus className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  </div>
                   <div>
                     <h3 className="font-semibold">Add Funds</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       Deposit to wallet
                     </p>
                   </div>
                 </CardContent>
               </Card>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Add Funds to Wallet</DialogTitle>
                 <DialogDescription>
@@ -224,10 +228,11 @@ export default function WalletPage() {
                     placeholder="0.00"
                     value={addAmount}
                     onChange={(e) => setAddAmount(e.target.value)}
+                    className="text-lg font-bold"
                   />
                 </div>
                 <Button
-                  className="w-full"
+                  className="w-full py-6 text-lg font-bold bg-yellow-500 hover:bg-yellow-600 text-black"
                   onClick={() => {
                     toast.success("Payment gateway integration coming soon!");
                     setIsAddFundsOpen(false);
@@ -241,19 +246,21 @@ export default function WalletPage() {
 
           <Dialog open={isBuyCoinsOpen} onOpenChange={setIsBuyCoinsOpen}>
             <DialogTrigger asChild>
-              <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-                <CardContent className="flex items-center justify-center p-6">
-                  <Coins className="h-6 w-6 mr-3 text-yellow-500" />
+              <Card className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] border-none bg-card">
+                <CardContent className="flex items-center p-6">
+                  <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/20 mr-4">
+                    <Coins className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                  </div>
                   <div>
                     <h3 className="font-semibold">Buy Coins</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       Purchase platform coins
                     </p>
                   </div>
                 </CardContent>
               </Card>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle>Buy Coins</DialogTitle>
                 <DialogDescription>
@@ -261,24 +268,24 @@ export default function WalletPage() {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[100, 250, 500, 1000, 2500, 5000].map((amount) => (
                     <Button
                       key={amount}
                       variant="outline"
-                      className="flex flex-col h-auto py-4"
+                      className={`flex flex-col h-auto py-4 transition-all ${coinsAmount === amount.toString() ? "border-primary bg-primary/5 ring-1 ring-primary" : ""}`}
                       onClick={() => setCoinsAmount(amount.toString())}
                     >
-                      <Coins className="h-6 w-6 text-yellow-500 mb-2" />
+                      <Coins className="h-5 w-5 text-yellow-500 mb-2" />
                       <span className="font-bold">{amount}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-[10px] text-muted-foreground">
                         ETB {amount * 10}
                       </span>
                     </Button>
                   ))}
                 </div>
                 <Button
-                  className="w-full"
+                  className="w-full py-6 text-lg font-bold bg-yellow-500 hover:bg-yellow-600 text-black"
                   disabled={!coinsAmount}
                   onClick={() => {
                     toast.success("Coin purchase coming soon!");
@@ -291,12 +298,14 @@ export default function WalletPage() {
             </DialogContent>
           </Dialog>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-            <CardContent className="flex items-center justify-center p-6">
-              <ArrowUpRight className="h-6 w-6 mr-3 text-blue-500" />
+          <Card className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] border-none bg-card">
+            <CardContent className="flex items-center p-6">
+              <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/20 mr-4">
+                <ArrowUpRight className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
               <div>
                 <h3 className="font-semibold">Withdraw</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Transfer to bank
                 </p>
               </div>
@@ -305,14 +314,14 @@ export default function WalletPage() {
         </div>
 
         {/* Transaction History */}
-        <Card>
-          <CardHeader>
+        <Card className="border-none bg-card shadow-sm">
+          <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center">
-                <History className="h-5 w-5 mr-2" />
+              <CardTitle className="flex items-center text-lg font-bold">
+                <History className="h-5 w-5 mr-2 text-yellow-500" />
                 Transaction History
               </CardTitle>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="h-8">
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
@@ -320,53 +329,56 @@ export default function WalletPage() {
           </CardHeader>
           <CardContent>
             {isTransactionsLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader className="h-6 w-6 animate-spin" />
+              <div className="flex justify-center py-12">
+                <Loader className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : transactions && transactions.length > 0 ? (
               <div className="space-y-4">
                 {transactions.map((tx: any) => (
                   <div
                     key={tx.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-border/50 rounded-xl hover:bg-muted/30 transition-all gap-4"
                   >
                     <div className="flex items-center space-x-4">
                       <div
-                        className={`p-2 rounded-full ${
+                        className={`p-3 rounded-full shrink-0 ${
                           tx.type === "DEPOSIT" || tx.type === "EARNING"
                             ? "bg-green-100 dark:bg-green-900/20"
                             : "bg-red-100 dark:bg-red-900/20"
                         }`}
                       >
                         {tx.type === "DEPOSIT" || tx.type === "EARNING" ? (
-                          <ArrowDownLeft className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <ArrowDownLeft className="h-5 w-5 text-green-600 dark:text-green-400" />
                         ) : (
-                          <ArrowUpRight className="h-4 w-4 text-red-600 dark:text-red-400" />
+                          <ArrowUpRight className="h-5 w-5 text-red-600 dark:text-red-400" />
                         )}
                       </div>
-                      <div>
-                        <p className="font-medium">
-                          {tx.type === "EARNING"
-                            ? "Earned"
-                            : tx.type === "PAYMENT"
-                            ? "Paid"
-                            : tx.type}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-foreground">
+                            {tx.type === "EARNING"
+                              ? "Earned"
+                              : tx.type === "PAYMENT"
+                              ? "Paid"
+                              : tx.type}
+                          </p>
+                          <span className="text-xs text-muted-foreground">•</span>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(tx.createdAt), {
+                              addSuffix: true,
+                            })}
+                          </p>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate max-w-[200px] sm:max-w-none">
                           {tx.meta?.description ||
                             tx.meta?.listingTitle ||
                             "Transaction"}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(tx.createdAt), {
-                            addSuffix: true,
-                          })}
-                        </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-3 sm:pt-0">
                       <p
-                        className={`font-bold ${
+                        className={`text-lg font-bold ${
                           tx.type === "DEPOSIT" || tx.type === "EARNING"
                             ? "text-green-600 dark:text-green-400"
                             : "text-red-600 dark:text-red-400"
@@ -377,7 +389,7 @@ export default function WalletPage() {
                           : "-"}
                         ETB {tx.amount.toLocaleString()}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded uppercase tracking-wider">
                         {tx.currency}
                       </p>
                     </div>
@@ -385,16 +397,19 @@ export default function WalletPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <Wallet className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No transactions yet</p>
-                <p className="text-sm text-muted-foreground mt-2">
+              <div className="text-center py-16">
+                <div className="bg-muted w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Wallet className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <p className="text-foreground font-semibold">No transactions yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
                   Your transaction history will appear here
                 </p>
               </div>
             )}
           </CardContent>
         </Card>
+        </div>
       </main>
     </div>
   );
