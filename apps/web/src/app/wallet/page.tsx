@@ -106,15 +106,15 @@ export default function WalletPage() {
       />
       {/* Main Content */}
       <main
-        className={`flex-1 p-4 md:p-8 bg-background flex flex-col lg:flex-row transition-all duration-300 ${
+        className={`flex-1 p-2 sm:p-4 md:p-8 bg-background flex flex-col transition-all duration-300 ${
           isSidebarOpen ? "md:ml-[200px]" : "md:ml-[60px]"
         }`}
       >
-        <div className="flex-1">
+        <div className="flex-1 max-w-full overflow-hidden">
           {/* Header */}
-          <header className="flex flex-col sm:flex-row items-center justify-between mb-4 md:mb-8 bg-card p-4 rounded-lg">
-            <div className="flex items-center mb-4 sm:mb-0">
-              <Avatar className="h-10 w-10 mr-4">
+          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-6 bg-card p-3 sm:p-4 rounded-lg">
+            <div className="flex items-center mb-3 sm:mb-0 w-full sm:w-auto">
+              <Avatar className="h-8 w-8 sm:h-10 sm:w-10 mr-3 sm:mr-4 flex-shrink-0">
                 <AvatarImage
                   src={userProfile?.image || "/placeholder-avatar.jpg"}
                   alt={userProfile?.name || "User"}
@@ -125,23 +125,22 @@ export default function WalletPage() {
                     : "U"}
                 </AvatarFallback>
               </Avatar>
-              <div className="relative w-full sm:w-auto">
-                <h1 className="text-foreground">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-sm sm:text-base md:text-lg font-semibold text-foreground truncate">
                   {isSessionLoading ? (
                     "Loading..."
                   ) : (
                     <>
-                      Welcome to Your Wallet,{" "}
+                      Wallet -{" "}
                       <span className="text-primary">
                         {userProfile?.name || "User"}
                       </span>
-                      !
                     </>
                   )}
                 </h1>
               </div>
             </div>
-            <div className="flex flex-wrap items-center justify-center sm:justify-end space-x-2 sm:space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
               <NotificationBell />
               <CoinDisplay />
             </div>
@@ -317,13 +316,15 @@ export default function WalletPage() {
             </Dialog>
 
             <Card className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] border-none bg-card">
-              <CardContent className="flex items-center p-6">
-                <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/20 mr-4">
-                  <ArrowUpRight className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <CardContent className="flex items-center p-4 sm:p-6">
+                <div className="p-2 sm:p-3 rounded-full bg-blue-100 dark:bg-blue-900/20 mr-3 sm:mr-4">
+                  <ArrowUpRight className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Withdraw</h3>
-                  <p className="text-xs text-muted-foreground">
+                  <h3 className="text-sm sm:text-base font-semibold">
+                    Withdraw
+                  </h3>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
                     Transfer to bank
                   </p>
                 </div>
@@ -335,12 +336,16 @@ export default function WalletPage() {
           <Card className="border-none bg-card shadow-sm">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center text-lg font-bold">
-                  <History className="h-5 w-5 mr-2 text-yellow-500" />
+                <CardTitle className="flex items-center text-base sm:text-lg font-bold">
+                  <History className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-yellow-500" />
                   Transaction History
                 </CardTitle>
-                <Button variant="outline" size="sm" className="h-8">
-                  <Download className="h-4 w-4 mr-2" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 sm:h-8 text-xs sm:text-sm"
+                >
+                  <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   Export
                 </Button>
               </div>
