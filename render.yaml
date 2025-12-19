@@ -5,9 +5,11 @@ services:
     env: node
     plan: starter
     buildCommand: |
-      npm ci
-      npm run build --workspace=server
-    startCommand: npm run start --workspace=server
+      npm ci --include=dev
+      npx turbo build --filter=server
+    startCommand: |
+      cd apps/server
+      npm start
     envVars:
       - key: NODE_ENV
         value: production
