@@ -42,7 +42,7 @@ export default function JobDetailPage() {
 
   const {
     data: similarJobs,
-    isLoading: isSimilarJobsLoading,git 
+    isLoading: isSimilarJobsLoading,
     error: similarJobsError,
   } = trpc.job.getSimilarJobs.useQuery(
     { jobId: jobId },
