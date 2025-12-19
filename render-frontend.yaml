@@ -4,11 +4,10 @@ services:
     name: yalegn
     env: node
     plan: starter
-    rootDir: apps/web
-    buildCommand: |
-      npm ci
-      npm run build
-    startCommand: npm start
+    buildCommand: ./build-frontend-monorepo.sh
+    startCommand: |
+      cd apps/web
+      npm start
     envVars:
       - key: NODE_ENV
         value: production

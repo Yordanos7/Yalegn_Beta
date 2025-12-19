@@ -4,11 +4,14 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   reactCompiler: true,
   output: "standalone", // Enable standalone output for Docker deployment
-  transpilePackages: [
-    "@my-better-t-app/db",
-    "@my-better-t-app/api",
-    "@my-better-t-app/auth",
-  ],
+  transpilePackages:
+    process.env.NODE_ENV === "production"
+      ? []
+      : [
+          "@my-better-t-app/db",
+          "@my-better-t-app/api",
+          "@my-better-t-app/auth",
+        ],
   images: {
     unoptimized: true,
     remotePatterns: [
