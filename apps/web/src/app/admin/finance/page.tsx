@@ -363,7 +363,7 @@ const AdminFinancePage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions.map((transaction) => (
+                  {transactions.map((transaction: any) => (
                     <TableRow key={transaction.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
