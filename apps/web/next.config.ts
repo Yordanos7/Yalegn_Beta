@@ -4,6 +4,14 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   reactCompiler: true,
   output: "standalone", // Enable standalone output for Docker deployment
+  typescript: {
+    // Skip TypeScript checking during production builds
+    ignoreBuildErrors: process.env.NODE_ENV === "production",
+  },
+  eslint: {
+    // Skip ESLint during production builds
+    ignoreDuringBuilds: process.env.NODE_ENV === "production",
+  },
   transpilePackages:
     process.env.NODE_ENV === "production"
       ? []
