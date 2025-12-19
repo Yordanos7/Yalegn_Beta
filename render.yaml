@@ -1,0 +1,24 @@
+# Render Blueprint for Backend
+services:
+  - type: web
+    name: my-better-t-app-backend
+    env: node
+    plan: starter
+    buildCommand: |
+      npm ci
+      npm run build --workspace=server
+    startCommand: npm run start --workspace=server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        value: postgresql://postgres:QEtIwdgA1qZe4e0s@db.gvnyuwhbfjscwjaxjfuy.supabase.co:5432/postgres
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      - key: BETTER_AUTH_URL
+        value: https://my-better-t-app-backend.onrender.com
+      - key: CORS_ORIGIN
+        value: https://my-better-t-app-frontend.onrender.com
+    healthCheckPath: /

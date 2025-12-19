@@ -20,7 +20,10 @@
     "db:start": "turbo -F @my-better-t-app/db db:start",
     "db:watch": "turbo -F @my-better-t-app/db db:watch",
     "db:stop": "turbo -F @my-better-t-app/db db:stop",
-    "db:down": "turbo -F @my-better-t-app/db db:down"
+    "db:down": "turbo -F @my-better-t-app/db db:down",
+    "deploy:setup": "./scripts/deploy-setup.sh",
+    "deploy:db-migrate": "./scripts/db-migrate.sh",
+    "deploy:generate-env": "node scripts/generate-env.js"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

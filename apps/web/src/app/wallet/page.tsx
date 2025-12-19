@@ -106,13 +106,11 @@ export default function WalletPage() {
       />
       {/* Main Content */}
       <main
-        className={`flex-1 p-2 sm:p-4 md:p-8 bg-background flex flex-col transition-all duration-300 ${
-          isSidebarOpen ? "md:ml-[200px]" : "md:ml-[60px]"
-        }`}
+        className="flex-1 p-4 md:p-8 bg-background flex flex-col transition-all duration-300 min-w-0"
       >
-        <div className="flex-1 max-w-full overflow-hidden">
+        <div className="flex-1">
           {/* Header */}
-          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-6 bg-card p-3 sm:p-4 rounded-lg">
+          <header className="flex flex-col sm:flex-row items-center justify-between mb-4 md:mb-8 bg-card p-4 rounded-lg">
             <div className="flex items-center mb-3 sm:mb-0 w-full sm:w-auto">
               <Avatar className="h-8 w-8 sm:h-10 sm:w-10 mr-3 sm:mr-4 flex-shrink-0">
                 <AvatarImage
@@ -140,14 +138,14 @@ export default function WalletPage() {
                 </h1>
               </div>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+            <div className="flex flex-wrap items-center justify-center sm:justify-end space-x-2 sm:space-x-4">
               <NotificationBell />
               <CoinDisplay />
             </div>
           </header>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-3 sm:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-4 md:mb-8">
             {/* Main Balance */}
             <Card className="bg-card p-2 sm:p-4 rounded-lg">
               <div className="flex flex-col items-center text-center">
@@ -165,7 +163,7 @@ export default function WalletPage() {
             <Card className="bg-card p-2 sm:p-4 rounded-lg">
               <div className="flex flex-col items-center text-center">
                 <Coins className="text-yellow-500 mb-1" size={16} />
-                <p className="text-xs sm:text-lg font-bold truncate w-full">
+                <p className="text-xs sm:text-lg font-bold truncate">
                   {userProfile?.coins?.toLocaleString() || "0"}
                 </p>
                 <p className="text-[8px] sm:text-xs text-muted-foreground">
@@ -178,7 +176,7 @@ export default function WalletPage() {
             <Card className="bg-card p-2 sm:p-4 rounded-lg">
               <div className="flex flex-col items-center text-center">
                 <TrendingUp className="text-yellow-500 mb-1" size={16} />
-                <p className="text-xs sm:text-lg font-bold truncate w-full">
+                <p className="text-xs sm:text-lg font-bold truncate">
                   ETB {stats.totalIn.toLocaleString()}
                 </p>
                 <p className="text-[8px] sm:text-xs text-muted-foreground">
@@ -191,25 +189,28 @@ export default function WalletPage() {
             <Card className="bg-card p-2 sm:p-4 rounded-lg">
               <div className="flex flex-col items-center text-center">
                 <DollarSign className="text-yellow-500 mb-1" size={16} />
-                <p className="text-xs sm:text-lg font-bold truncate w-full">
+                <p className="text-xs sm:text-lg font-bold truncate">
                   ETB {stats.thisMonth.toLocaleString()}
                 </p>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                This Month
-              </p>
+                <p className="text-[8px] sm:text-xs text-muted-foreground">
+                  This Month
+                </p>
+              </div>
             </Card>
           </div>
 
           {/* Coin Test Buttons (Development Only) */}
           {process.env.NODE_ENV === "development" && (
             <div className="mb-3 sm:mb-6">
-              <h2 className="text-sm sm:text-lg font-semibold mb-2 sm:mb-4">Test Coin Rewards</h2>
+              <h2 className="text-sm sm:text-lg font-semibold mb-2 sm:mb-4">
+                Test Coin Rewards
+              </h2>
               <CoinTestButton />
             </div>
           )}
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3 sm:mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-8">
             <Dialog open={isAddFundsOpen} onOpenChange={setIsAddFundsOpen}>
               <DialogTrigger asChild>
                 <Card className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] border-none bg-card">

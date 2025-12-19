@@ -87,15 +87,20 @@ export const analyticsRouter = router({
   getEarningsVsExpenses: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.user.id;
 
-    // Earnings: Contracts where the current user is the provider and the contract is released
-    const earningsData = await prisma.contract.findMany({
+    // Earnings: Orders where the current user is the seller and the order is completed
+    const earningsData = await prisma.order.findMany({
       where: {
-        providerId: userId,
-        status: "RELEASED",
+        sellerId: userId,
+        orderStatus: "COMPLETED",
       },
       select: {
-        totalAmount: true,
+        totalPrice: true,
         createdAt: true,
+        listing: {
+          select: {
+            title: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "asc",
@@ -111,21 +116,35 @@ export const analyticsRouter = router({
       select: {
         totalPrice: true,
         createdAt: true,
+        listing: {
+          select: {
+            title: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "asc",
       },
     });
 
-    // Aggregate data by a time period (e.g., monthly) for the chart
+    // Aggregate data by month for better visualization
     const aggregateByMonth = (data: { createdAt: Date; amount: number }[]) => {
       const monthlyData: { [key: string]: number } = {};
       data.forEach((item) => {
-        const month = item.createdAt.toISOString().substring(0, 7); // YYYY-MM
-        monthlyData[month] = (monthlyData[month] || 0) + item.amount;
+        const date = new Date(item.createdAt);
+        const monthKey = date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+        }); // e.g., "Jan 2024"
+        monthlyData[monthKey] = (monthlyData[monthKey] || 0) + item.amount;
       });
       return Object.keys(monthlyData)
-        .sort()
+        .sort((a, b) => {
+          // Sort by date
+          const dateA = new Date(a);
+          const dateB = new Date(b);
+          return dateA.getTime() - dateB.getTime();
+        })
         .map((month) => ({
           name: month,
           value: monthlyData[month],
@@ -133,11 +152,12 @@ export const analyticsRouter = router({
     };
 
     const aggregatedEarnings = aggregateByMonth(
-      earningsData.map((e: { createdAt: Date; totalAmount: number }) => ({
+      earningsData.map((e: { createdAt: Date; totalPrice: number }) => ({
         createdAt: e.createdAt,
-        amount: e.totalAmount,
+        amount: e.totalPrice,
       }))
     );
+
     const aggregatedExpenses = aggregateByMonth(
       expensesData.map((e: { createdAt: Date; totalPrice: number }) => ({
         createdAt: e.createdAt,
@@ -145,36 +165,50 @@ export const analyticsRouter = router({
       }))
     );
 
-    // Merge earnings and expenses data for the chart
+    // Create a comprehensive time range (last 12 months)
+    const now = new Date();
+    const months = [];
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+      });
+      months.push(monthKey);
+    }
+
+    // Merge earnings and expenses data for the chart with all months
     const chartDataMap = new Map<
       string,
       { name: string; earnings: number; expenses: number }
     >();
 
-    aggregatedEarnings.forEach((item) => {
-      chartDataMap.set(item.name, {
-        name: item.name,
-        earnings: item.value ?? 0,
+    // Initialize all months with zero values
+    months.forEach((month) => {
+      chartDataMap.set(month, {
+        name: month,
+        earnings: 0,
         expenses: 0,
       });
     });
 
+    // Add earnings data
+    aggregatedEarnings.forEach((item) => {
+      const existing = chartDataMap.get(item.name);
+      if (existing) {
+        existing.earnings = item.value ?? 0;
+      }
+    });
+
+    // Add expenses data
     aggregatedExpenses.forEach((item) => {
       const existing = chartDataMap.get(item.name);
       if (existing) {
         existing.expenses = item.value ?? 0;
-      } else {
-        chartDataMap.set(item.name, {
-          name: item.name,
-          earnings: 0,
-          expenses: item.value ?? 0,
-        });
       }
     });
 
-    const earningsVsExpensesChartData = Array.from(chartDataMap.values()).sort(
-      (a, b) => a.name.localeCompare(b.name)
-    );
+    const earningsVsExpensesChartData = Array.from(chartDataMap.values());
 
     return earningsVsExpensesChartData;
   }),

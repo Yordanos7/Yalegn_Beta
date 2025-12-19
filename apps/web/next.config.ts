@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   typedRoutes: true,
   reactCompiler: true,
+  output: "standalone", // Enable standalone output for Docker deployment
   transpilePackages: [
     "@my-better-t-app/db",
     "@my-better-t-app/api",
@@ -17,7 +18,17 @@ const nextConfig: NextConfig = {
         port: "3001",
         pathname: "/uploads/**",
       },
+      {
+        protocol: "https",
+        hostname: "*.onrender.com",
+        pathname: "/uploads/**",
+      },
     ],
+  },
+  // Environment variables for client-side
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
 };
 

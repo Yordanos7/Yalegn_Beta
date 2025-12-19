@@ -35,7 +35,7 @@ export default function RootLayout({
             <CoinRewardsProvider>
               <div className="grid grid-rows-[auto_1fr] h-svh">
                 <Header />
-                <main className="pt-[112px] bg-background">{children}</main>
+                <main className="pt-[112px] bg-background min-w-0 overflow-x-hidden">{children}</main>
               </div>
               <Toaster /> {/* Add Toaster component here */}
             </CoinRewardsProvider>

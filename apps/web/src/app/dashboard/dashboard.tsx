@@ -268,9 +268,7 @@ export default function Dashboard() {
       />
       {/* Main Content */}
       <main
-        className={`flex-1 p-4 md:p-8 bg-background flex flex-col lg:flex-row transition-all duration-300 ${
-          isSidebarOpen ? "md:ml-[200px]" : "md:ml-[60px]"
-        }`}
+        className="flex-1 p-4 md:p-8 bg-background flex flex-col lg:flex-row transition-all duration-300"
       >
         <div className="flex-1">
           {/* Header */}
