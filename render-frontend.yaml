@@ -1,0 +1,21 @@
+# Render Blueprint for Frontend
+services:
+  - type: web
+    name: yalegn
+    env: node
+    plan: starter
+    rootDir: apps/web
+    buildCommand: |
+      npm ci
+      npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_SERVER_URL
+        value: https://my-better-t-app-backend.onrender.com
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        value: postgresql://postgres:QEtIwdgA1qZe4e0s@db.gvnyuwhbfjscwjaxjfuy.supabase.co:5432/postgres
+    healthCheckPath: /
