@@ -6,6 +6,9 @@ services:
     plan: starter
     buildCommand: |
       npm ci --include=dev
+      export DATABASE_URL="postgresql://postgres:QEtIwdgA1qZe4e0s@db.gvnyuwhbfjscwjaxjfuy.supabase.co:5432/postgres"
+      cd packages/db && npm run db:generate
+      cd ../..
       npx turbo build --filter=server
     startCommand: |
       cd apps/server
