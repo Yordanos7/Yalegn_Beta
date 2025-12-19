@@ -4,10 +4,7 @@ services:
     name: my-better-t-app-backend
     env: node
     plan: starter
-    buildCommand: |
-      npm ci --include=dev
-      DATABASE_URL="postgresql://postgres:QEtIwdgA1qZe4e0s@db.gvnyuwhbfjscwjaxjfuy.supabase.co:5432/postgres" npx turbo db:generate --filter=@my-better-t-app/db
-      npx turbo build --filter=server
+    buildCommand: ./build.sh
     startCommand: |
       cd apps/server
       npm start
