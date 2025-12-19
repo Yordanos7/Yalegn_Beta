@@ -132,7 +132,7 @@ const AdminFinancePage = () => {
                     "Status",
                     "Date",
                   ].join(","),
-                  ...transactionsData.transactions.map((t) =>
+                  ...transactionsData.transactions.map((t: any) =>
                     [
                       t.type,
                       `"${t.description}"`,
