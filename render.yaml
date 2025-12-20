@@ -14,11 +14,11 @@ services:
       - key: PORT
         value: 3000
       - key: DATABASE_URL
-        value: postgresql://postgres:QEtIwdgA1qZe4e0s@db.gvnyuwhbfjscwjaxjfuy.supabase.co:5432/postgres
+        value: postgresql://postgres:QEtIwdgA1qZe4e0s@db.gvnyuwhbfjscwjaxjfuy.supabase.co:6543/postgres?pgbouncer=true
       - key: BETTER_AUTH_SECRET
         generateValue: true
       - key: BETTER_AUTH_URL
         value: https://my-better-t-app-backend.onrender.com
       - key: CORS_ORIGIN
-        value: https://my-better-t-app-frontend.onrender.com
+        value: https://yalegn.onrender.com
     healthCheckPath: /
