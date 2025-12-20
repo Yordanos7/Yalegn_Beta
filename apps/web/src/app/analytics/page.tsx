@@ -21,8 +21,23 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import WorldMap from "@/components/WorldMap";
-import GlobalMarketCharts from "@/components/GlobalMarketCharts"; // Import the new component
+import dynamic from "next/dynamic";
+
+// Dynamically import components that use window/browser APIs
+const WorldMap = dynamic(() => import("@/components/WorldMap"), {
+  ssr: false,
+  loading: () => <div className="h-64 bg-gray-100 rounded-lg animate-pulse" />,
+});
+
+const GlobalMarketCharts = dynamic(
+  () => import("@/components/GlobalMarketCharts"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 bg-gray-100 rounded-lg animate-pulse" />
+    ),
+  }
+);
 import { trpc } from "@/utils/trpc"; // Import tRPC client
 
 // Placeholder for a simple sparkline component for the USD card
@@ -261,3 +276,6 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+
+// Disable static generation for this page
+export const dynamic = "force-dynamic";

@@ -20,3 +20,6 @@ export default async function DashboardPage() {
 
   return <Dashboard />;
 }
+
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';

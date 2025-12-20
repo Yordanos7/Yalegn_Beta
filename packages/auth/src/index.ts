@@ -13,9 +13,15 @@ dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 console.log("🔍 AUTH CONFIG DEBUG:");
 console.log("  - CORS_ORIGIN:", process.env.CORS_ORIGIN);
 console.log("  - BETTER_AUTH_URL:", process.env.BETTER_AUTH_URL);
-console.log("  - RESEND_API_KEY:", process.env.RESEND_API_KEY ? "✅ Present" : "❌ Missing");
+console.log(
+  "  - RESEND_API_KEY:",
+  process.env.RESEND_API_KEY ? "✅ Present" : "❌ Missing"
+);
 
 export const auth = betterAuth({
+  secret:
+    process.env.BETTER_AUTH_SECRET ||
+    "fallback-secret-for-build-only-not-for-production-use",
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
@@ -46,7 +52,7 @@ export const auth = betterAuth({
       name: string;
     }) => {
       console.log("✅ Email verified for user:", user.id);
-      
+
       // Award 30 welcome coins
       try {
         await prisma.$transaction([
@@ -77,18 +83,22 @@ export const auth = betterAuth({
     },
     sendVerificationEmail: async ({ user, url }) => {
       console.log("📧 Sending verification email to:", user.email);
-      
+
       const gmailUser = process.env.GMAIL_USER;
       const gmailPassword = process.env.GMAIL_APP_PASSWORD;
-      
+
       if (!gmailUser || !gmailPassword) {
-        console.error("❌ Gmail credentials not found in environment variables");
-        throw new Error("Gmail credentials are required (GMAIL_USER and GMAIL_APP_PASSWORD)");
+        console.error(
+          "❌ Gmail credentials not found in environment variables"
+        );
+        throw new Error(
+          "Gmail credentials are required (GMAIL_USER and GMAIL_APP_PASSWORD)"
+        );
       }
 
       // Create Gmail SMTP transporter
       const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        service: "gmail",
         auth: {
           user: gmailUser,
           pass: gmailPassword,
@@ -150,7 +160,9 @@ export const auth = betterAuth({
                     &copy; ${new Date().getFullYear()} Yalegn. All rights reserved.
                   </p>
                   <p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 12px;">
-                    This email was sent to ${user.email}. If you didn't sign up for Yalegn, you can safely ignore this email.
+                    This email was sent to ${
+                      user.email
+                    }. If you didn't sign up for Yalegn, you can safely ignore this email.
                   </p>
                 </div>
               </div>

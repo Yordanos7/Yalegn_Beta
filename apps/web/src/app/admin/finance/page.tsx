@@ -516,3 +516,6 @@ const AdminFinancePage = () => {
 };
 
 export default AdminFinancePage;
+
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';

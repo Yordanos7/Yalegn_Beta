@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
     // Skip ESLint during production builds
     ignoreDuringBuilds: process.env.NODE_ENV === "production",
   },
+  experimental: {
+    // Disable static optimization for pages with client-side dependencies
+    missingSuspenseWithCSRBailout: false,
+  },
   transpilePackages:
     process.env.NODE_ENV === "production"
       ? []

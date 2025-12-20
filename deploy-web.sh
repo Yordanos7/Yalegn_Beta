@@ -4,6 +4,9 @@ set -e
 echo "Installing dependencies..."
 npm ci --include=dev
 
+echo "Fixing SSR issues..."
+./fix-ssr-issues.sh
+
 echo "Generating Prisma client..."
 cd packages/db
 DATABASE_URL="$DATABASE_URL" npm run db:generate
