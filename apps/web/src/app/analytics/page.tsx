@@ -21,15 +21,15 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import dynamic from "next/dynamic";
+import dynamicImport from "next/dynamic";
 
 // Dynamically import components that use window/browser APIs
-const WorldMap = dynamic(() => import("@/components/WorldMap"), {
+const WorldMap = dynamicImport(() => import("@/components/WorldMap"), {
   ssr: false,
   loading: () => <div className="h-64 bg-gray-100 rounded-lg animate-pulse" />,
 });
 
-const GlobalMarketCharts = dynamic(
+const GlobalMarketCharts = dynamicImport(
   () => import("@/components/GlobalMarketCharts"),
   {
     ssr: false,
