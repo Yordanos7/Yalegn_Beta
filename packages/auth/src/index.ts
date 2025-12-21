@@ -1,9 +1,9 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "@my-better-t-app/db";
+import { Resend } from "resend";
 import dotenv from "dotenv";
 import path from "path";
-import nodemailer from "nodemailer";
 
 // Load environment variables first
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
@@ -18,6 +18,8 @@ console.log(
   process.env.RESEND_API_KEY ? "✅ Present" : "❌ Missing"
 );
 
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 export const auth = betterAuth({
   secret:
     process.env.BETTER_AUTH_SECRET ||
@@ -27,24 +29,15 @@ export const auth = betterAuth({
   }),
   trustedOrigins: [
     process.env.CORS_ORIGIN || "http://localhost:3001",
-    "http://localhost:3001", // Web app URL
-    "http://localhost:3000", // Server URL
+    "http://localhost:3001",
+    "http://localhost:3000",
   ],
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // Allow users to use platform before verification
-    onSignUp: async (user: { email: any; password: any; name: any }) => {
-      console.log("🎯 SIGNUP DEBUG - onSignUp callback triggered");
-      console.log("👤 User data:", { email: user.email, name: user.name });
-      return user;
-    },
-    afterSignUp: async (user: { id: string; email: string; name: string }) => {
-      console.log("🎉 SIGNUP DEBUG - afterSignUp callback triggered");
-      console.log("👤 User created with ID:", user.id);
-    },
+    requireEmailVerification: false,
   },
   emailVerification: {
-    sendOnSignUp: true, // Send automatically on signup
+    sendOnSignUp: true,
     autoSignInAfterVerification: true,
     onEmailVerified: async (user: {
       id: string;
@@ -84,30 +77,17 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       console.log("📧 Sending verification email to:", user.email);
 
-      const gmailUser = process.env.GMAIL_USER;
-      const gmailPassword = process.env.GMAIL_APP_PASSWORD;
+      const resendApiKey = process.env.RESEND_API_KEY;
+      const resendFrom = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 
-      if (!gmailUser || !gmailPassword) {
-        console.error(
-          "❌ Gmail credentials not found in environment variables"
-        );
-        throw new Error(
-          "Gmail credentials are required (GMAIL_USER and GMAIL_APP_PASSWORD)"
-        );
+      if (!resendApiKey) {
+        console.error("❌ RESEND_API_KEY not found");
+        throw new Error("RESEND_API_KEY is required for email verification");
       }
 
-      // Create Gmail SMTP transporter
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: gmailUser,
-          pass: gmailPassword,
-        },
-      });
-
       try {
-        const info = await transporter.sendMail({
-          from: `"Yalegn Team" <${gmailUser}>`,
+        const { data, error } = await resend.emails.send({
+          from: `Yalegn Team <${resendFrom}>`,
           to: user.email,
           subject: "Verify your email for Yalegn",
           html: `
@@ -123,13 +103,10 @@ export const auth = betterAuth({
             <body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f9fafb; min-height: 100vh;">
               <div style="max-width: 600px; margin: 40px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
                 
-                <!-- Header -->
                 <div style="background-color: #000000; padding: 32px; text-align: center;">
-                  <!-- Logo Placeholder - Replace src with your public logo URL -->
                   <div style="color: white; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">Yalegn</div>
                 </div>
                 
-                <!-- Content -->
                 <div style="padding: 40px 32px;">
                   <h1 style="color: #111827; margin: 0 0 24px 0; font-size: 24px; font-weight: 700; text-align: center;">Verify your email address</h1>
                   
@@ -141,7 +118,6 @@ export const auth = betterAuth({
                     Thanks for joining Yalegn! We're excited to have you on board. Please verify your email address to activate your account and receive your <strong>30 welcome coins</strong>.
                   </p>
                   
-                  <!-- CTA Button -->
                   <div style="text-align: center; margin: 32px 0;">
                     <a href="${url}" style="display: inline-block; background-color: #000000; color: white; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 16px; transition: background-color 0.2s;">
                       Verify Email Address
@@ -154,38 +130,28 @@ export const auth = betterAuth({
                   </p>
                 </div>
                 
-                <!-- Footer -->
                 <div style="background-color: #f3f4f6; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
                   <p style="color: #6b7280; margin: 0; font-size: 12px;">
                     &copy; ${new Date().getFullYear()} Yalegn. All rights reserved.
                   </p>
                   <p style="color: #9ca3af; margin: 8px 0 0 0; font-size: 12px;">
-                    This email was sent to ${
-                      user.email
-                    }. If you didn't sign up for Yalegn, you can safely ignore this email.
+                    This email was sent to ${user.email}.
                   </p>
                 </div>
               </div>
             </body>
             </html>
           `,
-          text: `
-Verify your email for Yalegn
-
-Hi ${user.name || "there"},
-
-Thanks for joining Yalegn! Please verify your email address to activate your account and receive your 30 welcome coins.
-
-Verify Email: ${url}
-
-If you didn't sign up for Yalegn, you can safely ignore this email.
-          `,
         });
 
-        console.log("✅ Verification email sent successfully via Gmail!");
-        console.log("📧 Message ID:", info.messageId);
+        if (error) {
+          throw error;
+        }
+
+        console.log("✅ Verification email sent successfully via Resend!");
+        console.log("📧 Message data:", data);
       } catch (error: any) {
-        console.error("❌ Failed to send email via Gmail:", error);
+        console.error("❌ Failed to send email via Resend:", error);
         throw new Error(`Failed to send verification email: ${error.message}`);
       }
     },

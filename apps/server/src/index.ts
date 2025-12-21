@@ -131,6 +131,17 @@ server.listen(port, () => {
 
   // Debug environment variables
   console.log("🔍 Environment Variables Check:");
+  const dbUrl = process.env.DATABASE_URL || "";
+  try {
+    const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ":****@");
+    console.log(`  - DATABASE_URL: ${maskedUrl || "❌ MISSING"}`);
+    if (dbUrl.includes("!")) {
+      console.log("  ⚠️ WARNING: DATABASE_URL contains an un-encoded '!'");
+    }
+  } catch (e) {
+    console.log("  - DATABASE_URL: (Failed to mask URL)");
+  }
+  
   console.log(
     `  - RESEND_API_KEY: ${
       process.env.RESEND_API_KEY
@@ -139,7 +150,10 @@ server.listen(port, () => {
     }`
   );
   console.log(
-    `  - RESEND_FROM_EMAIL: ${process.env.RESEND_FROM_EMAIL || "❌ MISSING"}`
+    `  - GMAIL_USER: ${process.env.GMAIL_USER ? "✅ Present" : "❌ MISSING"}`
+  );
+  console.log(
+    `  - GMAIL_APP_PASSWORD: ${process.env.GMAIL_APP_PASSWORD ? "✅ Present" : "❌ MISSING"}`
   );
   console.log(`  - NODE_ENV: ${process.env.NODE_ENV || "undefined"}`);
 });
