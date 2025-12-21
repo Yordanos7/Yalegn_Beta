@@ -18,7 +18,8 @@ console.log(
   process.env.RESEND_API_KEY ? "✅ Present" : "❌ Missing"
 );
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Remove top-level Resend initialization that crashes build if key is missing
+// const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const auth = betterAuth({
   secret:
@@ -86,6 +87,7 @@ export const auth = betterAuth({
       }
 
       try {
+        const resend = new Resend(resendApiKey);
         const { data, error } = await resend.emails.send({
           from: `Yalegn Team <${resendFrom}>`,
           to: user.email,
