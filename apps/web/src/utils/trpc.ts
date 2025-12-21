@@ -25,7 +25,7 @@ export const trpcClient = trpc.createClient({
   // Use trpc.createClient
   links: [
     httpBatchLink({
-      url: `${process.env.NEXT_PUBLIC_SERVER_URL}/trpc`,
+      url: `${process.env.NEXT_PUBLIC_API_URL}/trpc`,
       fetch(url, options) {
         // the url and options are come from trpc for fetching data from the server
         return fetch(url, {
