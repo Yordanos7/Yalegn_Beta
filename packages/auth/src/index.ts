@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "@my-better-t-app/db";
-import prisma from "@my-better-t-app/db";
+
 import dotenv from "dotenv";
 import path from "path";
 import nodemailer from "nodemailer";
