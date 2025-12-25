@@ -4,7 +4,6 @@ import prisma from "@my-better-t-app/db";
 
 import dotenv from "dotenv";
 import path from "path";
-import nodemailer from "nodemailer";
 
 // Load environment variables first
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
@@ -36,7 +35,8 @@ export const auth = betterAuth({
   ],
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
+    requireEmailVerification: false, // Allow immediate login without email verification
+    autoSignIn: true, // Auto sign in after signup
   },
   emailVerification: {
     sendOnSignUp: true,
@@ -79,31 +79,19 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       console.log("📧 Sending verification email to:", user.email);
 
-      const gmailUser = process.env.GMAIL_USER;
-      const gmailPassword = process.env.GMAIL_APP_PASSWORD;
+      const resendApiKey = process.env.RESEND_API_KEY;
 
-      if (!gmailUser || !gmailPassword) {
-        console.error("❌ Gmail credentials not found (GMAIL_USER, GMAIL_APP_PASSWORD)");
-        throw new Error("Gmail credentials are required for email verification");
+      if (!resendApiKey) {
+        console.warn("⚠️ RESEND_API_KEY not found - skipping email send");
+        return; // Don't throw error, just skip email
       }
 
       try {
-        const transporter = nodemailer.createTransport({
-          host: "smtp.gmail.com",
-          port: 465,
-          secure: true, // use SSL
-          auth: {
-            user: gmailUser,
-            pass: gmailPassword,
-          },
-          tls: {
-            // Do not fail on invalid certs
-            rejectUnauthorized: false,
-          },
-        });
-
-        const info = await transporter.sendMail({
-          from: `"Yalegn Team" <${gmailUser}>`,
+        const { Resend } = await import("resend");
+        const resend = new Resend(resendApiKey);
+        
+        const { data, error } = await resend.emails.send({
+          from: "Yalegn <onboarding@resend.dev>",
           to: user.email,
           subject: "Verify your email for Yalegn",
           html: `
@@ -127,15 +115,15 @@ export const auth = betterAuth({
                     Hi <strong>${user.name || "there"}</strong>,
                   </p>
                   <p style="color: #374151; margin: 0 0 32px 0; font-size: 16px; line-height: 1.6;">
-                    Thanks for joining Yalegn! Please verify your email address to activate your account and receive your <strong>30 welcome coins</strong>.
+                    Thanks for joining Yalegn! Click below to verify your email and receive your <strong>30 welcome coins</strong>.
                   </p>
                   <div style="text-align: center; margin: 32px 0;">
-                    <a href="${url}" style="display: inline-block; background-color: #000000; color: white; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 16px; transition: background-color 0.2s;">
+                    <a href="${url}" style="display: inline-block; background-color: #000000; color: white; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 16px;">
                       Verify Email Address
                     </a>
                   </div>
                   <p style="color: #6b7280; margin: 32px 0 0 0; font-size: 14px; line-height: 1.5; text-align: center;">
-                    If the button above doesn't work, copy and paste this link into your browser:<br>
+                    If the button doesn't work, copy this link:<br>
                     <a href="${url}" style="color: #000000; text-decoration: underline; word-break: break-all;">${url}</a>
                   </p>
                 </div>
@@ -150,11 +138,16 @@ export const auth = betterAuth({
           `,
         });
 
-        console.log("✅ Verification email sent successfully via Gmail!");
-        console.log("📧 Message ID:", info.messageId);
+        if (error) {
+          console.error("❌ Resend API error:", error);
+          return; // Don't throw, just log
+        }
+
+        console.log("✅ Verification email sent successfully via Resend!");
+        console.log("📧 Message ID:", data?.id);
       } catch (error: any) {
-        console.error("❌ Failed to send email via Gmail:", error);
-        throw new Error(`Failed to send verification email: ${error.message}`);
+        console.error("❌ Failed to send email via Resend:", error);
+        // Don't throw error - allow signup to continue
       }
     },
   },
