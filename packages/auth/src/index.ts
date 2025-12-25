@@ -22,6 +22,7 @@ console.log(
 // const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
   secret:
     process.env.BETTER_AUTH_SECRET ||
     "fallback-secret-for-build-only-not-for-production-use",
