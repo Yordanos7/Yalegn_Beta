@@ -23,6 +23,12 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  // Check if user is admin and redirect to admin dashboard
+  if (session.user.role === "ADMIN") {
+    console.log("Admin user detected, redirecting to /admin");
+    redirect("/admin");
+  }
+
   return <Dashboard />;
 }
 
