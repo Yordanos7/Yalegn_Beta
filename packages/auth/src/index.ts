@@ -164,9 +164,13 @@ export const auth = betterAuth({
   },
   advanced: {
     defaultCookieAttributes: {
-      sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax",
-      secure: process.env.NODE_ENV === "production" ? true : false,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 'none' required for cross-origin
+      secure: true, // Always true when sameSite is 'none'
       httpOnly: true,
+      path: "/",
+    },
+    crossSubDomainCookies: {
+      enabled: true,
     },
   },
 });
