@@ -5,9 +5,14 @@ import { auth } from "@my-better-t-app/auth";
 import { authClient } from "@/lib/auth-client";
 
 export default async function DashboardPage() {
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.getAll()
+    .map(cookie => `${cookie.name}=${cookie.value}`)
+    .join('; ');
+
   const session = await auth.api.getSession({
     headers: {
-      cookie: (await cookies()).toString(), // Await cookies() before toString()
+      cookie: cookieHeader,
     },
   });
 
