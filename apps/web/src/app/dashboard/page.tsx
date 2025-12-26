@@ -14,9 +14,6 @@ export default function DashboardPage() {
     if (!isLoading && !session?.user) {
       console.log("No user in session, redirecting to login.");
       router.push("/login");
-    } else if (!isLoading && session?.user?.role === "ADMIN") {
-      console.log("Admin user detected, redirecting to /admin");
-      router.push("/admin");
     }
   }, [session, isLoading, router]);
 

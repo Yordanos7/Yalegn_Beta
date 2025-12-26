@@ -1,33 +1,31 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { auth } from "@my-better-t-app/auth";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import AdminDashboard from "./admin-dashboard";
+import { useSession } from "@/hooks/use-session";
 
-export default async function AdminPage() {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((cookie) => `${cookie.name}=${cookie.value}`)
-    .join("; ");
+export default function AdminPage() {
+  const router = useRouter();
+  const { session, isLoading } = useSession();
 
-  const session = await auth.api.getSession({
-    headers: {
-      cookie: cookieHeader,
-    },
-  });
+  useEffect(() => {
+    if (!isLoading && !session?.user) {
+      router.push("/login");
+    }
+  }, [session, isLoading, router]);
 
-  // Check if user is logged in
-  if (!session?.user) {
-    redirect("/login");
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+      </div>
+    );
   }
 
-  // Check if user has ADMIN role
-  if (session.user.role !== "ADMIN") {
-    redirect("/dashboard"); // Redirect non-admins to regular dashboard
+  if (!session?.user) {
+    return null;
   }
 
   return <AdminDashboard />;
 }
-
-// Disable static generation for this page
-export const dynamic = "force-dynamic";
