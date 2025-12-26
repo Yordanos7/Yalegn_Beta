@@ -1,36 +1,36 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Dashboard from "./dashboard";
-import { headers, cookies } from "next/headers"; // Import cookies
-import { auth } from "@my-better-t-app/auth";
 import { authClient } from "@/lib/auth-client";
+import { useSession } from "@/hooks/use-session";
 
-export default async function DashboardPage() {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll()
-    .map(cookie => `${cookie.name}=${cookie.value}`)
-    .join('; ');
+export default function DashboardPage() {
+  const router = useRouter();
+  const { session, isLoading } = useSession();
 
-  const session = await auth.api.getSession({
-    headers: {
-      cookie: cookieHeader,
-    },
-  });
+  useEffect(() => {
+    if (!isLoading && !session?.user) {
+      console.log("No user in session, redirecting to login.");
+      router.push("/login");
+    } else if (!isLoading && session?.user?.role === "ADMIN") {
+      console.log("Admin user detected, redirecting to /admin");
+      router.push("/admin");
+    }
+  }, [session, isLoading, router]);
 
-  console.log("Server-side session in DashboardPage:", session); // Log the session
-
-  if (!session?.user) {
-    console.log("No user in session, redirecting to login."); // Log redirection reason
-    redirect("/login");
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+      </div>
+    );
   }
 
-  // Check if user is admin and redirect to admin dashboard
-  if (session.user.role === "ADMIN") {
-    console.log("Admin user detected, redirecting to /admin");
-    redirect("/admin");
+  if (!session?.user) {
+    return null; // Will redirect in useEffect
   }
 
   return <Dashboard />;
 }
-
-// Disable static generation for this page
-export const dynamic = 'force-dynamic';
