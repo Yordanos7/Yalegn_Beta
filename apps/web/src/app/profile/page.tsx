@@ -370,10 +370,10 @@ export default function UserProfilePage() {
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-8">
           {/* Header Section */}
-          <Card className="p-6 bg-card rounded-lg shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center">
-                <div className="mr-6">
+          <Card className="p-4 sm:p-6 bg-card rounded-lg shadow-sm">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-6 sm:gap-0">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left">
+                <div className="sm:mr-6 mb-4 sm:mb-0">
                   <ProfileImageUpload
                     userId={userId!}
                     initialImageUrl={userProfile.image || null}
@@ -381,7 +381,7 @@ export default function UserProfilePage() {
                   />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold">{userProfile.name}</h1>
+                  <h1 className="text-2xl sm:text-4xl font-bold break-words">{userProfile.name}</h1>
                   {userProfile.verification?.status ===
                     VerificationStatus.APPROVED && (
                     <div className="flex items-center text-green-500 text-sm mt-1">
@@ -400,13 +400,13 @@ export default function UserProfilePage() {
                       VerificationStatus.NONE ||
                     userProfile.verification?.status ===
                       VerificationStatus.REJECTED) && (
-                    <div className="flex items-center text-red-500 text-sm mt-1">
+                    <div className="flex items-center justify-center sm:justify-start text-red-500 text-sm mt-1">
                       <XCircle className="mr-1 h-4 w-4" /> Faida ID Not Verified
                     </div>
                   )}
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row items-center gap-4">
                 {isOwnProfile &&
                   (!session?.user?.accountType ||
                     session?.user?.accountType === "INDIVIDUAL") &&
@@ -446,7 +446,7 @@ export default function UserProfilePage() {
                       </p>
                     </div>
                   )}
-                <div className="relative w-24 h-24">
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24">
                   <svg className="w-full h-full" viewBox="0 0 100 100">
                     <circle
                       className="text-muted-foreground"
@@ -481,7 +481,7 @@ export default function UserProfilePage() {
                       y="50"
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      className={`text-xl font-bold ${
+                      className={`text-lg sm:text-xl font-bold ${
                         profileCompletion === 100
                           ? "fill-green-500"
                           : "fill-foreground"
@@ -514,10 +514,10 @@ export default function UserProfilePage() {
               </div>
             </div>
 
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-md px-6 py-2 flex items-center">
+                  <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-md px-6 py-2 flex items-center justify-center">
                     <Edit className="mr-2 h-4 w-4" /> Edit Profile
                   </Button>
                 </DialogTrigger>
@@ -558,17 +558,17 @@ export default function UserProfilePage() {
                   />
                 </DialogContent>
               </Dialog>
-              <Link href={{ pathname: `/profile/${userId!}` }} passHref>
+              <Link href={{ pathname: `/profile/${userId!}` }} passHref className="w-full sm:w-auto">
                 <Button
                   variant="outline"
-                  className="font-semibold rounded-md px-6 py-2 flex items-center"
+                  className="w-full font-semibold rounded-md px-6 py-2 flex items-center justify-center"
                 >
                   <Share2 className="mr-2 h-4 w-4" /> Share Profile Link
                 </Button>
               </Link>
               <Button
                 variant="outline"
-                className="font-semibold rounded-md px-6 py-2 flex items-center"
+                className="w-full sm:w-auto font-semibold rounded-md px-6 py-2 flex items-center justify-center"
               >
                 <Eye className="mr-2 h-4 w-4" /> Preview as Public View
               </Button>

@@ -105,7 +105,7 @@ export function ProfileImageUpload({
         disabled={
           isUploading || uploadProfileImageMutation.status === "pending"
         }
-        className="bg-blue-600 hover:bg-blue-700 text-white"
+        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
       >
         {isUploading || uploadProfileImageMutation.status === "pending" ? (
           <>
