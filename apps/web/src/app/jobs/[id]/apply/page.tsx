@@ -109,7 +109,6 @@ export default function ApplyToJobPage() {
     }
 
     const data = await response.json();
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
     return `${backendUrl}${data.filePath}`; // Correctly get full URL
   };
 

@@ -126,13 +126,13 @@ export function ListingForm({
 
     const uploadedImagePaths: string[] = [];
     const uploadedVideoPaths: string[] = [];
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
     const uploadFile = async (file: File) => {
       const formData = new FormData();
       formData.append("file", file);
 
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
         const response = await fetch(`${backendUrl}/api/upload`, {
           method: "POST",
           body: formData,
@@ -157,7 +157,6 @@ export function ListingForm({
       for (const file of selectedFiles) {
         const path = await uploadFile(file);
         if (path) {
-          const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
           uploadedImagePaths.push(`${backendUrl}${path}`);
         }
       }
@@ -167,7 +166,6 @@ export function ListingForm({
       for (const file of selectedVideos) {
         const path = await uploadFile(file);
         if (path) {
-          const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
           uploadedVideoPaths.push(`${backendUrl}${path}`);
         }
       }
