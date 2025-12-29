@@ -145,7 +145,8 @@ export function ProfileEditForm({
     formData.append("file", file);
 
     try {
-      const response = await fetch("/api/upload", {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const response = await fetch(`${backendUrl}/api/upload`, {
         method: "POST",
         body: formData,
       });
@@ -194,7 +195,8 @@ export function ProfileEditForm({
         setIsUploadingIdFront(true);
         try {
           const relativePath = await uploadFile(file, "idFront");
-          const fullImageUrl = `${window.location.origin}${relativePath}`;
+          const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
+          const fullImageUrl = `${backendUrl}${relativePath}`;
           setIdFrontImageUrl(fullImageUrl);
           form.setValue("idFrontImage", fullImageUrl);
           toast.success("ID Front image uploaded successfully!");
@@ -215,7 +217,8 @@ export function ProfileEditForm({
         setIsUploadingIdBack(true);
         try {
           const relativePath = await uploadFile(file, "idBack");
-          const fullImageUrl = `${window.location.origin}${relativePath}`;
+          const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
+          const fullImageUrl = `${backendUrl}${relativePath}`;
           setIdBackImageUrl(fullImageUrl);
           form.setValue("idBackImage", fullImageUrl);
           toast.success("ID Back image uploaded successfully!");

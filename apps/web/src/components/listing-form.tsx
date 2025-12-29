@@ -132,7 +132,8 @@ export function ListingForm({
       formData.append("file", file);
 
       try {
-        const response = await fetch("/api/upload", {
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
+        const response = await fetch(`${backendUrl}/api/upload`, {
           method: "POST",
           body: formData,
         });
@@ -156,7 +157,8 @@ export function ListingForm({
       for (const file of selectedFiles) {
         const path = await uploadFile(file);
         if (path) {
-          uploadedImagePaths.push(path);
+          const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
+          uploadedImagePaths.push(`${backendUrl}${path}`);
         }
       }
     }
@@ -165,7 +167,8 @@ export function ListingForm({
       for (const file of selectedVideos) {
         const path = await uploadFile(file);
         if (path) {
-          uploadedVideoPaths.push(path);
+          const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
+          uploadedVideoPaths.push(`${backendUrl}${path}`);
         }
       }
     }

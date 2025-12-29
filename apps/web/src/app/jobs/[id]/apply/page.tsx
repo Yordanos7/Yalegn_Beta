@@ -98,7 +98,8 @@ export default function ApplyToJobPage() {
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await fetch("/api/upload", {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    const response = await fetch(`${backendUrl}/api/upload`, {
       method: "POST",
       body: formData,
     });
@@ -108,7 +109,8 @@ export default function ApplyToJobPage() {
     }
 
     const data = await response.json();
-    return data.filePath; // Correctly get filePath from the upload API response
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    return `${backendUrl}${data.filePath}`; // Correctly get full URL
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

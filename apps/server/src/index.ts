@@ -78,7 +78,7 @@ const storage = multer.diskStorage({
 // @ts-ignore
 const upload = multer({ storage: storage });
 
-app.use("/uploads", express.static("uploads")); // Serve static files from the 'uploads' directory
+app.use("/uploads", express.static(uploadDir)); // Serve static files from the 'uploads' directory
 
 // Dedicated endpoint for profile image uploads
 app.post(
@@ -99,6 +99,28 @@ app.post(
     const filePath = `/uploads/${req.file.filename}`;
     console.log("Generated filePath:", filePath);
     res.status(200).json({ message: "File uploaded successfully", filePath });
+  }
+);
+
+// Generic file upload endpoint for listings, jobs, etc.
+app.post(
+  "/api/upload",
+  // @ts-ignore
+  upload.single("file"),
+  // @ts-ignore
+  (req, res) => {
+    console.log("Received request to /api/upload");
+    // @ts-ignore
+    if (!req.file) {
+      console.error("No file uploaded in the request.");
+      return res.status(400).json({ success: false, error: "No file uploaded" });
+    }
+    // @ts-ignore
+    console.log("File received:", req.file);
+    // @ts-ignore
+    const filePath = `/uploads/${req.file.filename}`;
+    console.log("Generated filePath:", filePath);
+    res.status(200).json({ success: true, filePath });
   }
 );
 
