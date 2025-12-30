@@ -26,7 +26,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/hooks/use-session";
 import { redirect } from "next/navigation";
 import { trpc } from "@/utils/trpc";
-import type { AppRouter } from "@Alpha/api/routers";
+import type { AppRouter } from "@my-better-t-app/api/routers";
 import type { inferRouterOutputs } from "@trpc/server";
 import { toast } from "sonner"; // Import toast for notifications
 

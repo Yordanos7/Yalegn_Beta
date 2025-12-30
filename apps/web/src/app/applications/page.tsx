@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/hooks/use-session"; // Added useSession import
 import { trpc } from "@/utils/trpc";
 import { Loader } from "lucide-react";
-import type { AppRouter } from "@Alpha/api/routers";
+import type { AppRouter } from "@my-better-t-app/api/routers";
 import type { inferRouterOutputs } from "@trpc/server";
 
 type RouterOutput = inferRouterOutputs<AppRouter>;

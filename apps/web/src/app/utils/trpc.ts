@@ -2,7 +2,7 @@
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
-import type { AppRouter } from "@Alpha/api/src/routers/types"; // Corrected import path
+import type { AppRouter } from "@my-better-t-app/api/routers/index"; // Corrected import path
 import { toast } from "sonner";
 import superjson from "superjson";
 

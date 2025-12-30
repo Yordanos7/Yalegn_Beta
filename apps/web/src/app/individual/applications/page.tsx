@@ -30,7 +30,7 @@ import {
 import { useSession } from "@/hooks/use-session";
 import { redirect } from "next/navigation";
 import { trpc } from "@/utils/trpc";
-import type { AppRouter } from "@Alpha/api/routers";
+import type { AppRouter } from "@my-better-t-app/api/routers";
 import type { inferRouterOutputs } from "@trpc/server";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
