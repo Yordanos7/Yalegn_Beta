@@ -16,7 +16,7 @@ export const sendVerificationEmail = async (
     const formData = new FormData();
 
     // Web3Forms configuration (100% free, no signup needed)
-    const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY;
+    const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY || "009f3a14-789f-4162-83b6-71392e5c52e4";
 
     console.log("🔑 Access key from env:", accessKey);
     console.log("🔑 Access key length:", accessKey?.length);

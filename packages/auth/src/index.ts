@@ -80,7 +80,7 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       console.log("📧 Sending verification email to:", user.email);
 
-      const web3FormsAccessKey = "009f3a14-789f-4162-83b6-71392e5c52e4";
+      const web3FormsAccessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY || "009f3a14-789f-4162-83b6-71392e5c52e4";
 
       try {
         const formData = new FormData();
@@ -109,7 +109,7 @@ The Yalegn Team`
           body: formData,
         });
 
-        const result = await response.json();
+        const result = (await response.json()) as { success: boolean; message?: string };
 
         if (result.success) {
           console.log("✅ Verification email sent successfully via Web3Forms!");
