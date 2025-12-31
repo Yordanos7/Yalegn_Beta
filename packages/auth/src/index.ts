@@ -92,7 +92,9 @@ export const auth = betterAuth({
         const { createTransport } = await import("nodemailer");
         
         const transporter = createTransport({
-          service: "gmail",
+          host: "smtp.gmail.com",
+          port: 465,
+          secure: true, // true for 465, false for other ports
           auth: {
             user: gmailUser,
             pass: gmailPass,
