@@ -83,14 +83,18 @@ export const auth = betterAuth({
       const web3FormsAccessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY || "009f3a14-789f-4162-83b6-71392e5c52e4";
 
       try {
-        const formData = new FormData();
-        formData.append("access_key", web3FormsAccessKey);
-        formData.append("subject", "✨ Verify your Yalegn account");
-        formData.append("from_name", "Yalegn");
-        formData.append("email", user.email);
-        formData.append(
-          "message",
-          `Hi ${user.name || "there"}!
+        const response = await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            access_key: web3FormsAccessKey,
+            subject: "✨ Verify your Yalegn account",
+            from_name: "Yalegn",
+            email: user.email,
+            message: `Hi ${user.name || "there"}!
 
 Welcome to Yalegn! 🎉
 
@@ -101,12 +105,8 @@ ${url}
 If you didn't create an account, please ignore this email.
 
 Thanks,
-The Yalegn Team`
-        );
-
-        const response = await fetch("https://api.web3forms.com/submit", {
-          method: "POST",
-          body: formData,
+The Yalegn Team`,
+          }),
         });
 
         const result = (await response.json()) as { success: boolean; message?: string };
