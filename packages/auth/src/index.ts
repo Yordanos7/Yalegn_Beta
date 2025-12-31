@@ -80,44 +80,77 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       console.log("📧 Sending verification email to:", user.email);
 
-      const web3FormsAccessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY || "009f3a14-789f-4162-83b6-71392e5c52e4";
+      const gmailUser = process.env.GMAIL_USER || "yordanosyohans7@gmail.com";
+      const gmailPass = process.env.GMAIL_APP_PASSWORD || "sooi leyu dlra uelv";
+
+      if (!gmailUser || !gmailPass) {
+        console.warn("⚠️ GMAIL credentials missing - skipping email send");
+        return;
+      }
 
       try {
-        const response = await fetch("https://api.web3forms.com/submit", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
+        const { createTransport } = await import("nodemailer");
+        
+        const transporter = createTransport({
+          service: "gmail",
+          auth: {
+            user: gmailUser,
+            pass: gmailPass,
           },
-          body: JSON.stringify({
-            access_key: web3FormsAccessKey,
-            subject: "✨ Verify your Yalegn account",
-            from_name: "Yalegn",
-            email: user.email,
-            message: `Hi ${user.name || "there"}!
-
-Welcome to Yalegn! 🎉
-
-Please click the link below to verify your email address and receive your 30 welcome coins:
-
-${url}
-
-If you didn't create an account, please ignore this email.
-
-Thanks,
-The Yalegn Team`,
-          }),
         });
 
-        const result = (await response.json()) as { success: boolean; message?: string };
+        const info = await transporter.sendMail({
+          from: `"Yalegn Team" <${gmailUser}>`,
+          to: user.email,
+          subject: "✨ Verify your Yalegn account",
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+              </style>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f9fafb; min-height: 100vh;">
+              <div style="max-width: 600px; margin: 40px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                <div style="background-color: #000000; padding: 32px; text-align: center;">
+                  <div style="color: white; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">Yalegn</div>
+                </div>
+                <div style="padding: 40px 32px;">
+                  <h1 style="color: #111827; margin: 0 0 24px 0; font-size: 24px; font-weight: 700; text-align: center;">Verify your email address</h1>
+                  <p style="color: #374151; margin: 0 0 24px 0; font-size: 16px; line-height: 1.6;">
+                    Hi <strong>${user.name || "there"}</strong>,
+                  </p>
+                  <p style="color: #374151; margin: 0 0 32px 0; font-size: 16px; line-height: 1.6;">
+                    Thanks for joining Yalegn! Click below to verify your email and receive your <strong>30 welcome coins</strong>.
+                  </p>
+                  <div style="text-align: center; margin: 32px 0;">
+                    <a href="${url}" style="display: inline-block; background-color: #000000; color: white; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 16px;">
+                      Verify Email Address
+                    </a>
+                  </div>
+                  <p style="color: #6b7280; margin: 32px 0 0 0; font-size: 14px; line-height: 1.5; text-align: center;">
+                    If the button doesn't work, copy this link:<br>
+                    <a href="${url}" style="color: #000000; text-decoration: underline; word-break: break-all;">${url}</a>
+                  </p>
+                </div>
+                <div style="background-color: #f3f4f6; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
+                  <p style="color: #6b7280; margin: 0; font-size: 12px;">
+                    &copy; ${new Date().getFullYear()} Yalegn. All rights reserved.
+                  </p>
+                </div>
+              </div>
+            </body>
+            </html>
+          `,
+        });
 
-        if (result.success) {
-          console.log("✅ Verification email sent successfully via Web3Forms!");
-        } else {
-          console.error("❌ Web3Forms error:", result.message);
-        }
+        console.log("✅ Verification email sent successfully via Gmail SMTP!");
+        console.log("📧 Message ID:", info.messageId);
       } catch (error: any) {
-        console.error("❌ Failed to send email via Web3Forms:", error);
+        console.error("❌ Failed to send email via Gmail:", error);
       }
     },
   },
