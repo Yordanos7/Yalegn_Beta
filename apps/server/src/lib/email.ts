@@ -1,12 +1,22 @@
 import { createTransport } from "nodemailer";
 
 // Email configuration
+// Email configuration
 const EMAIL_CONFIG = {
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // true for 465, false for other ports
   auth: {
     user: process.env.GMAIL_USER || "yordanosyohannes7@gmail.com",
     pass: process.env.GMAIL_APP_PASSWORD || "your_app_password_here",
   },
+  // Important for Render deployment:
+  family: 4, // Force IPv4 to avoid IPv6 timeouts
+  logger: true,
+  debug: true,
+  connectionTimeout: 30000, 
+  greetingTimeout: 30000,
+  socketTimeout: 30000, 
 };
 
 // Create transporter
