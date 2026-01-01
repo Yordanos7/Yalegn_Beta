@@ -18,7 +18,7 @@ import { ProfileImageUpload } from "@/components/profile-image-upload"; // Impor
 import { PortfolioForm } from "@/components/portfolio-form"; // Import PortfolioForm
 import { Switch } from "@/components/ui/switch"; // Import Switch component
 import { authClient } from "@/lib/auth-client";
-import { sendVerificationEmail } from "@/lib/web3forms";
+// import { sendVerificationEmail } from "@/lib/web3forms"; // Removed Web3Forms
 // import EmailJSTest from "@/components/EmailJSTest"; // Removed
 import {
   Mail,
@@ -153,20 +153,30 @@ export default function UserProfilePage() {
         userProfile.email
       )}`;
 
-      // Send email via Web3Forms
-      const success = await sendVerificationEmail({
-        to: userProfile.email,
-        name: userProfile.name,
-        verificationLink: verificationLink,
+      // Send email via Server API (Nodemailer)
+      const serverUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000";
+      
+      const response = await fetch(`${serverUrl}/api/send-verification`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: userProfile.email,
+          name: userProfile.name,
+          verificationLink: verificationLink,
+        }),
       });
 
-      if (success) {
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         toast.success("Verification email sent! 📧", {
           description:
             "Check your inbox and click the verification link to get 30 welcome coins!",
         });
       } else {
-        throw new Error("Failed to send verification email");
+        throw new Error(data.error || "Failed to send verification email");
       }
     } catch (error: any) {
       console.error("Error sending verification email:", error);

@@ -15,7 +15,8 @@ import { auth } from "@my-better-t-app/auth";
 import { toNodeHandler } from "better-auth/node";
 import multer from "multer";
 import fs from "fs";
-// Removed email router - using client-side Web3Forms instead
+// Email router restored for Nodemailer support
+import emailRouter from "./routes/email";
 import http from "http"; // Import http module
 import { Server } from "socket.io"; // Import Server from socket.io
 
@@ -130,7 +131,8 @@ app.use(express.urlencoded({ limit: "50mb", extended: true })); // Also increase
 // Better-auth handles all /api/auth/* routes including email verification
 app.use("/api/auth", toNodeHandler(auth));
 
-// Removed email routes - using client-side Web3Forms instead
+// Email routes
+app.use("/api", emailRouter);
 
 app.use(
   "/trpc",
