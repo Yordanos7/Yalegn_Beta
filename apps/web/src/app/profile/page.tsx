@@ -147,6 +147,9 @@ export default function UserProfilePage() {
         userId: userId,
       });
 
+      console.log("✅ Mutation Result:", result);
+      console.log("✅ Token from result:", result?.token);
+
       const verificationLink = `${
         window.location.origin
       }/verify-email?token=${result.token}&email=${encodeURIComponent(
