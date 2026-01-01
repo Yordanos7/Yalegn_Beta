@@ -93,12 +93,15 @@ export const auth = betterAuth({
         
         const transporter = createTransport({
           host: "smtp.gmail.com",
-          port: 465,
-          secure: true, // true for 465, false for other ports
+          port: 587,
+          secure: false, // true for 465, false for other ports
           auth: {
             user: gmailUser,
             pass: gmailPass,
           },
+          logger: true,
+          debug: true,
+          connectionTimeout: 10000, // 10 seconds
         });
 
         const info = await transporter.sendMail({
