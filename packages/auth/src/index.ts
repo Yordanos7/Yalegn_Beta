@@ -113,7 +113,7 @@ export const auth = betterAuth({
         const info = await transporter.sendMail({
           from: `"Yalegn Team" <${gmailUser}>`,
           to: user.email,
-          subject: "✨ Verify your Yalegn account",
+          subject: "✨ Verify your Yalegn account (Action Required)",
           html: `
             <!DOCTYPE html>
             <html>
