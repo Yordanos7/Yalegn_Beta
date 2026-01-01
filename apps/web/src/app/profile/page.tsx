@@ -1,4 +1,4 @@
-"use client";
+  "use client";
 
 import Sidebar from "@/components/sidebar"; // Import Sidebar
 import { useEffect, useState } from "react";
@@ -18,7 +18,7 @@ import { ProfileImageUpload } from "@/components/profile-image-upload"; // Impor
 import { PortfolioForm } from "@/components/portfolio-form"; // Import PortfolioForm
 import { Switch } from "@/components/ui/switch"; // Import Switch component
 import { authClient } from "@/lib/auth-client";
-// import { sendVerificationEmail } from "@/lib/web3forms"; // Removed Web3Forms
+import { sendVerificationEmail } from "@/lib/emailjs"; // Import EmailJS
 // import EmailJSTest from "@/components/EmailJSTest"; // Removed
 import {
   Mail,
@@ -153,21 +153,24 @@ export default function UserProfilePage() {
         userProfile.email
       )}`;
 
-      // Send email via Server API (Nodemailer)
-      const serverUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000";
-      
-      const response = await fetch(`${serverUrl}/api/send-verification`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: userProfile.email,
-          name: userProfile.name,
-          verificationLink: verificationLink,
-        }),
+      // Send email via Client-Side EmailJS (Bypasses Server Blocks)
+      const success = await sendVerificationEmail({
+        to_email: userProfile.email,
+        to_name: userProfile.name,
+        verification_link: verificationLink,
+        app_name: "Yalegn",
       });
 
+      if (success) {
+        toast.success("Verification email sent! 📧", {
+          description:
+            "Check your inbox and click the verification link to get 30 welcome coins!",
+        });
+      } else {
+        throw new Error("Failed to send verification email");
+      }
+
+      /*
       const data = await response.json();
 
       if (response.ok && data.success) {
@@ -178,6 +181,7 @@ export default function UserProfilePage() {
       } else {
         throw new Error(data.error || "Failed to send verification email");
       }
+      */
     } catch (error: any) {
       console.error("Error sending verification email:", error);
       toast.error("Failed to send verification email", {

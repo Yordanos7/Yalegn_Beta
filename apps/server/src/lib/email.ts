@@ -31,10 +31,52 @@ export interface EmailData {
 export const sendVerificationEmail = async (
   data: EmailData
 ): Promise<boolean> => {
+  // 1. Try Resend (HTTP) first - bypasses SMTP port blocks
+  if (process.env.RESEND_API_KEY) {
+    try {
+      console.log("📧 Resend: Attempting to send via HTTP API...");
+      
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: "Yalegn <onboarding@resend.dev>", // Default for testing
+          to: [data.to],
+          subject: "✨ Verify your Yalegn account - Welcome!",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h1 style="color: #4f46e5;">Welcome to Yalegn!</h1>
+              <p>Hi ${data.name},</p>
+              <p>Please verify your email to get started and receive 30 welcome coins:</p>
+              <a href="${data.verificationLink}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 10px 0;">Verify Email</a>
+              <p style="color: #666; font-size: 14px; margin-top: 20px;">Or copy link: ${data.verificationLink}</p>
+            </div>
+          `
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        console.log("✅ Resend: Email sent successfully!", json);
+        return true;
+      } else {
+        const err = await res.text();
+        console.error("⚠️ Resend API Error:", err);
+        // Fall through to Nodemailer...
+      }
+    } catch (e: any) {
+      console.error("⚠️ Resend Exception:", e);
+      // Fall through to Nodemailer...
+    }
+  }
+
+  // 2. Fallback to Nodemailer (SMTP)
   try {
     console.log("📧 Nodemailer: Sending verification email...");
     console.log("📧 To:", data.to);
-    console.log("📧 Name:", data.name);
 
     const mailOptions = {
       from: `"Yalegn Team" <${EMAIL_CONFIG.auth.user}>`,
@@ -71,21 +113,6 @@ export const sendVerificationEmail = async (
             </div>
           </div>
         </div>
-      `,
-      text: `
-Hi ${data.name}!
-
-Welcome to Yalegn! 
-
-Please verify your email by clicking this link:
-${data.verificationLink}
-
-You'll get 30 welcome coins after verification!
-
-Thanks!
-Yalegn Team
-
-© 2024 Yalegn. All rights reserved.
       `,
     };
 
