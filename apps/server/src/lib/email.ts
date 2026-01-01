@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { createTransport } from "nodemailer";
 
 // Email configuration
 const EMAIL_CONFIG = {
@@ -10,7 +10,7 @@ const EMAIL_CONFIG = {
 };
 
 // Create transporter
-const transporter = nodemailer.createTransporter(EMAIL_CONFIG);
+const transporter = createTransport(EMAIL_CONFIG);
 
 export interface EmailData {
   to: string;
