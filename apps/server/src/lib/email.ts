@@ -4,8 +4,8 @@ import { createTransport } from "nodemailer";
 // Email configuration
 const EMAIL_CONFIG = {
   host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // true for 465, false for other ports
+  port: 465, // Use Port 465 for implicit SSL
+  secure: true, // true for 465, false for other ports
   auth: {
     user: process.env.GMAIL_USER || "yordanosyohannes7@gmail.com",
     pass: process.env.GMAIL_APP_PASSWORD || "your_app_password_here",
