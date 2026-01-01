@@ -92,7 +92,7 @@ export const auth = betterAuth({
         const { createTransport } = await import("nodemailer");
         
         const transporter = createTransport({
-          host: "smtp.googlemail.com", // Alternate hostname
+          host: "smtp.gmail.com",
           port: 587,
           secure: false,
           auth: {
@@ -100,14 +100,14 @@ export const auth = betterAuth({
             pass: gmailPass,
           },
           tls: {
-            rejectUnauthorized: false,
             ciphers: "SSLv3",
           },
+          family: 4, // Force IPv4 to avoid IPv6 timeouts on Render
           logger: true,
           debug: true,
-          connectionTimeout: 20000, // Increased to 20 seconds
-          greetingTimeout: 20000,
-          socketTimeout: 20000,
+          connectionTimeout: 30000, 
+          greetingTimeout: 30000,
+          socketTimeout: 30000,
         });
 
         const info = await transporter.sendMail({
